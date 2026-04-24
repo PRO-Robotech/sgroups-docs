@@ -10,8 +10,8 @@ import dedent from 'ts-dedent'
 Локальная сторона — адресная группа, удаленная — доменное имя (`FQDN`).
 Поле `remote.value` **обязательно** — содержит доменное имя. Поля `remote.name` и `remote.namespace` не используются.
 
-:::warning Transport
-Блок `spec.transport` **обязателен**. Необходимо явно указать протокол, IP-семейство и записи.
+:::warning Transport и Traffic
+Блок `spec.transport` **обязателен**. Направление трафика — только `EGRESS` (AG отправляет трафик на внешний домен).
 :::
 
 <table>
@@ -44,8 +44,8 @@ import dedent from 'ts-dedent'
     </tr>
     <tr>
       <td><code>spec.session.traffic</code></td>
-      <td>нет</td>
-      <td><code>{TYPES.enumTraffic}</code></td>
+      <td><strong>да</strong></td>
+      <td><code>{TYPES.enumTrafficEgress}</code></td>
       <td>{DICTIONARY.traffic.short}</td>
     </tr>
     <tr>
@@ -75,7 +75,7 @@ import dedent from 'ts-dedent'
     <tr>
       <td><code>spec.endpoints.remote.value</code></td>
       <td><strong>да</strong></td>
-      <td><code>{TYPES.enumEndpointLocal}</code></td>
+      <td><code>{TYPES.string}</code></td>
       <td>{DICTIONARY.remoteValue.short}</td>
     </tr>
     <tr>

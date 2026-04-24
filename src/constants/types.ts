@@ -17,6 +17,8 @@ export const TYPES = {
   enumTraffic: 'Enum("BOTH", "INGRESS", "EGRESS")',
   enumTrafficEgressBoth: 'Enum("EGRESS", "BOTH")',
   enumTrafficIngress: 'Enum("INGRESS")',
+  enumTrafficEgress: 'Enum("EGRESS")',
+  enumTrafficIngressEgress: 'Enum("INGRESS", "EGRESS")',
   enumProtocol: 'Enum("TCP", "UDP", "ICMP")',
   enumIpv: 'Enum("IPv4", "IPv6")',
   enumEndpointLocal: 'Enum("ADDRESS_GROUP", "SERVICE")',

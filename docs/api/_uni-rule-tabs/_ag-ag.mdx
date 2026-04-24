@@ -69,13 +69,13 @@ import dedent from 'ts-dedent'
     <tr>
       <td><code>spec.action</code></td>
       <td><strong>да</strong></td>
-      <td><code>{TYPES.string}</code></td>
+      <td><code>{TYPES.enumAction}</code></td>
       <td>{DICTIONARY.action.short}</td>
     </tr>
     <tr>
       <td><code>spec.session.traffic</code></td>
       <td>нет</td>
-      <td><code>{TYPES.string}</code></td>
+      <td><code>{TYPES.enumTraffic}</code></td>
       <td>{DICTIONARY.traffic.short}</td>
     </tr>
     <tr>
@@ -93,7 +93,7 @@ import dedent from 'ts-dedent'
     <tr>
       <td><code>spec.endpoints.local.type</code></td>
       <td>да</td>
-      <td><code>{TYPES.mapStringString}</code></td>
+      <td><code>{TYPES.enumEndpointAG}</code></td>
       <td>{DICTIONARY.endpointType.short}</td>
     </tr>
     <tr>
@@ -111,19 +111,19 @@ import dedent from 'ts-dedent'
     <tr>
       <td><code>spec.endpoints.remote.type</code></td>
       <td>да</td>
-      <td><code>{TYPES.mapStringString}</code></td>
+      <td><code>{TYPES.enumEndpointAG}</code></td>
       <td>{DICTIONARY.endpointType.short}</td>
     </tr>
     <tr>
       <td><code>spec.transport.protocol</code></td>
       <td>да</td>
-      <td><code>{TYPES.string}</code></td>
+      <td><code>{TYPES.enumProtocol}</code></td>
       <td>{DICTIONARY.protocol.short}</td>
     </tr>
     <tr>
       <td><code>spec.transport.ipv</code></td>
       <td>да</td>
-      <td><code>{TYPES.string}</code></td>
+      <td><code>{TYPES.enumIpv}</code></td>
       <td>{DICTIONARY.ipv.short}</td>
     </tr>
     <tr>
