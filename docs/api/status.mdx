@@ -5,6 +5,7 @@ title: Status API
 ---
 
 import { DICTIONARY } from '@site/src/constants/dictionary'
+import { TYPES } from '@site/src/constants/types'
 import { RESTRICTIONS } from '@site/src/constants/restrictions'
 import { Restrictions } from '@site/src/components/commonBlocks/Restrictions'
 import { Codes } from '@site/src/components/commonBlocks/Codes'
@@ -48,22 +49,22 @@ API для получения информации о статусе синхр�
     </tr>
     <tr>
       <td><code>statuses[].component</code></td>
-      <td><code>string</code></td>
+      <td><code>{TYPES.string}</code></td>
       <td>Название компонента</td>
     </tr>
     <tr>
       <td><code>statuses[].status</code></td>
-      <td><code>string</code></td>
+      <td><code>{TYPES.string}</code></td>
       <td>Текущий статус (<code>OK</code>, <code>ERROR</code>, <code>SYNCING</code>)</td>
     </tr>
     <tr>
       <td><code>statuses[].last_sync</code></td>
-      <td><code>Timestamp</code></td>
+      <td><code>{TYPES.timestamp}</code></td>
       <td>Время последней синхронизации</td>
     </tr>
     <tr>
       <td><code>statuses[].message</code></td>
-      <td><code>string</code></td>
+      <td><code>{TYPES.string}</code></td>
       <td>Дополнительное сообщение</td>
     </tr>
   </tbody>

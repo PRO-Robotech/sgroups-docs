@@ -43,6 +43,8 @@ export const RESTRICTIONS: TRestrictions = {
     <>Допустимые значения: <code>ADDRESS_GROUP</code> (1), <code>SERVICE</code> (2), <code>FQDN</code> (3), <code>CIDR</code> (4)</>,
     <>Для local: допустимы <code>ADDRESS_GROUP</code> и <code>SERVICE</code></>,
     <>Для remote: допустимы все четыре типа</>,
+    <>При типе <code>ADDRESS_GROUP</code> или <code>SERVICE</code> — ресурс с указанным name и namespace должен существовать</>,
+    <>При типе <code>FQDN</code> или <code>CIDR</code> — проверка существования не выполняется, обязательно поле <code>value</code></>,
   ],
   cidr: [
     <>Обязательное поле (<code>string.min_len: 1</code>)</>,
@@ -86,19 +88,23 @@ export const RESTRICTIONS: TRestrictions = {
     'Необходимо указать uid ИЛИ комбинацию name + namespace',
   ],
   addressGroupRef: [
-    <>Поле <code>address_group</code> обязательно (<code>required: true</code>)</>,
+    <>Поле <code>addressGroup</code> обязательно (<code>required: true</code>)</>,
     'Должны быть указаны name и namespace',
+    'Ресурс AddressGroup с указанным name и namespace должен существовать на момент создания связи',
   ],
   hostRef: [
     <>Поле <code>host</code> обязательно (<code>required: true</code>)</>,
     'Должны быть указаны name и namespace',
+    'Ресурс Host с указанным name и namespace должен существовать на момент создания связи',
   ],
   networkRef: [
     <>Поле <code>network</code> обязательно (<code>required: true</code>)</>,
     'Должны быть указаны name и namespace',
+    'Ресурс Network с указанным name и namespace должен существовать на момент создания связи',
   ],
   serviceRef: [
     <>Поле <code>service</code> обязательно (<code>required: true</code>)</>,
     'Должны быть указаны name и namespace',
+    'РесурсService с указанным name и namespace должен существовать на момент создания связи',
   ],
 }

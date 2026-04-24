@@ -5,6 +5,7 @@ title: Namespaces
 ---
 
 import { DICTIONARY } from '@site/src/constants/dictionary'
+import { TYPES } from '@site/src/constants/types'
 import { RESTRICTIONS } from '@site/src/constants/restrictions'
 import { Restrictions } from '@site/src/components/commonBlocks/Restrictions'
 import { Codes } from '@site/src/components/commonBlocks/Codes'
@@ -39,37 +40,37 @@ import dedent from 'ts-dedent'
     <tr>
       <td><code>metadata.name</code></td>
       <td>да</td>
-      <td><code>string</code></td>
+      <td><code>{TYPES.string}</code></td>
       <td>{DICTIONARY.name.short}</td>
     </tr>
     <tr>
       <td><code>metadata.labels</code></td>
       <td>нет</td>
-      <td><code>map&lt;string, string&gt;</code></td>
+      <td><code>{TYPES.mapStringString}</code></td>
       <td>{DICTIONARY.labels.short}</td>
     </tr>
     <tr>
       <td><code>metadata.annotations</code></td>
       <td>нет</td>
-      <td><code>map&lt;string, string&gt;</code></td>
+      <td><code>{TYPES.mapStringString}</code></td>
       <td>{DICTIONARY.annotations.short}</td>
     </tr>
     <tr>
       <td><code>spec.displayName</code></td>
       <td>нет</td>
-      <td><code>string</code></td>
+      <td><code>{TYPES.string}</code></td>
       <td>{DICTIONARY.displayName.short}</td>
     </tr>
     <tr>
       <td><code>spec.comment</code></td>
       <td>нет</td>
-      <td><code>string</code></td>
+      <td><code>{TYPES.string}</code></td>
       <td>{DICTIONARY.comment.short}</td>
     </tr>
     <tr>
       <td><code>spec.description</code></td>
       <td>нет</td>
-      <td><code>string</code></td>
+      <td><code>{TYPES.string}</code></td>
       <td>{DICTIONARY.description.short}</td>
     </tr>
   </tbody>
@@ -162,13 +163,13 @@ import dedent from 'ts-dedent'
     <tr>
       <td><code>uid</code></td>
       <td>нет*</td>
-      <td><code>string</code></td>
+      <td><code>{TYPES.string}</code></td>
       <td>{DICTIONARY.uid.short}</td>
     </tr>
     <tr>
       <td><code>name</code></td>
       <td>нет*</td>
-      <td><code>string</code></td>
+      <td><code>{TYPES.string}</code></td>
       <td>{DICTIONARY.name.short}</td>
     </tr>
   </tbody>
@@ -249,15 +250,15 @@ import dedent from 'ts-dedent'
   </thead>
   <tbody>
     <tr>
-      <td><code>selector.fieldSelector.name</code></td>
+      <td><code>selectors[].fieldSelector.name</code></td>
       <td>нет</td>
-      <td><code>string</code></td>
-      <td>{DICTIONARY.fieldSelector.short}</td>
+      <td><code>{TYPES.string}</code></td>
+      <td>{DICTIONARY.name.short}</td>
     </tr>
     <tr>
-      <td><code>selector.labelSelector</code></td>
+      <td><code>selectors[].labelSelector</code></td>
       <td>нет</td>
-      <td><code>map&lt;string, string&gt;</code></td>
+      <td><code>{TYPES.mapStringString}</code></td>
       <td>{DICTIONARY.labelSelector.short}</td>
     </tr>
   </tbody>
@@ -294,7 +295,7 @@ import dedent from 'ts-dedent'
   <tbody>
     <tr>
       <td><code>resourceVersion</code></td>
-      <td><code>string</code></td>
+      <td><code>{TYPES.string}</code></td>
       <td>{DICTIONARY.resourceVersion.short}</td>
     </tr>
   </tbody>
@@ -357,21 +358,21 @@ import dedent from 'ts-dedent'
   </thead>
   <tbody>
     <tr>
-      <td><code>selector.fieldSelector.name</code></td>
+      <td><code>selectors[].fieldSelector.name</code></td>
       <td>нет</td>
-      <td><code>string</code></td>
-      <td>{DICTIONARY.fieldSelector.short}</td>
+      <td><code>{TYPES.string}</code></td>
+      <td>{DICTIONARY.name.short}</td>
     </tr>
     <tr>
-      <td><code>selector.labelSelector</code></td>
+      <td><code>selectors[].labelSelector</code></td>
       <td>нет</td>
-      <td><code>map&lt;string, string&gt;</code></td>
+      <td><code>{TYPES.mapStringString}</code></td>
       <td>{DICTIONARY.labelSelector.short}</td>
     </tr>
     <tr>
       <td><code>resource_version</code></td>
       <td>нет</td>
-      <td><code>int64</code></td>
+      <td><code>{TYPES.int64}</code></td>
       <td>{DICTIONARY.resourceVersion.short}</td>
     </tr>
   </tbody>

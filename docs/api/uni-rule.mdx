@@ -5,6 +5,7 @@ title: UniRule
 ---
 
 import { DICTIONARY } from '@site/src/constants/dictionary'
+import { TYPES } from '@site/src/constants/types'
 import { RESTRICTIONS } from '@site/src/constants/restrictions'
 import { Restrictions } from '@site/src/components/commonBlocks/Restrictions'
 import { Codes } from '@site/src/components/commonBlocks/Codes'
@@ -27,30 +28,6 @@ import SvcCidr from './_uni-rule-tabs/_svc-cidr.mdx'
 
 {DICTIONARY.resourceUniRule.full}
 
-:::info Общие поля всех комбинаций
-Независимо от типа эндпоинтов каждое правило содержит:
-- `metadata.name`, `metadata.namespace` — обязательные идентификаторы
-- `spec.action` — `ALLOW` или `DENY` (обязательно)
-- `spec.session.traffic` — `BOTH`, `INGRESS` или `EGRESS`
-:::
-
-:::warning Блок transport зависит от комбинации эндпоинтов и направления трафика
-Если одна из сторон правила — ресурс Service, то `transport` может наследоваться из его `transports`:
-
-| Комбинация | Traffic | transport в правиле |
-|---|---|---|
-| AG → AG | любой | **обязателен** |
-| AG → SVC | egress / both | не нужен (из remote Service) |
-| AG → SVC | ingress | **обязателен** |
-| SVC → AG | egress / both | **обязателен** |
-| SVC → AG | ingress | не нужен (из local Service) |
-| SVC → SVC | любой | не нужен (из обоих Service) |
-| AG → FQDN | любой | **обязателен** |
-| SVC → FQDN | любой | **обязателен** |
-| AG → CIDR | любой | **обязателен** |
-| SVC → CIDR | любой | **обязателен** |
-:::
-
 ---
 
 ## Upsert
@@ -60,39 +37,30 @@ import SvcCidr from './_uni-rule-tabs/_svc-cidr.mdx'
 Создает новое правило или обновляет существующее. Тип правила определяется комбинацией `endpoints.local.type` и `endpoints.remote.type` (oneOf):
 
 <Tabs>
-
-<TabItem value="ag-ag" label="AG → AG" default>
-<AgAg />
-</TabItem>
-
-<TabItem value="ag-svc" label="AG → Service">
-<AgSvc />
-</TabItem>
-
-<TabItem value="svc-ag" label="Service → AG">
-<SvcAg />
-</TabItem>
-
-<TabItem value="svc-svc" label="Service → Service">
-<SvcSvc />
-</TabItem>
-
-<TabItem value="ag-fqdn" label="AG → FQDN">
-<AgFqdn />
-</TabItem>
-
-<TabItem value="svc-fqdn" label="Service → FQDN">
-<SvcFqdn />
-</TabItem>
-
-<TabItem value="ag-cidr" label="AG → CIDR">
-<AgCidr />
-</TabItem>
-
-<TabItem value="svc-cidr" label="Service → CIDR">
-<SvcCidr />
-</TabItem>
-
+  <TabItem value="ag-ag" label="AG → AG" default>
+    <AgAg />
+  </TabItem>
+  <TabItem value="ag-svc" label="AG → Service">
+    <AgSvc />
+  </TabItem>
+  <TabItem value="svc-ag" label="Service → AG">
+    <SvcAg />
+  </TabItem>
+  <TabItem value="svc-svc" label="Service → Service">
+    <SvcSvc />
+  </TabItem>
+  <TabItem value="ag-fqdn" label="AG → FQDN">
+    <AgFqdn />
+  </TabItem>
+  <TabItem value="svc-fqdn" label="Service → FQDN">
+    <SvcFqdn />
+  </TabItem>
+  <TabItem value="ag-cidr" label="AG → CIDR">
+    <AgCidr />
+  </TabItem>
+  <TabItem value="svc-cidr" label="Service → CIDR">
+    <SvcCidr />
+  </TabItem>
 </Tabs>
 
 <Codes codes={['invalidArgument', 'notFound', 'internal']} />
@@ -122,19 +90,19 @@ import SvcCidr from './_uni-rule-tabs/_svc-cidr.mdx'
     <tr>
       <td><code>uid</code></td>
       <td>нет*</td>
-      <td><code>string</code></td>
+      <td><code>{TYPES.string}</code></td>
       <td>{DICTIONARY.uid.short}</td>
     </tr>
     <tr>
       <td><code>name</code></td>
       <td>нет*</td>
-      <td><code>string</code></td>
+      <td><code>{TYPES.string}</code></td>
       <td>{DICTIONARY.name.short}</td>
     </tr>
     <tr>
       <td><code>namespace</code></td>
       <td>нет*</td>
-      <td><code>string</code></td>
+      <td><code>{TYPES.string}</code></td>
       <td>{DICTIONARY.namespace.short}</td>
     </tr>
   </tbody>
@@ -218,19 +186,37 @@ import SvcCidr from './_uni-rule-tabs/_svc-cidr.mdx'
     <tr>
       <td><code>selectors[].fieldSelector.name</code></td>
       <td>нет</td>
-      <td><code>string</code></td>
-      <td>{DICTIONARY.fieldSelector.short}</td>
+      <td><code>{TYPES.string}</code></td>
+      <td>{DICTIONARY.name.short}</td>
     </tr>
     <tr>
       <td><code>selectors[].fieldSelector.namespace</code></td>
       <td>нет</td>
-      <td><code>string</code></td>
+      <td><code>{TYPES.string}</code></td>
       <td>{DICTIONARY.namespace.short}</td>
+    </tr>
+    <tr>
+      <td><code>selectors[].fieldSelector.traffic</code></td>
+      <td>нет</td>
+      <td><code>{TYPES.enumTraffic}</code></td>
+      <td>{DICTIONARY.traffic.short}</td>
+    </tr>
+    <tr>
+      <td><code>selectors[].fieldSelector.protocol</code></td>
+      <td>нет</td>
+      <td><code>{TYPES.enumProtocol}</code></td>
+      <td>{DICTIONARY.protocol.short}</td>
+    </tr>
+    <tr>
+      <td><code>selectors[].fieldSelector.endpoints</code></td>
+      <td>нет</td>
+      <td><code>{TYPES.endpoints}</code></td>
+      <td>{DICTIONARY.endpoints.short}</td>
     </tr>
     <tr>
       <td><code>selectors[].labelSelector</code></td>
       <td>нет</td>
-      <td><code>map&lt;string, string&gt;</code></td>
+      <td><code>{TYPES.mapStringString}</code></td>
       <td>{DICTIONARY.labelSelector.short}</td>
     </tr>
   </tbody>
@@ -270,7 +256,7 @@ import SvcCidr from './_uni-rule-tabs/_svc-cidr.mdx'
   <tbody>
     <tr>
       <td><code>resourceVersion</code></td>
-      <td><code>string</code></td>
+      <td><code>{TYPES.string}</code></td>
       <td>{DICTIONARY.resourceVersion.short}</td>
     </tr>
   </tbody>
@@ -360,25 +346,43 @@ import SvcCidr from './_uni-rule-tabs/_svc-cidr.mdx'
     <tr>
       <td><code>selectors[].fieldSelector.name</code></td>
       <td>нет</td>
-      <td><code>string</code></td>
-      <td>{DICTIONARY.fieldSelector.short}</td>
+      <td><code>{TYPES.string}</code></td>
+      <td>{DICTIONARY.name.short}</td>
     </tr>
     <tr>
       <td><code>selectors[].fieldSelector.namespace</code></td>
       <td>нет</td>
-      <td><code>string</code></td>
+      <td><code>{TYPES.string}</code></td>
       <td>{DICTIONARY.namespace.short}</td>
+    </tr>
+    <tr>
+      <td><code>selectors[].fieldSelector.traffic</code></td>
+      <td>нет</td>
+      <td><code>{TYPES.enumTraffic}</code></td>
+      <td>{DICTIONARY.traffic.short}</td>
+    </tr>
+    <tr>
+      <td><code>selectors[].fieldSelector.protocol</code></td>
+      <td>нет</td>
+      <td><code>{TYPES.enumProtocol}</code></td>
+      <td>{DICTIONARY.protocol.short}</td>
+    </tr>
+    <tr>
+      <td><code>selectors[].fieldSelector.endpoints</code></td>
+      <td>нет</td>
+      <td><code>{TYPES.endpoints}</code></td>
+      <td>{DICTIONARY.endpoints.short}</td>
     </tr>
     <tr>
       <td><code>selectors[].labelSelector</code></td>
       <td>нет</td>
-      <td><code>map&lt;string, string&gt;</code></td>
+      <td><code>{TYPES.mapStringString}</code></td>
       <td>{DICTIONARY.labelSelector.short}</td>
     </tr>
     <tr>
       <td><code>resourceVersion</code></td>
       <td>нет</td>
-      <td><code>string</code></td>
+      <td><code>{TYPES.string}</code></td>
       <td>{DICTIONARY.resourceVersion.short}</td>
     </tr>
   </tbody>
