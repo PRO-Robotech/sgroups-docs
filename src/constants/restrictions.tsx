@@ -70,6 +70,8 @@ export const RESTRICTIONS: TRestrictions = {
   selectors: [
     <>Массив обязателен (<code>required: true</code>)</>,
     'Каждый селектор может содержать fieldSelector и/или labelSelector',
+    'Внутри одного селектора fieldSelector + labelSelector — логическое И (AND)',
+    'Между селекторами в массиве — логическое ИЛИ (OR)',
   ],
   metadataRequired: [
     <>Поле <code>metadata</code> обязательно (<code>required: true</code>)</>,
