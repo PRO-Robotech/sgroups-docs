@@ -5,6 +5,7 @@ title: Host Bindings
 ---
 
 import { DICTIONARY } from '@site/src/constants/dictionary'
+import { TYPES } from '@site/src/constants/types'
 import { RESTRICTIONS } from '@site/src/constants/restrictions'
 import { Restrictions } from '@site/src/components/commonBlocks/Restrictions'
 import CodeBlock from '@theme/CodeBlock'
@@ -37,27 +38,27 @@ import dedent from 'ts-dedent'
   <tbody>
     <tr>
       <td><code>displayName</code></td>
-      <td><code>string</code></td>
+      <td><code>{TYPES.string}</code></td>
       <td>{DICTIONARY.displayName.short}</td>
     </tr>
     <tr>
       <td><code>comment</code></td>
-      <td><code>string</code></td>
+      <td><code>{TYPES.string}</code></td>
       <td>{DICTIONARY.comment.short}</td>
     </tr>
     <tr>
       <td><code>description</code></td>
-      <td><code>string</code></td>
+      <td><code>{TYPES.string}</code></td>
       <td>{DICTIONARY.description.short}</td>
     </tr>
     <tr>
       <td><code>addressGroup</code></td>
-      <td><code>ResourceIdentifier</code></td>
+      <td><code>{TYPES.resourceIdentifier}</code></td>
       <td>{DICTIONARY.addressGroup.short}</td>
     </tr>
     <tr>
       <td><code>host</code></td>
-      <td><code>ResourceIdentifier</code></td>
+      <td><code>{TYPES.resourceIdentifier}</code></td>
       <td>{DICTIONARY.host.short}</td>
     </tr>
   </tbody>

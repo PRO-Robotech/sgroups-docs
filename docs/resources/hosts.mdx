@@ -5,6 +5,7 @@ title: Hosts
 ---
 
 import { DICTIONARY } from '@site/src/constants/dictionary'
+import { TYPES } from '@site/src/constants/types'
 import { RESTRICTIONS } from '@site/src/constants/restrictions'
 import { Restrictions } from '@site/src/components/commonBlocks/Restrictions'
 import CodeBlock from '@theme/CodeBlock'
@@ -37,17 +38,17 @@ import dedent from 'ts-dedent'
   <tbody>
     <tr>
       <td><code>displayName</code></td>
-      <td><code>string</code></td>
+      <td><code>{TYPES.string}</code></td>
       <td>{DICTIONARY.displayName.short}</td>
     </tr>
     <tr>
       <td><code>comment</code></td>
-      <td><code>string</code></td>
+      <td><code>{TYPES.string}</code></td>
       <td>{DICTIONARY.comment.short}</td>
     </tr>
     <tr>
       <td><code>description</code></td>
-      <td><code>string</code></td>
+      <td><code>{TYPES.string}</code></td>
       <td>{DICTIONARY.description.short}</td>
     </tr>
   </tbody>
@@ -90,32 +91,32 @@ import dedent from 'ts-dedent'
     </tr>
     <tr>
       <td><code>metaInfo.hostName</code></td>
-      <td><code>string</code></td>
+      <td><code>{TYPES.string}</code></td>
       <td>{DICTIONARY.hostName.short}</td>
     </tr>
     <tr>
       <td><code>metaInfo.os</code></td>
-      <td><code>string</code></td>
+      <td><code>{TYPES.string}</code></td>
       <td>{DICTIONARY.os.short}</td>
     </tr>
     <tr>
       <td><code>metaInfo.platform</code></td>
-      <td><code>string</code></td>
+      <td><code>{TYPES.string}</code></td>
       <td>{DICTIONARY.platform.short}</td>
     </tr>
     <tr>
       <td><code>metaInfo.platformFamily</code></td>
-      <td><code>string</code></td>
+      <td><code>{TYPES.string}</code></td>
       <td>{DICTIONARY.platformFamily.short}</td>
     </tr>
     <tr>
       <td><code>metaInfo.platformVersion</code></td>
-      <td><code>string</code></td>
+      <td><code>{TYPES.string}</code></td>
       <td>{DICTIONARY.platformVersion.short}</td>
     </tr>
     <tr>
       <td><code>metaInfo.kernelVersion</code></td>
-      <td><code>string</code></td>
+      <td><code>{TYPES.string}</code></td>
       <td>{DICTIONARY.kernelVersion.short}</td>
     </tr>
   </tbody>
@@ -133,11 +134,11 @@ import dedent from 'ts-dedent'
   <tbody>
     <tr>
       <td><code>upd-ips</code></td>
-      <td>Обновление IP-адресов хоста (выполняется агентом)</td>
+      <td>{DICTIONARY.ips.short}</td>
     </tr>
     <tr>
       <td><code>upd-metainfo</code></td>
-      <td>Обновление системной метаинформации</td>
+      <td>{DICTIONARY.metaInfo.short}</td>
     </tr>
   </tbody>
 </table>

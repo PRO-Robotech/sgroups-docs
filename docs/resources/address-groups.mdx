@@ -5,6 +5,7 @@ title: Address Groups
 ---
 
 import { DICTIONARY } from '@site/src/constants/dictionary'
+import { TYPES } from '@site/src/constants/types'
 import { RESTRICTIONS } from '@site/src/constants/restrictions'
 import { Restrictions } from '@site/src/components/commonBlocks/Restrictions'
 import CodeBlock from '@theme/CodeBlock'
@@ -37,17 +38,17 @@ import dedent from 'ts-dedent'
   <tbody>
     <tr>
       <td><code>displayName</code></td>
-      <td><code>string</code></td>
+      <td><code>{TYPES.string}</code></td>
       <td>{DICTIONARY.displayName.short}</td>
     </tr>
     <tr>
       <td><code>comment</code></td>
-      <td><code>string</code></td>
+      <td><code>{TYPES.string}</code></td>
       <td>{DICTIONARY.comment.short}</td>
     </tr>
     <tr>
       <td><code>description</code></td>
-      <td><code>string</code></td>
+      <td><code>{TYPES.string}</code></td>
       <td>{DICTIONARY.description.short}</td>
     </tr>
     <tr>
@@ -57,12 +58,12 @@ import dedent from 'ts-dedent'
     </tr>
     <tr>
       <td><code>logs</code></td>
-      <td><code>bool</code></td>
+      <td><code>{TYPES.bool}</code></td>
       <td>{DICTIONARY.logs.short}</td>
     </tr>
     <tr>
       <td><code>trace</code></td>
-      <td><code>bool</code></td>
+      <td><code>{TYPES.bool}</code></td>
       <td>{DICTIONARY.trace.short}</td>
     </tr>
   </tbody>

@@ -5,6 +5,7 @@ title: Network Bindings
 ---
 
 import { DICTIONARY } from '@site/src/constants/dictionary'
+import { TYPES } from '@site/src/constants/types'
 import { RESTRICTIONS } from '@site/src/constants/restrictions'
 import { Restrictions } from '@site/src/components/commonBlocks/Restrictions'
 import CodeBlock from '@theme/CodeBlock'
@@ -37,12 +38,12 @@ import dedent from 'ts-dedent'
   <tbody>
     <tr>
       <td><code>addressGroup</code></td>
-      <td><code>ResourceIdentifier</code></td>
+      <td><code>{TYPES.resourceIdentifier}</code></td>
       <td>{DICTIONARY.addressGroup.short}</td>
     </tr>
     <tr>
       <td><code>network</code></td>
-      <td><code>ResourceIdentifier</code></td>
+      <td><code>{TYPES.resourceIdentifier}</code></td>
       <td>{DICTIONARY.network.short}</td>
     </tr>
   </tbody>

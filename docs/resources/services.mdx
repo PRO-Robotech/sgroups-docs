@@ -5,6 +5,7 @@ title: Services
 ---
 
 import { DICTIONARY } from '@site/src/constants/dictionary'
+import { TYPES } from '@site/src/constants/types'
 import { RESTRICTIONS } from '@site/src/constants/restrictions'
 import { Restrictions } from '@site/src/components/commonBlocks/Restrictions'
 import CodeBlock from '@theme/CodeBlock'
@@ -37,17 +38,17 @@ import dedent from 'ts-dedent'
   <tbody>
     <tr>
       <td><code>displayName</code></td>
-      <td><code>string</code></td>
+      <td><code>{TYPES.string}</code></td>
       <td>{DICTIONARY.displayName.short}</td>
     </tr>
     <tr>
       <td><code>comment</code></td>
-      <td><code>string</code></td>
+      <td><code>{TYPES.string}</code></td>
       <td>{DICTIONARY.comment.short}</td>
     </tr>
     <tr>
       <td><code>description</code></td>
-      <td><code>string</code></td>
+      <td><code>{TYPES.string}</code></td>
       <td>{DICTIONARY.description.short}</td>
     </tr>
     <tr>
@@ -109,17 +110,17 @@ import dedent from 'ts-dedent'
   <tbody>
     <tr>
       <td><code>description</code></td>
-      <td><code>Enum("TCP", "UDP", "ICMP")</code></td>
+      <td><code>{TYPES.enumProtocol}</code></td>
       <td>{DICTIONARY.description.short}</td>
     </tr>
     <tr>
       <td><code>comment</code></td>
-      <td><code>Enum("IPv4", "IPv6")</code></td>
+      <td><code>{TYPES.enumIpv}</code></td>
       <td>{DICTIONARY.comment.short}</td>
     </tr>
     <tr>
       <td><code>ports</code></td>
-      <td><code>string</code></td>
+      <td><code>{TYPES.string}</code></td>
       <td>{DICTIONARY.ports.short}</td>
     </tr>
     <tr>

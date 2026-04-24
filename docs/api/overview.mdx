@@ -5,6 +5,7 @@ title: Обзор API
 ---
 
 import { DICTIONARY } from '@site/src/constants/dictionary'
+import { TYPES } from '@site/src/constants/types'
 import { RESTRICTIONS } from '@site/src/constants/restrictions'
 import { Restrictions } from '@site/src/components/commonBlocks/Restrictions'
 import { Codes } from '@site/src/components/commonBlocks/Codes'
@@ -59,37 +60,37 @@ API следует ресурсной модели, аналогичной Kuber
   <tbody>
     <tr>
       <td><code>uid</code></td>
-      <td><code>string</code></td>
+      <td><code>{TYPES.string}</code></td>
       <td>{DICTIONARY.uid.short}</td>
     </tr>
     <tr>
       <td><code>name</code></td>
-      <td><code>string</code></td>
+      <td><code>{TYPES.string}</code></td>
       <td>{DICTIONARY.name.short}</td>
     </tr>
     <tr>
       <td><code>namespace</code></td>
-      <td><code>string</code></td>
+      <td><code>{TYPES.string}</code></td>
       <td>{DICTIONARY.namespace.short}</td>
     </tr>
     <tr>
       <td><code>labels</code></td>
-      <td><code>map&lt;string, string&gt;</code></td>
+      <td><code>{TYPES.mapStringString}</code></td>
       <td>{DICTIONARY.labels.short}</td>
     </tr>
     <tr>
       <td><code>annotations</code></td>
-      <td><code>map&lt;string, string&gt;</code></td>
+      <td><code>{TYPES.mapStringString}</code></td>
       <td>{DICTIONARY.annotations.short}</td>
     </tr>
     <tr>
       <td><code>creation_timestamp</code></td>
-      <td><code>Timestamp</code></td>
-      <td>Время создания ресурса (только для чтения)</td>
+      <td><code>{TYPES.timestamp}</code></td>
+      <td>{DICTIONARY.creationTimestamp.short}</td>
     </tr>
     <tr>
       <td><code>resource_version</code></td>
-      <td><code>int64</code></td>
+      <td><code>{TYPES.int64}</code></td>
       <td>{DICTIONARY.resourceVersion.short}</td>
     </tr>
   </tbody>
@@ -98,6 +99,222 @@ API следует ресурсной модели, аналогичной Kuber
 ### Spec
 
 Специфичные для ресурса поля, определяющие его конфигурацию.
+
+## Общие типы данных
+
+Ниже описаны вложенные структуры, которые используются в нескольких ресурсах.
+
+### ResourceIdentifier
+
+Ссылка на связанный ресурс по имени и пространству имён. Используется в Binding-ресурсах для указания на AddressGroup, Host, Network или Service.
+
+<table>
+  <thead>
+    <tr>
+      <th>Поле</th>
+      <th>Тип</th>
+      <th>Описание</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><code>name</code></td>
+      <td><code>{TYPES.string}</code></td>
+      <td>{DICTIONARY.name.short}</td>
+    </tr>
+    <tr>
+      <td><code>namespace</code></td>
+      <td><code>{TYPES.string}</code></td>
+      <td>{DICTIONARY.namespace.short}</td>
+    </tr>
+  </tbody>
+</table>
+
+### ResourceRef
+
+Обратная ссылка на связанный ресурс. Заполняется сервером автоматически. Присутствует в ответах List/Watch для ресурсов AddressGroup, Host, Network, Service.
+
+<table>
+  <thead>
+    <tr>
+      <th>Поле</th>
+      <th>Тип</th>
+      <th>Описание</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><code>name</code></td>
+      <td><code>{TYPES.string}</code></td>
+      <td>{DICTIONARY.name.short}</td>
+    </tr>
+    <tr>
+      <td><code>namespace</code></td>
+      <td><code>{TYPES.string}</code></td>
+      <td>{DICTIONARY.namespace.short}</td>
+    </tr>
+    <tr>
+      <td><code>resType</code></td>
+      <td><code>{TYPES.string}</code></td>
+      <td>Тип связанного ресурса (Host, Network, Service, AddressGroup, Rule)</td>
+    </tr>
+  </tbody>
+</table>
+
+### Transport
+
+Транспортная конфигурация. Используется в ресурсе Service (поле `transports[]`) и в UniRule (поле `spec.transport`).
+
+<table>
+  <thead>
+    <tr>
+      <th>Поле</th>
+      <th>Тип</th>
+      <th>Описание</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><code>protocol</code></td>
+      <td><code>{TYPES.enumProtocol}</code></td>
+      <td>{DICTIONARY.protocol.short}</td>
+    </tr>
+    <tr>
+      <td><code>IPv</code></td>
+      <td><code>{TYPES.enumIpv}</code></td>
+      <td>{DICTIONARY.ipv.short}</td>
+    </tr>
+    <tr>
+      <td><code>entries[]</code></td>
+      <td><code>{TYPES.entry}</code></td>
+      <td>{DICTIONARY.entries.short}</td>
+    </tr>
+  </tbody>
+</table>
+
+### Entry
+
+Запись внутри Transport. Описывает порты (для TCP/UDP) или типы сообщений (для ICMP).
+
+<table>
+  <thead>
+    <tr>
+      <th>Поле</th>
+      <th>Тип</th>
+      <th>Описание</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><code>description</code></td>
+      <td><code>{TYPES.string}</code></td>
+      <td>{DICTIONARY.description.short}</td>
+    </tr>
+    <tr>
+      <td><code>comment</code></td>
+      <td><code>{TYPES.string}</code></td>
+      <td>{DICTIONARY.comment.short}</td>
+    </tr>
+    <tr>
+      <td><code>ports</code></td>
+      <td><code>{TYPES.string}</code></td>
+      <td>{DICTIONARY.ports.short}</td>
+    </tr>
+    <tr>
+      <td><code>types</code></td>
+      <td><code>{TYPES.uint32}</code></td>
+      <td>{DICTIONARY.icmpTypes.short}</td>
+    </tr>
+  </tbody>
+</table>
+
+### Session
+
+Параметры сессии правила.
+
+<table>
+  <thead>
+    <tr>
+      <th>Поле</th>
+      <th>Тип</th>
+      <th>Описание</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><code>traffic</code></td>
+      <td><code>{TYPES.enumTraffic}</code></td>
+      <td>{DICTIONARY.traffic.short}</td>
+    </tr>
+  </tbody>
+</table>
+
+### Endpoints
+
+Стороны сетевого взаимодействия в правиле.
+
+<table>
+  <thead>
+    <tr>
+      <th>Поле</th>
+      <th>Тип</th>
+      <th>Описание</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><code>local</code></td>
+      <td><code>{TYPES.endpoint}</code></td>
+      <td>{DICTIONARY.local.short}</td>
+    </tr>
+    <tr>
+      <td><code>remote</code></td>
+      <td><code>{TYPES.endpoint}</code></td>
+      <td>{DICTIONARY.remote.short}</td>
+    </tr>
+  </tbody>
+</table>
+
+### Endpoint
+
+Описание одной стороны правила (local или remote).
+
+<table>
+  <thead>
+    <tr>
+      <th>Поле</th>
+      <th>Тип</th>
+      <th>Описание</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><code>name</code></td>
+      <td><code>{TYPES.string}</code></td>
+      <td>{DICTIONARY.endpointName.short}</td>
+    </tr>
+    <tr>
+      <td><code>namespace</code></td>
+      <td><code>{TYPES.string}</code></td>
+      <td>{DICTIONARY.endpointNamespace.short}</td>
+    </tr>
+    <tr>
+      <td><code>type</code></td>
+      <td><code>{TYPES.enumEndpointRemote}</code></td>
+      <td>{DICTIONARY.endpointType.short}</td>
+    </tr>
+    <tr>
+      <td><code>value</code></td>
+      <td><code>{TYPES.string}</code></td>
+      <td>{DICTIONARY.remoteValue.short}</td>
+    </tr>
+    <tr>
+      <td><code>labels</code></td>
+      <td><code>{TYPES.mapStringString}</code></td>
+      <td>{DICTIONARY.labels.short}</td>
+    </tr>
+  </tbody>
+</table>
 
 ## Типы ресурсов
 
@@ -111,39 +328,39 @@ API следует ресурсной модели, аналогичной Kuber
   <tbody>
     <tr>
       <td><strong>Namespace</strong></td>
-      <td>Пространство имен для логической изоляции ресурсов</td>
+      <td>{DICTIONARY.resourceNamespace.short}</td>
     </tr>
     <tr>
-      <td><strong>Address Group</strong></td>
-      <td>Группа безопасности с политикой по умолчанию</td>
+      <td><strong>AddressGroup</strong></td>
+      <td>{DICTIONARY.resourceAddressGroup.short}</td>
     </tr>
     <tr>
       <td><strong>Host</strong></td>
-      <td>Управляемый узел инфраструктуры</td>
+      <td>{DICTIONARY.resourceHost.short}</td>
     </tr>
     <tr>
       <td><strong>Network</strong></td>
-      <td>Сетевая подсеть (CIDR)</td>
+      <td>{DICTIONARY.resourceNetwork.short}</td>
     </tr>
     <tr>
       <td><strong>Service</strong></td>
-      <td>Описание сетевого сервиса (порты и протоколы)</td>
+      <td>{DICTIONARY.resourceService.short}</td>
     </tr>
     <tr>
-      <td><strong>Host Binding</strong></td>
-      <td>Привязка хоста к группе безопасности</td>
+      <td><strong>HostBinding</strong></td>
+      <td>{DICTIONARY.resourceHostBinding.short}</td>
     </tr>
     <tr>
-      <td><strong>Network Binding</strong></td>
-      <td>Привязка сети к группе безопасности</td>
+      <td><strong>NetworkBinding</strong></td>
+      <td>{DICTIONARY.resourceNetworkBinding.short}</td>
     </tr>
     <tr>
-      <td><strong>Service Binding</strong></td>
-      <td>Привязка сервиса к группе безопасности</td>
+      <td><strong>ServiceBinding</strong></td>
+      <td>{DICTIONARY.resourceServiceBinding.short}</td>
     </tr>
     <tr>
-      <td><strong>Rule</strong></td>
-      <td>Правило сетевого доступа между группами</td>
+      <td><strong>UniRule</strong></td>
+      <td>{DICTIONARY.resourceUniRule.short}</td>
     </tr>
   </tbody>
 </table>
@@ -195,12 +412,12 @@ API следует ресурсной модели, аналогичной Kuber
   <tbody>
     <tr>
       <td><code>name</code></td>
-      <td><code>string</code></td>
+      <td><code>{TYPES.string}</code></td>
       <td>{DICTIONARY.fieldSelector.short}</td>
     </tr>
     <tr>
       <td><code>namespace</code></td>
-      <td><code>string</code></td>
+      <td><code>{TYPES.string}</code></td>
       <td>{DICTIONARY.namespace.short}</td>
     </tr>
   </tbody>
@@ -221,7 +438,7 @@ API следует ресурсной модели, аналогичной Kuber
   <tbody>
     <tr>
       <td><code>match_labels</code></td>
-      <td><code>map&lt;string, string&gt;</code></td>
+      <td><code>{TYPES.mapStringString}</code></td>
       <td>{DICTIONARY.labelSelector.short}</td>
     </tr>
   </tbody>

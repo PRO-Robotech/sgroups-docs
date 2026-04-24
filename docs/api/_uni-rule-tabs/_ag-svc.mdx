@@ -1,4 +1,5 @@
 import { DICTIONARY } from '@site/src/constants/dictionary'
+import { TYPES } from '@site/src/constants/types'
 import { RESTRICTIONS } from '@site/src/constants/restrictions'
 import { Restrictions } from '@site/src/components/commonBlocks/Restrictions'
 import Tabs from '@theme/Tabs'
@@ -9,8 +10,10 @@ import dedent from 'ts-dedent'
 Локальная сторона — адресная группа (`ADDRESS_GROUP`), удаленная — сервис (`SERVICE`).
 Поведение `transport` зависит от направления трафика:
 
-- **Egress / Both** — `transport` НЕ указывается. Транспортная конфигурация берется из ресурса Service (remote).
-- **Ingress** — `transport` ОБЯЗАТЕЛЕН, задается явно в правиле.
+:::warning Transport
+- **Egress / Both** — блок `spec.transport` не указывается. Транспортная конфигурация наследуется из `transports` ресурса Service (remote).
+- **Ingress** — блок `spec.transport` **обязателен**, задаётся явно в правиле.
+:::
 
 <Tabs groupId="ag-svc-traffic">
 
@@ -31,69 +34,65 @@ AG отправляет трафик к Service. Порты и протокол 
     <tr>
       <td><code>metadata.name</code></td>
       <td>да</td>
-      <td><code>string</code></td>
+      <td><code>{TYPES.string}</code></td>
       <td>{DICTIONARY.name.short}</td>
     </tr>
     <tr>
       <td><code>metadata.namespace</code></td>
       <td>да</td>
-      <td><code>string</code></td>
+      <td><code>{TYPES.string}</code></td>
       <td>{DICTIONARY.namespace.short}</td>
     </tr>
     <tr>
       <td><code>spec.action</code></td>
       <td><strong>да</strong></td>
-      <td><code>Enum("ALLOW", "DENY")</code></td>
+      <td><code>{TYPES.enumAction}</code></td>
       <td>{DICTIONARY.action.short}</td>
     </tr>
     <tr>
       <td><code>spec.session.traffic</code></td>
       <td>да</td>
-      <td><code>Enum("EGRESS", "BOTH")</code></td>
+      <td><code>{TYPES.enumTrafficEgressBoth}</code></td>
       <td>{DICTIONARY.traffic.short}</td>
     </tr>
     <tr>
       <td><code>spec.endpoints.local.name</code></td>
       <td>да</td>
-      <td><code>string</code></td>
+      <td><code>{TYPES.string}</code></td>
       <td>{DICTIONARY.endpointName.short}</td>
     </tr>
     <tr>
       <td><code>spec.endpoints.local.namespace</code></td>
       <td>да</td>
-      <td><code>string</code></td>
+      <td><code>{TYPES.string}</code></td>
       <td>{DICTIONARY.endpointNamespace.short}</td>
     </tr>
     <tr>
       <td><code>spec.endpoints.local.type</code></td>
       <td>да</td>
-      <td><code>Enum("ADDRESS_GROUP")</code></td>
+      <td><code>{TYPES.enumEndpointAG}</code></td>
       <td>{DICTIONARY.endpointType.short}</td>
     </tr>
     <tr>
       <td><code>spec.endpoints.remote.name</code></td>
       <td>да</td>
-      <td><code>string</code></td>
+      <td><code>{TYPES.string}</code></td>
       <td>{DICTIONARY.endpointName.short}</td>
     </tr>
     <tr>
       <td><code>spec.endpoints.remote.namespace</code></td>
       <td>да</td>
-      <td><code>string</code></td>
+      <td><code>{TYPES.string}</code></td>
       <td>{DICTIONARY.endpointNamespace.short}</td>
     </tr>
     <tr>
       <td><code>spec.endpoints.remote.type</code></td>
       <td>да</td>
-      <td><code>Enum("SERVICE")</code></td>
+      <td><code>{TYPES.enumEndpointSVC}</code></td>
       <td>{DICTIONARY.endpointType.short}</td>
     </tr>
   </tbody>
 </table>
-
-:::info Transport не указывается
-Блок `spec.transport` отсутствует — транспортная конфигурация (протоколы, порты, ICMP-типы) наследуется из поля `transports` ресурса Service, на который ссылается `remote`.
-:::
 
 <CodeBlock language="bash">
   {dedent`
@@ -149,80 +148,114 @@ Service отправляет трафик к AG. Транспорт задает
     <tr>
       <td><code>metadata.name</code></td>
       <td>да</td>
-      <td><code>string</code></td>
+      <td><code>{TYPES.string}</code></td>
       <td>{DICTIONARY.name.short}</td>
     </tr>
     <tr>
       <td><code>metadata.namespace</code></td>
       <td>да</td>
-      <td><code>string</code></td>
+      <td><code>{TYPES.string}</code></td>
       <td>{DICTIONARY.namespace.short}</td>
     </tr>
     <tr>
       <td><code>spec.action</code></td>
       <td><strong>да</strong></td>
-      <td><code>Enum("ALLOW", "DENY")</code></td>
+      <td><code>{TYPES.enumAction}</code></td>
       <td>{DICTIONARY.action.short}</td>
     </tr>
     <tr>
       <td><code>spec.session.traffic</code></td>
       <td>да</td>
-      <td><code>Enum("INGRESS")</code></td>
+      <td><code>{TYPES.enumTrafficIngress}</code></td>
       <td>{DICTIONARY.traffic.short}</td>
     </tr>
     <tr>
       <td><code>spec.endpoints.local.name</code></td>
       <td>да</td>
-      <td><code>string</code></td>
+      <td><code>{TYPES.string}</code></td>
       <td>{DICTIONARY.endpointName.short}</td>
     </tr>
     <tr>
       <td><code>spec.endpoints.local.namespace</code></td>
       <td>да</td>
-      <td><code>string</code></td>
+      <td><code>{TYPES.string}</code></td>
       <td>{DICTIONARY.endpointNamespace.short}</td>
     </tr>
     <tr>
       <td><code>spec.endpoints.local.type</code></td>
       <td>да</td>
-      <td><code>Enum("ADDRESS_GROUP")</code></td>
+      <td><code>{TYPES.enumEndpointAG}</code></td>
       <td>{DICTIONARY.endpointType.short}</td>
     </tr>
     <tr>
       <td><code>spec.endpoints.remote.name</code></td>
       <td>да</td>
-      <td><code>string</code></td>
+      <td><code>{TYPES.string}</code></td>
       <td>{DICTIONARY.endpointName.short}</td>
     </tr>
     <tr>
       <td><code>spec.endpoints.remote.namespace</code></td>
       <td>да</td>
-      <td><code>string</code></td>
+      <td><code>{TYPES.string}</code></td>
       <td>{DICTIONARY.endpointNamespace.short}</td>
     </tr>
     <tr>
       <td><code>spec.endpoints.remote.type</code></td>
       <td>да</td>
-      <td><code>Enum("SERVICE")</code></td>
+      <td><code>{TYPES.enumEndpointSVC}</code></td>
       <td>{DICTIONARY.endpointType.short}</td>
     </tr>
     <tr>
       <td><code>spec.transport.protocol</code></td>
       <td>да</td>
-      <td><code>Enum("TCP", "UDP", "ICMP")</code></td>
+      <td><code>{TYPES.enumProtocol}</code></td>
       <td>{DICTIONARY.protocol.short}</td>
     </tr>
     <tr>
       <td><code>spec.transport.ipv</code></td>
       <td>да</td>
-      <td><code>Enum("IPv4", "IPv6")</code></td>
+      <td><code>{TYPES.enumIpv}</code></td>
       <td>{DICTIONARY.ipv.short}</td>
     </tr>
     <tr>
       <td><code>spec.transport.entries[]</code></td>
       <td>нет</td>
-      <td><code>Entry[]</code></td>
+      <td><code>{TYPES.entry}</code></td>
       <td>{DICTIONARY.entries.short}</td>
+    </tr>
+  </tbody>
+</table>
+
+**Структура Entry:**
+
+<table>
+  <thead>
+    <tr>
+      <th>Поле</th>
+      <th>Тип</th>
+      <th>Описание</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><code>description</code></td>
+      <td><code>{TYPES.string}</code></td>
+      <td>{DICTIONARY.description.short}</td>
+    </tr>
+    <tr>
+      <td><code>comment</code></td>
+      <td><code>{TYPES.string}</code></td>
+      <td>{DICTIONARY.comment.short}</td>
+    </tr>
+    <tr>
+      <td><code>ports</code></td>
+      <td><code>{TYPES.string}</code></td>
+      <td>{DICTIONARY.ports.short}</td>
+    </tr>
+    <tr>
+      <td><code>types</code></td>
+      <td><code>{TYPES.uint32}</code></td>
+      <td>{DICTIONARY.icmpTypes.short}</td>
     </tr>
   </tbody>
 </table>
