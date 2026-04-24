@@ -222,7 +222,10 @@ import SvcCidr from './_uni-rule-tabs/_svc-cidr.mdx'
   </tbody>
 </table>
 
-#### Пример запроса
+#### Примеры запроса
+
+<Tabs groupId="rule-list">
+  <TabItem value="name" label="name" default>
 
 <CodeBlock language="bash">
   {dedent`
@@ -232,7 +235,90 @@ import SvcCidr from './_uni-rule-tabs/_svc-cidr.mdx'
         "selectors": [
           {
             "fieldSelector": {
+              "name": "allow-web-to-db",
               "namespace": "production"
+            }
+          }
+        ]
+      }'
+  `}
+</CodeBlock>
+
+  </TabItem>
+  <TabItem value="refs" label="refs">
+
+Фильтр по `endpoints.local`/`endpoints.remote`, а также `traffic` и `protocol`. Для `type` допустимы `ADDRESS_GROUP`, `SERVICE`, `FQDN`, `CIDR` (local — только `ADDRESS_GROUP`/`SERVICE`).
+
+<CodeBlock language="bash">
+  {dedent`
+    curl -X POST http://localhost:9006/v1/rules/list \\
+      -H 'Content-Type: application/json' \\
+      -d '{
+        "selectors": [
+          {
+            "fieldSelector": {
+              "traffic": "EGRESS",
+              "protocol": "TCP",
+              "endpoints": {
+                "local": {
+                  "name": "web-servers",
+                  "namespace": "production",
+                  "type": "ADDRESS_GROUP"
+                },
+                "remote": {
+                  "name": "db-servers",
+                  "namespace": "production",
+                  "type": "ADDRESS_GROUP"
+                }
+              }
+            }
+          }
+        ]
+      }'
+  `}
+</CodeBlock>
+
+  </TabItem>
+  <TabItem value="labels" label="labels">
+
+<CodeBlock language="bash">
+  {dedent`
+    curl -X POST http://localhost:9006/v1/rules/list \\
+      -H 'Content-Type: application/json' \\
+      -d '{
+        "selectors": [
+          {
+            "labelSelector": {
+              "policy": "web-access",
+              "env": "prod"
+            }
+          }
+        ]
+      }'
+  `}
+</CodeBlock>
+
+  </TabItem>
+  <TabItem value="and" label="AND">
+
+<CodeBlock language="bash">
+  {dedent`
+    curl -X POST http://localhost:9006/v1/rules/list \\
+      -H 'Content-Type: application/json' \\
+      -d '{
+        "selectors": [
+          {
+            "fieldSelector": {
+              "namespace": "production",
+              "traffic": "EGRESS",
+              "protocol": "TCP",
+              "endpoints": {
+                "local": {
+                  "name": "web-servers",
+                  "namespace": "production",
+                  "type": "ADDRESS_GROUP"
+                }
+              }
             },
             "labelSelector": {
               "policy": "web-access"
@@ -242,6 +328,45 @@ import SvcCidr from './_uni-rule-tabs/_svc-cidr.mdx'
       }'
   `}
 </CodeBlock>
+
+  </TabItem>
+  <TabItem value="or" label="OR">
+
+<CodeBlock language="bash">
+  {dedent`
+    curl -X POST http://localhost:9006/v1/rules/list \\
+      -H 'Content-Type: application/json' \\
+      -d '{
+        "selectors": [
+          {
+            "fieldSelector": {
+              "endpoints": {
+                "local": {
+                  "name": "web-servers",
+                  "namespace": "production",
+                  "type": "ADDRESS_GROUP"
+                }
+              }
+            }
+          },
+          {
+            "fieldSelector": {
+              "endpoints": {
+                "remote": {
+                  "name": "web-servers",
+                  "namespace": "production",
+                  "type": "ADDRESS_GROUP"
+                }
+              }
+            }
+          }
+        ]
+      }'
+  `}
+</CodeBlock>
+
+  </TabItem>
+</Tabs>
 
 #### Поля ответа
 
@@ -388,7 +513,10 @@ import SvcCidr from './_uni-rule-tabs/_svc-cidr.mdx'
   </tbody>
 </table>
 
-#### Пример запроса
+#### Примеры запроса
+
+<Tabs groupId="rule-watch">
+  <TabItem value="name" label="name" default>
 
 <CodeBlock language="bash">
   {dedent`
@@ -398,6 +526,7 @@ import SvcCidr from './_uni-rule-tabs/_svc-cidr.mdx'
         "selectors": [
           {
             "fieldSelector": {
+              "name": "allow-web-to-db",
               "namespace": "production"
             }
           }
@@ -406,6 +535,115 @@ import SvcCidr from './_uni-rule-tabs/_svc-cidr.mdx'
       }'
   `}
 </CodeBlock>
+
+  </TabItem>
+  <TabItem value="refs" label="refs">
+
+Фильтр по `endpoints.local`/`endpoints.remote`, а также `traffic` и `protocol`.
+
+<CodeBlock language="bash">
+  {dedent`
+    curl -X POST http://localhost:9006/v1/rules/watch \\
+      -H 'Content-Type: application/json' \\
+      -d '{
+        "selectors": [
+          {
+            "fieldSelector": {
+              "traffic": "EGRESS",
+              "protocol": "TCP",
+              "endpoints": {
+                "local": {
+                  "name": "web-servers",
+                  "namespace": "production",
+                  "type": "ADDRESS_GROUP"
+                },
+                "remote": {
+                  "name": "db-servers",
+                  "namespace": "production",
+                  "type": "ADDRESS_GROUP"
+                }
+              }
+            }
+          }
+        ],
+        "resourceVersion": "0"
+      }'
+  `}
+</CodeBlock>
+
+  </TabItem>
+  <TabItem value="labels" label="labels">
+
+<CodeBlock language="bash">
+  {dedent`
+    curl -X POST http://localhost:9006/v1/rules/watch \\
+      -H 'Content-Type: application/json' \\
+      -d '{
+        "selectors": [
+          {
+            "labelSelector": {
+              "policy": "web-access"
+            }
+          }
+        ],
+        "resourceVersion": "0"
+      }'
+  `}
+</CodeBlock>
+
+  </TabItem>
+  <TabItem value="and" label="AND">
+
+<CodeBlock language="bash">
+  {dedent`
+    curl -X POST http://localhost:9006/v1/rules/watch \\
+      -H 'Content-Type: application/json' \\
+      -d '{
+        "selectors": [
+          {
+            "fieldSelector": {
+              "namespace": "production",
+              "traffic": "EGRESS"
+            },
+            "labelSelector": {
+              "policy": "web-access"
+            }
+          }
+        ],
+        "resourceVersion": "0"
+      }'
+  `}
+</CodeBlock>
+
+  </TabItem>
+  <TabItem value="or" label="OR">
+
+<CodeBlock language="bash">
+  {dedent`
+    curl -X POST http://localhost:9006/v1/rules/watch \\
+      -H 'Content-Type: application/json' \\
+      -d '{
+        "selectors": [
+          {
+            "fieldSelector": {
+              "namespace": "production",
+              "protocol": "TCP"
+            }
+          },
+          {
+            "fieldSelector": {
+              "namespace": "production",
+              "protocol": "UDP"
+            }
+          }
+        ],
+        "resourceVersion": "0"
+      }'
+  `}
+</CodeBlock>
+
+  </TabItem>
+</Tabs>
 
 #### Пример ответа
 
