@@ -764,7 +764,7 @@ import { ApiOperation } from '@site/src/components/commonBlocks/ApiOperation'
 
 <ApiOperation method="POST" endpoint="/v1/hosts/upd-ips">
 
-Обновляет список IP-адресов хоста. Это специальная операция — поле `ips` доступно только для чтения через стандартный upsert.
+Обновляет список IP-адресов хоста. Это специальная операция — поле `spec.IPs` доступно только для чтения через стандартный upsert.
 
 #### Тело запроса
 
@@ -779,25 +779,37 @@ import { ApiOperation } from '@site/src/components/commonBlocks/ApiOperation'
   </thead>
   <tbody>
     <tr>
-      <td><code>name</code></td>
+      <td><code>hosts</code></td>
+      <td>да</td>
+      <td><code>Host[]</code></td>
+      <td>Массив хостов для обновления IP-адресов</td>
+    </tr>
+    <tr>
+      <td><code>hosts[].metadata.name</code></td>
       <td>да</td>
       <td><code>{TYPES.string}</code></td>
       <td>{DICTIONARY.name.short}</td>
     </tr>
     <tr>
-      <td><code>namespace</code></td>
+      <td><code>hosts[].metadata.namespace</code></td>
       <td>да</td>
       <td><code>{TYPES.string}</code></td>
       <td>{DICTIONARY.namespace.short}</td>
     </tr>
     <tr>
-      <td><code>ips.ipv4</code></td>
+      <td><code>hosts[].metadata.uid</code></td>
+      <td>да</td>
+      <td><code>{TYPES.string}</code></td>
+      <td>{DICTIONARY.uid.short}</td>
+    </tr>
+    <tr>
+      <td><code>hosts[].spec.IPs.IPv4</code></td>
       <td>нет</td>
       <td><code>string[]</code></td>
       <td>{DICTIONARY.ipv4.short}</td>
     </tr>
     <tr>
-      <td><code>ips.ipv6</code></td>
+      <td><code>hosts[].spec.IPs.IPv6</code></td>
       <td>нет</td>
       <td><code>string[]</code></td>
       <td>{DICTIONARY.ipv6.short}</td>
@@ -812,18 +824,25 @@ import { ApiOperation } from '@site/src/components/commonBlocks/ApiOperation'
     curl -X POST http://localhost:9006/v1/hosts/upd-ips \\
       -H 'Content-Type: application/json' \\
       -d '{
-        "name": "node-01",
-        "namespace": "production",
-        "ips": {
-          "ipv4": [
-            "10.0.1.10",
-            "10.0.1.11",
-            "10.0.1.12"
-          ],
-          "ipv6": [
-            "fd00::1:10"
-          ]
-        }
+        "hosts": [
+          {
+            "metadata": {
+              "name": "host-3",
+              "namespace": "namespace-1",
+              "uid": "f315d9db-691e-4e9c-9bfc-546d59d35a68"
+            },
+            "spec": {
+              "IPs": {
+                "IPv4": [
+                  "127.0.0.1"
+                ],
+                "IPv6": [
+                  "::1"
+                ]
+              }
+            }
+          }
+        ]
       }'
   `}
 </CodeBlock>
@@ -850,7 +869,7 @@ import { ApiOperation } from '@site/src/components/commonBlocks/ApiOperation'
 
 <ApiOperation method="POST" endpoint="/v1/hosts/upd-metainfo">
 
-Обновляет метаинформацию хоста. Это специальная операция — поле `metaInfo` доступно только для чтения через стандартный upsert.
+Обновляет метаинформацию хоста. Это специальная операция — поле `spec.metaInfo` доступно только для чтения через стандартный upsert.
 
 #### Тело запроса
 
@@ -865,49 +884,61 @@ import { ApiOperation } from '@site/src/components/commonBlocks/ApiOperation'
   </thead>
   <tbody>
     <tr>
-      <td><code>name</code></td>
+      <td><code>hosts</code></td>
+      <td>да</td>
+      <td><code>Host[]</code></td>
+      <td>Массив хостов для обновления метаинформации</td>
+    </tr>
+    <tr>
+      <td><code>hosts[].metadata.name</code></td>
       <td>да</td>
       <td><code>{TYPES.string}</code></td>
       <td>{DICTIONARY.name.short}</td>
     </tr>
     <tr>
-      <td><code>namespace</code></td>
+      <td><code>hosts[].metadata.namespace</code></td>
       <td>да</td>
       <td><code>{TYPES.string}</code></td>
       <td>{DICTIONARY.namespace.short}</td>
     </tr>
     <tr>
-      <td><code>metaInfo.hostName</code></td>
+      <td><code>hosts[].metadata.uid</code></td>
+      <td>да</td>
+      <td><code>{TYPES.string}</code></td>
+      <td>{DICTIONARY.uid.short}</td>
+    </tr>
+    <tr>
+      <td><code>hosts[].spec.metaInfo.hostName</code></td>
       <td>нет</td>
       <td><code>{TYPES.string}</code></td>
       <td>FQDN хоста</td>
     </tr>
     <tr>
-      <td><code>metaInfo.os</code></td>
+      <td><code>hosts[].spec.metaInfo.os</code></td>
       <td>нет</td>
       <td><code>{TYPES.string}</code></td>
       <td>{DICTIONARY.os.short}</td>
     </tr>
     <tr>
-      <td><code>metaInfo.platform</code></td>
+      <td><code>hosts[].spec.metaInfo.platform</code></td>
       <td>нет</td>
       <td><code>{TYPES.string}</code></td>
       <td>{DICTIONARY.platform.short}</td>
     </tr>
     <tr>
-      <td><code>metaInfo.platformVersion</code></td>
+      <td><code>hosts[].spec.metaInfo.platformVersion</code></td>
       <td>нет</td>
       <td><code>{TYPES.string}</code></td>
       <td>{DICTIONARY.platformVersion.short}</td>
     </tr>
     <tr>
-      <td><code>metaInfo.kernelVersion</code></td>
+      <td><code>hosts[].spec.metaInfo.kernelVersion</code></td>
       <td>нет</td>
       <td><code>{TYPES.string}</code></td>
       <td>{DICTIONARY.kernelVersion.short}</td>
     </tr>
     <tr>
-      <td><code>metaInfo.kernelArch</code></td>
+      <td><code>hosts[].spec.metaInfo.kernelArch</code></td>
       <td>нет</td>
       <td><code>{TYPES.string}</code></td>
       <td>{DICTIONARY.kernelVersion.short}</td>
@@ -922,16 +953,25 @@ import { ApiOperation } from '@site/src/components/commonBlocks/ApiOperation'
     curl -X POST http://localhost:9006/v1/hosts/upd-metainfo \\
       -H 'Content-Type: application/json' \\
       -d '{
-        "name": "node-01",
-        "namespace": "production",
-        "metaInfo": {
-          "hostName": "node-01.example.com",
-          "os": "linux",
-          "platform": "ubuntu",
-          "platformVersion": "22.04",
-          "kernelVersion": "5.15.0-91-generic",
-          "kernelArch": "x86_64"
-        }
+        "hosts": [
+          {
+            "metadata": {
+              "name": "node-01",
+              "namespace": "production",
+              "uid": "f315d9db-691e-4e9c-9bfc-546d59d35a68"
+            },
+            "spec": {
+              "metaInfo": {
+                "hostName": "node-01.example.com",
+                "os": "linux",
+                "platform": "ubuntu",
+                "platformVersion": "22.04",
+                "kernelVersion": "5.15.0-91-generic",
+                "kernelArch": "x86_64"
+              }
+            }
+          }
+        ]
       }'
   `}
 </CodeBlock>
