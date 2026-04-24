@@ -9,6 +9,8 @@ import { TYPES } from '@site/src/constants/types'
 import { RESTRICTIONS } from '@site/src/constants/restrictions'
 import { Restrictions } from '@site/src/components/commonBlocks/Restrictions'
 import { Codes } from '@site/src/components/commonBlocks/Codes'
+import Tabs from '@theme/Tabs'
+import TabItem from '@theme/TabItem'
 import CodeBlock from '@theme/CodeBlock'
 import dedent from 'ts-dedent'
 import { ApiOperation } from '@site/src/components/commonBlocks/ApiOperation'
@@ -317,7 +319,112 @@ import { ApiOperation } from '@site/src/components/commonBlocks/ApiOperation'
   </tbody>
 </table>
 
-#### Пример запроса
+#### Примеры запроса
+
+:::info Правила комбинирования
+- Внутри одного `selectors[]` элемента `fieldSelector` и `labelSelector` объединяются по **И** (AND).
+- Между элементами массива `selectors[]` действует логическое **ИЛИ** (OR).
+- Элементы массива `refs[]` внутри одного `fieldSelector` объединяются по **И** — AG должна быть связана со всеми перечисленными ресурсами.
+- Пустое тело запроса возвращает все группы адресов.
+:::
+
+<Tabs groupId="ag-list">
+  <TabItem value="name" label="name" default>
+
+<CodeBlock language="bash">
+  {dedent`
+    curl -X POST http://localhost:9006/v1/address-groups/list \\
+      -H 'Content-Type: application/json' \\
+      -d '{
+        "selectors": [
+          {
+            "fieldSelector": {
+              "name": "web-servers",
+              "namespace": "production"
+            }
+          }
+        ]
+      }'
+  `}
+</CodeBlock>
+
+  </TabItem>
+  <TabItem value="refs" label="refs">
+
+Фильтр по связанным ресурсам. `resType` может быть `Host`, `Network`, `Service`, `Rule`.
+
+<CodeBlock language="bash">
+  {dedent`
+    curl -X POST http://localhost:9006/v1/address-groups/list \\
+      -H 'Content-Type: application/json' \\
+      -d '{
+        "selectors": [
+          {
+            "fieldSelector": {
+              "refs": [
+                {
+                  "name": "node-01",
+                  "namespace": "production",
+                  "resType": "Host"
+                }
+              ]
+            }
+          }
+        ]
+      }'
+  `}
+</CodeBlock>
+
+  </TabItem>
+  <TabItem value="labels" label="labels">
+
+<CodeBlock language="bash">
+  {dedent`
+    curl -X POST http://localhost:9006/v1/address-groups/list \\
+      -H 'Content-Type: application/json' \\
+      -d '{
+        "selectors": [
+          {
+            "labelSelector": {
+              "tier": "frontend"
+            }
+          }
+        ]
+      }'
+  `}
+</CodeBlock>
+
+  </TabItem>
+  <TabItem value="and" label="AND">
+
+<CodeBlock language="bash">
+  {dedent`
+    curl -X POST http://localhost:9006/v1/address-groups/list \\
+      -H 'Content-Type: application/json' \\
+      -d '{
+        "selectors": [
+          {
+            "fieldSelector": {
+              "namespace": "production",
+              "refs": [
+                {
+                  "name": "node-01",
+                  "namespace": "production",
+                  "resType": "Host"
+                }
+              ]
+            },
+            "labelSelector": {
+              "tier": "frontend"
+            }
+          }
+        ]
+      }'
+  `}
+</CodeBlock>
+
+  </TabItem>
+  <TabItem value="or" label="OR">
 
 <CodeBlock language="bash">
   {dedent`
@@ -328,12 +435,26 @@ import { ApiOperation } from '@site/src/components/commonBlocks/ApiOperation'
           {
             "fieldSelector": {
               "namespace": "production"
+            },
+            "labelSelector": {
+              "tier": "frontend"
+            }
+          },
+          {
+            "fieldSelector": {
+              "namespace": "staging"
+            },
+            "labelSelector": {
+              "tier": "backend"
             }
           }
         ]
       }'
   `}
 </CodeBlock>
+
+  </TabItem>
+</Tabs>
 
 #### Поля ответа
 
@@ -474,7 +595,109 @@ import { ApiOperation } from '@site/src/components/commonBlocks/ApiOperation'
   </tbody>
 </table>
 
-#### Пример запроса
+#### Примеры запроса
+
+<Tabs groupId="ag-watch">
+  <TabItem value="name" label="name" default>
+
+<CodeBlock language="bash">
+  {dedent`
+    curl -X POST http://localhost:9006/v1/address-groups/watch \\
+      -H 'Content-Type: application/json' \\
+      -d '{
+        "selectors": [
+          {
+            "fieldSelector": {
+              "name": "web-servers",
+              "namespace": "production"
+            }
+          }
+        ],
+        "resourceVersion": "0"
+      }'
+  `}
+</CodeBlock>
+
+  </TabItem>
+  <TabItem value="refs" label="refs">
+
+`resType` может быть `Host`, `Network`, `Service`, `Rule`.
+
+<CodeBlock language="bash">
+  {dedent`
+    curl -X POST http://localhost:9006/v1/address-groups/watch \\
+      -H 'Content-Type: application/json' \\
+      -d '{
+        "selectors": [
+          {
+            "fieldSelector": {
+              "refs": [
+                {
+                  "name": "allow-web-to-db",
+                  "namespace": "production",
+                  "resType": "Rule"
+                }
+              ]
+            }
+          }
+        ],
+        "resourceVersion": "0"
+      }'
+  `}
+</CodeBlock>
+
+  </TabItem>
+  <TabItem value="labels" label="labels">
+
+<CodeBlock language="bash">
+  {dedent`
+    curl -X POST http://localhost:9006/v1/address-groups/watch \\
+      -H 'Content-Type: application/json' \\
+      -d '{
+        "selectors": [
+          {
+            "labelSelector": {
+              "tier": "frontend"
+            }
+          }
+        ],
+        "resourceVersion": "0"
+      }'
+  `}
+</CodeBlock>
+
+  </TabItem>
+  <TabItem value="and" label="AND">
+
+<CodeBlock language="bash">
+  {dedent`
+    curl -X POST http://localhost:9006/v1/address-groups/watch \\
+      -H 'Content-Type: application/json' \\
+      -d '{
+        "selectors": [
+          {
+            "fieldSelector": {
+              "namespace": "production",
+              "refs": [
+                {
+                  "name": "allow-web-to-db",
+                  "namespace": "production",
+                  "resType": "Rule"
+                }
+              ]
+            },
+            "labelSelector": {
+              "tier": "frontend"
+            }
+          }
+        ],
+        "resourceVersion": "0"
+      }'
+  `}
+</CodeBlock>
+
+  </TabItem>
+  <TabItem value="or" label="OR">
 
 <CodeBlock language="bash">
   {dedent`
@@ -485,6 +708,14 @@ import { ApiOperation } from '@site/src/components/commonBlocks/ApiOperation'
           {
             "fieldSelector": {
               "namespace": "production"
+            },
+            "labelSelector": {
+              "tier": "frontend"
+            }
+          },
+          {
+            "fieldSelector": {
+              "namespace": "staging"
             }
           }
         ],
@@ -492,6 +723,9 @@ import { ApiOperation } from '@site/src/components/commonBlocks/ApiOperation'
       }'
   `}
 </CodeBlock>
+
+  </TabItem>
+</Tabs>
 
 #### Поля ответа
 

@@ -9,6 +9,8 @@ import { TYPES } from '@site/src/constants/types'
 import { RESTRICTIONS } from '@site/src/constants/restrictions'
 import { Restrictions } from '@site/src/components/commonBlocks/Restrictions'
 import { Codes } from '@site/src/components/commonBlocks/Codes'
+import Tabs from '@theme/Tabs'
+import TabItem from '@theme/TabItem'
 import CodeBlock from '@theme/CodeBlock'
 import dedent from 'ts-dedent'
 import { ApiOperation } from '@site/src/components/commonBlocks/ApiOperation'
@@ -285,7 +287,17 @@ import { ApiOperation } from '@site/src/components/commonBlocks/ApiOperation'
   </tbody>
 </table>
 
-#### Пример запроса
+#### Примеры запроса
+
+:::info Правила комбинирования
+- Внутри одного `selectors[]` элемента `fieldSelector` и `labelSelector` объединяются по **И** (AND).
+- Между элементами массива `selectors[]` действует логическое **ИЛИ** (OR).
+- Поля `addressGroup` и `network` в `fieldSelector` — это объекты `{name, namespace}`.
+- Пустое тело запроса возвращает все привязки сетей.
+:::
+
+<Tabs groupId="nb-list">
+  <TabItem value="name" label="name" default>
 
 <CodeBlock language="bash">
   {dedent`
@@ -295,6 +307,7 @@ import { ApiOperation } from '@site/src/components/commonBlocks/ApiOperation'
         "selectors": [
           {
             "fieldSelector": {
+              "name": "web-servers-internal-net",
               "namespace": "production"
             }
           }
@@ -302,6 +315,111 @@ import { ApiOperation } from '@site/src/components/commonBlocks/ApiOperation'
       }'
   `}
 </CodeBlock>
+
+  </TabItem>
+  <TabItem value="refs" label="refs">
+
+Фильтр по связанным ресурсам: `addressGroup` и/или `network`.
+
+<CodeBlock language="bash">
+  {dedent`
+    curl -X POST http://localhost:9006/v1/network-bindings/list \\
+      -H 'Content-Type: application/json' \\
+      -d '{
+        "selectors": [
+          {
+            "fieldSelector": {
+              "addressGroup": {
+                "name": "web-servers",
+                "namespace": "production"
+              },
+              "network": {
+                "name": "internal-net",
+                "namespace": "production"
+              }
+            }
+          }
+        ]
+      }'
+  `}
+</CodeBlock>
+
+  </TabItem>
+  <TabItem value="labels" label="labels">
+
+<CodeBlock language="bash">
+  {dedent`
+    curl -X POST http://localhost:9006/v1/network-bindings/list \\
+      -H 'Content-Type: application/json' \\
+      -d '{
+        "selectors": [
+          {
+            "labelSelector": {
+              "binding-type": "network"
+            }
+          }
+        ]
+      }'
+  `}
+</CodeBlock>
+
+  </TabItem>
+  <TabItem value="and" label="AND">
+
+<CodeBlock language="bash">
+  {dedent`
+    curl -X POST http://localhost:9006/v1/network-bindings/list \\
+      -H 'Content-Type: application/json' \\
+      -d '{
+        "selectors": [
+          {
+            "fieldSelector": {
+              "addressGroup": {
+                "name": "web-servers",
+                "namespace": "production"
+              }
+            },
+            "labelSelector": {
+              "binding-type": "network"
+            }
+          }
+        ]
+      }'
+  `}
+</CodeBlock>
+
+  </TabItem>
+  <TabItem value="or" label="OR">
+
+<CodeBlock language="bash">
+  {dedent`
+    curl -X POST http://localhost:9006/v1/network-bindings/list \\
+      -H 'Content-Type: application/json' \\
+      -d '{
+        "selectors": [
+          {
+            "fieldSelector": {
+              "network": {
+                "name": "internal-net",
+                "namespace": "production"
+              }
+            }
+          },
+          {
+            "fieldSelector": {
+              "network": {
+                "name": "dmz-net",
+                "namespace": "production"
+              }
+            }
+          }
+        ]
+      }'
+  `}
+</CodeBlock>
+
+  </TabItem>
+</Tabs>
 
 #### Поля ответа
 
@@ -429,17 +547,137 @@ import { ApiOperation } from '@site/src/components/commonBlocks/ApiOperation'
   </tbody>
 </table>
 
-#### Пример запроса
+#### Примеры запроса
+
+<Tabs groupId="nb-watch">
+  <TabItem value="name" label="name" default>
 
 <CodeBlock language="bash">
   {dedent`
     curl -X POST http://localhost:9006/v1/network-bindings/watch \\
       -H 'Content-Type: application/json' \\
       -d '{
+        "selectors": [
+          {
+            "fieldSelector": {
+              "name": "web-servers-internal-net",
+              "namespace": "production"
+            }
+          }
+        ],
         "resourceVersion": "0"
       }'
   `}
 </CodeBlock>
+
+  </TabItem>
+  <TabItem value="refs" label="refs">
+
+Связи по `addressGroup` и/или `network`.
+
+<CodeBlock language="bash">
+  {dedent`
+    curl -X POST http://localhost:9006/v1/network-bindings/watch \\
+      -H 'Content-Type: application/json' \\
+      -d '{
+        "selectors": [
+          {
+            "fieldSelector": {
+              "addressGroup": {
+                "name": "web-servers",
+                "namespace": "production"
+              },
+              "network": {
+                "name": "internal-net",
+                "namespace": "production"
+              }
+            }
+          }
+        ],
+        "resourceVersion": "0"
+      }'
+  `}
+</CodeBlock>
+
+  </TabItem>
+  <TabItem value="labels" label="labels">
+
+<CodeBlock language="bash">
+  {dedent`
+    curl -X POST http://localhost:9006/v1/network-bindings/watch \\
+      -H 'Content-Type: application/json' \\
+      -d '{
+        "selectors": [
+          {
+            "labelSelector": {
+              "binding-type": "network"
+            }
+          }
+        ],
+        "resourceVersion": "0"
+      }'
+  `}
+</CodeBlock>
+
+  </TabItem>
+  <TabItem value="and" label="AND">
+
+<CodeBlock language="bash">
+  {dedent`
+    curl -X POST http://localhost:9006/v1/network-bindings/watch \\
+      -H 'Content-Type: application/json' \\
+      -d '{
+        "selectors": [
+          {
+            "fieldSelector": {
+              "addressGroup": {
+                "name": "web-servers",
+                "namespace": "production"
+              }
+            },
+            "labelSelector": {
+              "binding-type": "network"
+            }
+          }
+        ],
+        "resourceVersion": "0"
+      }'
+  `}
+</CodeBlock>
+
+  </TabItem>
+  <TabItem value="or" label="OR">
+
+<CodeBlock language="bash">
+  {dedent`
+    curl -X POST http://localhost:9006/v1/network-bindings/watch \\
+      -H 'Content-Type: application/json' \\
+      -d '{
+        "selectors": [
+          {
+            "fieldSelector": {
+              "addressGroup": {
+                "name": "web-servers",
+                "namespace": "production"
+              }
+            }
+          },
+          {
+            "fieldSelector": {
+              "addressGroup": {
+                "name": "api-servers",
+                "namespace": "production"
+              }
+            }
+          }
+        ],
+        "resourceVersion": "0"
+      }'
+  `}
+</CodeBlock>
+
+  </TabItem>
+</Tabs>
 
 #### Пример ответа
 

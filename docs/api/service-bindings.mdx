@@ -9,6 +9,8 @@ import { TYPES } from '@site/src/constants/types'
 import { RESTRICTIONS } from '@site/src/constants/restrictions'
 import { Restrictions } from '@site/src/components/commonBlocks/Restrictions'
 import { Codes } from '@site/src/components/commonBlocks/Codes'
+import Tabs from '@theme/Tabs'
+import TabItem from '@theme/TabItem'
 import CodeBlock from '@theme/CodeBlock'
 import dedent from 'ts-dedent'
 import { ApiOperation } from '@site/src/components/commonBlocks/ApiOperation'
@@ -285,7 +287,10 @@ import { ApiOperation } from '@site/src/components/commonBlocks/ApiOperation'
   </tbody>
 </table>
 
-#### Пример запроса
+#### Примеры запроса
+
+<Tabs groupId="sb-list">
+  <TabItem value="name" label="name" default>
 
 <CodeBlock language="bash">
   {dedent`
@@ -295,6 +300,7 @@ import { ApiOperation } from '@site/src/components/commonBlocks/ApiOperation'
         "selectors": [
           {
             "fieldSelector": {
+              "name": "web-servers-web-service",
               "namespace": "production"
             }
           }
@@ -302,6 +308,112 @@ import { ApiOperation } from '@site/src/components/commonBlocks/ApiOperation'
       }'
   `}
 </CodeBlock>
+
+  </TabItem>
+  <TabItem value="refs" label="refs">
+
+Фильтр по связанным ресурсам: `addressGroup` и/или `service`.
+
+<CodeBlock language="bash">
+  {dedent`
+    curl -X POST http://localhost:9006/v1/service-bindings/list \\
+      -H 'Content-Type: application/json' \\
+      -d '{
+        "selectors": [
+          {
+            "fieldSelector": {
+              "addressGroup": {
+                "name": "web-servers",
+                "namespace": "production"
+              },
+              "service": {
+                "name": "web-service",
+                "namespace": "production"
+              }
+            }
+          }
+        ]
+      }'
+  `}
+</CodeBlock>
+
+  </TabItem>
+  <TabItem value="labels" label="labels">
+
+<CodeBlock language="bash">
+  {dedent`
+    curl -X POST http://localhost:9006/v1/service-bindings/list \\
+      -H 'Content-Type: application/json' \\
+      -d '{
+        "selectors": [
+          {
+            "labelSelector": {
+              "binding-type": "service",
+              "env": "prod"
+            }
+          }
+        ]
+      }'
+  `}
+</CodeBlock>
+
+  </TabItem>
+  <TabItem value="and" label="AND">
+
+<CodeBlock language="bash">
+  {dedent`
+    curl -X POST http://localhost:9006/v1/service-bindings/list \\
+      -H 'Content-Type: application/json' \\
+      -d '{
+        "selectors": [
+          {
+            "fieldSelector": {
+              "addressGroup": {
+                "name": "web-servers",
+                "namespace": "production"
+              }
+            },
+            "labelSelector": {
+              "binding-type": "service"
+            }
+          }
+        ]
+      }'
+  `}
+</CodeBlock>
+
+  </TabItem>
+  <TabItem value="or" label="OR">
+
+<CodeBlock language="bash">
+  {dedent`
+    curl -X POST http://localhost:9006/v1/service-bindings/list \\
+      -H 'Content-Type: application/json' \\
+      -d '{
+        "selectors": [
+          {
+            "fieldSelector": {
+              "service": {
+                "name": "web-service",
+                "namespace": "production"
+              }
+            }
+          },
+          {
+            "fieldSelector": {
+              "service": {
+                "name": "api-service",
+                "namespace": "production"
+              }
+            }
+          }
+        ]
+      }'
+  `}
+</CodeBlock>
+
+  </TabItem>
+</Tabs>
 
 #### Поля ответа
 
@@ -429,17 +541,137 @@ import { ApiOperation } from '@site/src/components/commonBlocks/ApiOperation'
   </tbody>
 </table>
 
-#### Пример запроса
+#### Примеры запроса
+
+<Tabs groupId="sb-watch">
+  <TabItem value="name" label="name" default>
 
 <CodeBlock language="bash">
   {dedent`
     curl -X POST http://localhost:9006/v1/service-bindings/watch \\
       -H 'Content-Type: application/json' \\
       -d '{
+        "selectors": [
+          {
+            "fieldSelector": {
+              "name": "web-servers-web-service",
+              "namespace": "production"
+            }
+          }
+        ],
         "resourceVersion": "0"
       }'
   `}
 </CodeBlock>
+
+  </TabItem>
+  <TabItem value="refs" label="refs">
+
+Связи по `addressGroup` и/или `service`.
+
+<CodeBlock language="bash">
+  {dedent`
+    curl -X POST http://localhost:9006/v1/service-bindings/watch \\
+      -H 'Content-Type: application/json' \\
+      -d '{
+        "selectors": [
+          {
+            "fieldSelector": {
+              "addressGroup": {
+                "name": "web-servers",
+                "namespace": "production"
+              },
+              "service": {
+                "name": "web-service",
+                "namespace": "production"
+              }
+            }
+          }
+        ],
+        "resourceVersion": "0"
+      }'
+  `}
+</CodeBlock>
+
+  </TabItem>
+  <TabItem value="labels" label="labels">
+
+<CodeBlock language="bash">
+  {dedent`
+    curl -X POST http://localhost:9006/v1/service-bindings/watch \\
+      -H 'Content-Type: application/json' \\
+      -d '{
+        "selectors": [
+          {
+            "labelSelector": {
+              "binding-type": "service"
+            }
+          }
+        ],
+        "resourceVersion": "0"
+      }'
+  `}
+</CodeBlock>
+
+  </TabItem>
+  <TabItem value="and" label="AND">
+
+<CodeBlock language="bash">
+  {dedent`
+    curl -X POST http://localhost:9006/v1/service-bindings/watch \\
+      -H 'Content-Type: application/json' \\
+      -d '{
+        "selectors": [
+          {
+            "fieldSelector": {
+              "addressGroup": {
+                "name": "web-servers",
+                "namespace": "production"
+              }
+            },
+            "labelSelector": {
+              "binding-type": "service"
+            }
+          }
+        ],
+        "resourceVersion": "0"
+      }'
+  `}
+</CodeBlock>
+
+  </TabItem>
+  <TabItem value="or" label="OR">
+
+<CodeBlock language="bash">
+  {dedent`
+    curl -X POST http://localhost:9006/v1/service-bindings/watch \\
+      -H 'Content-Type: application/json' \\
+      -d '{
+        "selectors": [
+          {
+            "fieldSelector": {
+              "service": {
+                "name": "web-service",
+                "namespace": "production"
+              }
+            }
+          },
+          {
+            "fieldSelector": {
+              "service": {
+                "name": "api-service",
+                "namespace": "production"
+              }
+            }
+          }
+        ],
+        "resourceVersion": "0"
+      }'
+  `}
+</CodeBlock>
+
+  </TabItem>
+</Tabs>
 
 #### Пример ответа
 
