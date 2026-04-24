@@ -98,15 +98,18 @@ export const RESTRICTIONS: TRestrictions = {
     <>Поле <code>host</code> обязательно (<code>required: true</code>)</>,
     'Должны быть указаны name и namespace',
     'Ресурс Host с указанным name и namespace должен существовать на момент создания связи',
+    'Host и AddressGroup должны находиться в одном namespace',
   ],
   networkRef: [
     <>Поле <code>network</code> обязательно (<code>required: true</code>)</>,
     'Должны быть указаны name и namespace',
     'Ресурс Network с указанным name и namespace должен существовать на момент создания связи',
+    'Network и AddressGroup должны находиться в одном namespace',
   ],
   serviceRef: [
     <>Поле <code>service</code> обязательно (<code>required: true</code>)</>,
     'Должны быть указаны name и namespace',
-    'РесурсService с указанным name и namespace должен существовать на момент создания связи',
+    'Ресурс Service с указанным name и namespace должен существовать на момент создания связи',
+    'Порты и протоколы Service не должны пересекаться с портами и протоколами других Service, уже привязанных к этой AddressGroup',
   ],
 }
