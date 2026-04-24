@@ -1,3 +1,8 @@
+export const RES_TYPES = ['AddressGroup', 'Host', 'Network', 'Service', 'Rule'] as const
+export type TResType = (typeof RES_TYPES)[number]
+
+const toEnum = (values: readonly string[]): string => `Enum(${values.map(v => `"${v}"`).join(', ')})`
+
 export const TYPES = {
   string: 'string',
   bool: 'bool',
@@ -27,4 +32,5 @@ export const TYPES = {
   enumEndpointSVC: 'Enum("SERVICE")',
   enumEndpointFQDN: 'Enum("FQDN")',
   enumEndpointCIDR: 'Enum("CIDR")',
+  enumResType: toEnum(RES_TYPES),
 } as const

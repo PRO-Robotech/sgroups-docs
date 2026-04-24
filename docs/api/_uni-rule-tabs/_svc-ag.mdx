@@ -312,6 +312,9 @@ AG отправляет трафик к Service. Порты и протокол 
 <Restrictions items={[
   { label: 'metadata / spec', rules: RESTRICTIONS.metadataRequired },
   { label: 'metadata.name', rules: RESTRICTIONS.name },
+  { label: 'spec.displayName', rules: RESTRICTIONS.displayName },
+  { label: 'spec.comment', rules: RESTRICTIONS.comment },
+  { label: 'spec.description', rules: RESTRICTIONS.description },
   { label: 'spec.action', rules: RESTRICTIONS.action },
   { label: 'endpoints.*.type', rules: RESTRICTIONS.endpointType },
 ]} />
