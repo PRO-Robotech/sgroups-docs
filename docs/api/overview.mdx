@@ -84,13 +84,13 @@ API следует ресурсной модели, аналогичной Kuber
       <td>{DICTIONARY.annotations.short}</td>
     </tr>
     <tr>
-      <td><code>creation_timestamp</code></td>
+      <td><code>creationTimestamp</code></td>
       <td><code>{TYPES.timestamp}</code></td>
       <td>{DICTIONARY.creationTimestamp.short}</td>
     </tr>
     <tr>
-      <td><code>resource_version</code></td>
-      <td><code>{TYPES.int64}</code></td>
+      <td><code>resourceVersion</code></td>
+      <td><code>{TYPES.string}</code></td>
       <td>{DICTIONARY.resourceVersion.short}</td>
     </tr>
   </tbody>
@@ -449,14 +449,14 @@ API следует ресурсной модели, аналогичной Kuber
   </tbody>
 </table>
 
-## Watch и resource_version
+## Watch и resourceVersion
 
 Механизм Watch позволяет получать изменения ресурсов в реальном времени:
 
-1. Клиент отправляет запрос Watch с опциональным `resource_version`
-2. Если `resource_version` указан — сервер отправляет все изменения, произошедшие после этой версии
+1. Клиент отправляет запрос Watch с опциональным `resourceVersion`
+2. Если `resourceVersion` указан — сервер отправляет все изменения, произошедшие после этой версии
 3. Если не указан — сервер начинает с текущего состояния и далее отправляет изменения
-4. Каждое событие содержит обновленный `resource_version` для отслеживания позиции
+4. Каждое событие содержит обновлённый `resourceVersion` для отслеживания позиции
 
 <CodeBlock language="json">
   {dedent`
