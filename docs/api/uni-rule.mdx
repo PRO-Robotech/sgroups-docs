@@ -16,6 +16,7 @@ import dedent from 'ts-dedent'
 import { ApiOperation } from '@site/src/components/commonBlocks/ApiOperation'
 
 import AgAg from './_uni-rule-tabs/_ag-ag.mdx'
+import AgIcmp from './_uni-rule-tabs/_ag-icmp.mdx'
 import AgSvc from './_uni-rule-tabs/_ag-svc.mdx'
 import SvcAg from './_uni-rule-tabs/_svc-ag.mdx'
 import SvcSvc from './_uni-rule-tabs/_svc-svc.mdx'
@@ -60,6 +61,9 @@ import SvcCidr from './_uni-rule-tabs/_svc-cidr.mdx'
   </TabItem>
   <TabItem value="svc-cidr" label="Service → CIDR">
     <SvcCidr />
+  </TabItem>
+  <TabItem value="ag-icmp" label="AG → ICMP">
+    <AgIcmp />
   </TabItem>
 </Tabs>
 
@@ -138,7 +142,7 @@ import SvcCidr from './_uni-rule-tabs/_svc-cidr.mdx'
         "rules": [
           {
             "metadata": {
-              "name": "allow-web-to-db",
+              "name": "allow-monitoring-icmp-egress",
               "namespace": "production"
             }
           }
