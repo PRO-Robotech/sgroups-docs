@@ -1,0 +1,655 @@
+---
+id: services
+sidebar_position: 6
+title: Services
+---
+
+import { DICTIONARY } from '@site/src/constants/dictionary'
+import { RESTRICTIONS } from '@site/src/constants/restrictions'
+import { Restrictions } from '@site/src/components/commonBlocks/Restrictions'
+import { Codes } from '@site/src/components/commonBlocks/Codes'
+import CodeBlock from '@theme/CodeBlock'
+import dedent from 'ts-dedent'
+import { ApiOperation } from '@site/src/components/commonBlocks/ApiOperation'
+
+# Services
+
+Ресурс Service логически представляет приложение, развёрнутое на Host. Service описывает, на каких протоколах и портах приложение принимает или генерирует трафик.
+
+Поле `transports` определяет набор транспортных конфигураций: протокол (TCP/UDP/ICMP), семейство IP (IPv4/IPv6) и записи (порты или типы ICMP).
+
+:::info Связь с правилами (UniRule)
+Когда Service используется как эндпоинт в правиле, его `transports` автоматически применяется вместо явного блока `transport`:
+- **AG → SVC (egress/both)**: transport берётся из remote Service
+- **SVC → AG (ingress)**: transport берётся из local Service
+- **SVC → SVC**: transport берётся из обоих Service
+
+В остальных комбинациях (ingress/egress с явным transport) блок `spec.transport` задаётся в самом правиле.
+:::
+
+---
+
+## Upsert
+
+<ApiOperation method="POST" endpoint="/v1/services/upsert">
+
+Создаёт новый сервис или обновляет существующий.
+
+#### Тело запроса
+
+<table>
+  <thead>
+    <tr>
+      <th>Параметр</th>
+      <th>Обязательность</th>
+      <th>Тип</th>
+      <th>Описание</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><code>metadata.name</code></td>
+      <td>да</td>
+      <td><code>string</code></td>
+      <td>{DICTIONARY.name.short}</td>
+    </tr>
+    <tr>
+      <td><code>metadata.namespace</code></td>
+      <td>да</td>
+      <td><code>string</code></td>
+      <td>{DICTIONARY.namespace.short}</td>
+    </tr>
+    <tr>
+      <td><code>metadata.labels</code></td>
+      <td>нет</td>
+      <td><code>map&lt;string, string&gt;</code></td>
+      <td>{DICTIONARY.labels.short}</td>
+    </tr>
+    <tr>
+      <td><code>metadata.annotations</code></td>
+      <td>нет</td>
+      <td><code>map&lt;string, string&gt;</code></td>
+      <td>{DICTIONARY.annotations.short}</td>
+    </tr>
+    <tr>
+      <td><code>spec.displayName</code></td>
+      <td>нет</td>
+      <td><code>string</code></td>
+      <td>{DICTIONARY.displayName.short}</td>
+    </tr>
+    <tr>
+      <td><code>spec.comment</code></td>
+      <td>нет</td>
+      <td><code>string</code></td>
+      <td>{DICTIONARY.comment.short}</td>
+    </tr>
+    <tr>
+      <td><code>spec.description</code></td>
+      <td>нет</td>
+      <td><code>string</code></td>
+      <td>{DICTIONARY.description.short}</td>
+    </tr>
+    <tr>
+      <td><code>spec.transports</code></td>
+      <td>нет</td>
+      <td><code>Transport[]</code></td>
+      <td>{DICTIONARY.transports.short}</td>
+    </tr>
+  </tbody>
+</table>
+
+**Структура Transport:**
+
+<table>
+  <thead>
+    <tr>
+      <th>Параметр</th>
+      <th>Обязательность</th>
+      <th>Тип</th>
+      <th>Описание</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><code>protocol</code></td>
+      <td>да</td>
+      <td><code>Enum("IPv4", "IPv6")</code></td>
+      <td>{DICTIONARY.protocol.short}</td>
+    </tr>
+    <tr>
+      <td><code>ipv</code></td>
+      <td>да</td>
+      <td><code>Enum("TCP", "UDP", "ICMP")</code></td>
+      <td>{DICTIONARY.ipv.short}</td>
+    </tr>
+    <tr>
+      <td><code>entries</code></td>
+      <td>нет</td>
+      <td><code>Entry[]</code></td>
+      <td>{DICTIONARY.entries.short}</td>
+    </tr>
+  </tbody>
+</table>
+
+**Структура Entry:**
+
+<table>
+  <thead>
+    <tr>
+      <th>Параметр</th>
+      <th>Обязательность</th>
+      <th>Тип</th>
+      <th>Описание</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><code>description</code></td>
+      <td>нет</td>
+      <td><code>string</code></td>
+      <td>{DICTIONARY.description.short}</td>
+    </tr>
+    <tr>
+      <td><code>comment</code></td>
+      <td>нет</td>
+      <td><code>string</code></td>
+      <td>{DICTIONARY.comment.short}</td>
+    </tr>
+    <tr>
+      <td><code>ports</code></td>
+      <td>нет</td>
+      <td><code>string</code></td>
+      <td>{DICTIONARY.ports.short}</td>
+    </tr>
+    <tr>
+      <td><code>types</code></td>
+      <td>нет</td>
+      <td><code>string[]</code></td>
+      <td>{DICTIONARY.icmpTypes.short}</td>
+    </tr>
+  </tbody>
+</table>
+
+#### Пример запроса
+
+<CodeBlock language="bash">
+  {dedent`
+    curl -X POST http://localhost:9006/v1/services/upsert \\
+      -H 'Content-Type: application/json' \\
+      -d '{
+        "services": [
+          {
+            "metadata": {
+              "name": "web-service",
+              "namespace": "production",
+              "labels": {
+                "app": "nginx"
+              }
+            },
+            "spec": {
+              "displayName": "Web Service",
+              "comment": "HTTP и HTTPS сервис",
+              "description": "Веб-сервис для фронтенд-приложений",
+              "transports": [
+                {
+                  "protocol": "TCP",
+                  "IPv": "IPv4",
+                  "entries": [
+                    {
+                      "description": "HTTP",
+                      "comment": "Стандартный HTTP порт",
+                      "ports": "80"
+                    },
+                    {
+                      "description": "HTTPS",
+                      "comment": "Стандартный HTTPS порт",
+                      "ports": "443"
+                    }
+                  ]
+                },
+                {
+                  "protocol": "TCP",
+                  "IPv": "IPv4",
+                  "entries": [
+                    {
+                      "description": "Приложение",
+                      "ports": "8080-8090"
+                    }
+                  ]
+                }
+              ]
+            }
+          }
+        ]
+      }'
+  `}
+</CodeBlock>
+
+#### Пример ответа
+
+<CodeBlock language="json">
+  {dedent`
+    {
+      "services": [
+        {
+          "metadata": {
+            "uid": "e5f6a7b8-c9d0-1234-efab-345678901234",
+            "name": "web-service",
+            "namespace": "production",
+            "labels": {
+              "app": "nginx"
+            },
+            "creationTimestamp": "2025-01-15T10:20:00Z",
+            "resourceVersion": "1"
+          },
+          "spec": {
+            "displayName": "Web Service",
+            "comment": "HTTP и HTTPS сервис",
+            "description": "Веб-сервис для фронтенд-приложений",
+            "transports": [
+              {
+                "protocol": "TCP",
+                "IPv": "IPv4",
+                "entries": [
+                  {
+                    "description": "HTTP",
+                    "comment": "Стандартный HTTP порт",
+                    "ports": "80"
+                  },
+                  {
+                    "description": "HTTPS",
+                    "comment": "Стандартный HTTPS порт",
+                    "ports": "443"
+                  }
+                ]
+              },
+              {
+                "protocol": "TCP",
+                "IPv": "IPv4",
+                "entries": [
+                  {
+                    "description": "Приложение",
+                    "ports": "8080-8090"
+                  }
+                ]
+              }
+            ]
+          }
+        }
+      ]
+    }
+  `}
+</CodeBlock>
+
+<Restrictions items={[
+  { label: 'metadata / spec', rules: RESTRICTIONS.metadataRequired },
+  { label: 'upsert batch', rules: RESTRICTIONS.upsertBatch },
+  { label: 'metadata.name', rules: RESTRICTIONS.name },
+  { label: 'metadata.namespace', rules: RESTRICTIONS.namespace },
+  { label: 'spec.displayName', rules: RESTRICTIONS.displayName },
+  { label: 'transports[].protocol', rules: RESTRICTIONS.protocol },
+  { label: 'transports[].IPv', rules: RESTRICTIONS.ipv },
+]} />
+
+<Codes codes={['invalidArgument', 'notFound', 'internal']} />
+
+</ApiOperation>
+
+---
+
+## Delete
+
+<ApiOperation method="POST" endpoint="/v1/services/delete">
+
+Удаляет сервис по `uid` или по комбинации `name` + `namespace`.
+
+#### Тело запроса
+
+<table>
+  <thead>
+    <tr>
+      <th>Параметр</th>
+      <th>Обязательность</th>
+      <th>Тип</th>
+      <th>Описание</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><code>uid</code></td>
+      <td>нет*</td>
+      <td><code>string</code></td>
+      <td>{DICTIONARY.uid.short}</td>
+    </tr>
+    <tr>
+      <td><code>name</code></td>
+      <td>нет*</td>
+      <td><code>string</code></td>
+      <td>{DICTIONARY.name.short}</td>
+    </tr>
+    <tr>
+      <td><code>namespace</code></td>
+      <td>нет*</td>
+      <td><code>string</code></td>
+      <td>{DICTIONARY.namespace.short}</td>
+    </tr>
+  </tbody>
+</table>
+
+> *Необходимо указать `uid` **или** комбинацию `name` + `namespace`.
+
+#### Пример запроса
+
+<CodeBlock language="bash">
+  {dedent`
+    curl -X POST http://localhost:9006/v1/services/delete \\
+      -H 'Content-Type: application/json' \\
+      -d '{
+        "services": [
+          {
+            "metadata": {
+              "name": "web-service",
+              "namespace": "production"
+            }
+          }
+        ]
+      }'
+  `}
+</CodeBlock>
+
+#### Пример ответа
+
+<CodeBlock language="json">
+  {dedent`
+    {}
+  `}
+</CodeBlock>
+
+<Restrictions items={[
+  { label: 'delete', rules: RESTRICTIONS.deleteWithNamespace },
+]} />
+
+<Codes codes={['invalidArgument', 'notFound', 'internal']} />
+
+</ApiOperation>
+
+---
+
+## List
+
+<ApiOperation method="POST" endpoint="/v1/services/list">
+
+Возвращает список сервисов с возможностью фильтрации.
+
+#### Тело запроса
+
+<table>
+  <thead>
+    <tr>
+      <th>Параметр</th>
+      <th>Обязательность</th>
+      <th>Тип</th>
+      <th>Описание</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><code>selector.fieldSelector.name</code></td>
+      <td>нет</td>
+      <td><code>string</code></td>
+      <td>{DICTIONARY.fieldSelector.short}</td>
+    </tr>
+    <tr>
+      <td><code>selector.fieldSelector.namespace</code></td>
+      <td>нет</td>
+      <td><code>string</code></td>
+      <td>{DICTIONARY.namespace.short}</td>
+    </tr>
+    <tr>
+      <td><code>selector.labelSelector.match_labels</code></td>
+      <td>нет</td>
+      <td><code>map&lt;string, string&gt;</code></td>
+      <td>{DICTIONARY.labelSelector.short}</td>
+    </tr>
+  </tbody>
+</table>
+
+#### Пример запроса
+
+<CodeBlock language="bash">
+  {dedent`
+    curl -X POST http://localhost:9006/v1/services/list \\
+      -H 'Content-Type: application/json' \\
+      -d '{
+        "selectors": [
+          {
+            "fieldSelector": {
+              "namespace": "production"
+            }
+          }
+        ]
+      }'
+  `}
+</CodeBlock>
+
+#### Поля ответа
+
+<table>
+  <thead>
+    <tr>
+      <th>Поле</th>
+      <th>Тип</th>
+      <th>Описание</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><code>resourceVersion</code></td>
+      <td><code>string</code></td>
+      <td>{DICTIONARY.resourceVersion.short}</td>
+    </tr>
+    <tr>
+      <td><code>refs[]</code></td>
+      <td><code>ResourceRef[]</code></td>
+      <td>{DICTIONARY.refs.short}</td>
+    </tr>
+  </tbody>
+</table>
+
+#### Пример ответа
+
+<CodeBlock language="json">
+  {dedent`
+    {
+      "resourceVersion": "42",
+      "services": [
+        {
+          "metadata": {
+            "uid": "e5f6a7b8-c9d0-1234-efab-345678901234",
+            "name": "web-service",
+            "namespace": "production",
+            "labels": {
+              "app": "nginx"
+            },
+            "creationTimestamp": "2025-01-15T10:20:00Z",
+            "resourceVersion": "1"
+          },
+          "spec": {
+            "displayName": "Web Service",
+            "comment": "HTTP и HTTPS сервис",
+            "description": "Веб-сервис для фронтенд-приложений",
+            "transports": [
+              {
+                "protocol": "TCP",
+                "IPv": "IPv4",
+                "entries": [
+                  {
+                    "description": "HTTP",
+                    "ports": "80"
+                  },
+                  {
+                    "description": "HTTPS",
+                    "ports": "443"
+                  }
+                ]
+              }
+            ]
+          },
+          "refs": [
+            {
+              "name": "web-servers",
+              "namespace": "production",
+              "resType": "AddressGroup"
+            }
+          ]
+        }
+      ]
+    }
+  `}
+</CodeBlock>
+
+<Restrictions items={[
+  { label: 'selectors', rules: RESTRICTIONS.selectors },
+]} />
+
+<Codes codes={['invalidArgument', 'internal']} />
+
+</ApiOperation>
+
+---
+
+## Watch
+
+<ApiOperation method="POST" endpoint="/v1/services/watch">
+
+Серверный стриминг — возвращает поток изменений сервисов в реальном времени.
+
+#### Тело запроса
+
+<table>
+  <thead>
+    <tr>
+      <th>Параметр</th>
+      <th>Обязательность</th>
+      <th>Тип</th>
+      <th>Описание</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><code>selector.fieldSelector.name</code></td>
+      <td>нет</td>
+      <td><code>string</code></td>
+      <td>{DICTIONARY.fieldSelector.short}</td>
+    </tr>
+    <tr>
+      <td><code>selector.fieldSelector.namespace</code></td>
+      <td>нет</td>
+      <td><code>string</code></td>
+      <td>{DICTIONARY.namespace.short}</td>
+    </tr>
+    <tr>
+      <td><code>selector.labelSelector.match_labels</code></td>
+      <td>нет</td>
+      <td><code>map&lt;string, string&gt;</code></td>
+      <td>{DICTIONARY.labelSelector.short}</td>
+    </tr>
+    <tr>
+      <td><code>resource_version</code></td>
+      <td>нет</td>
+      <td><code>int64</code></td>
+      <td>{DICTIONARY.resourceVersion.short}</td>
+    </tr>
+  </tbody>
+</table>
+
+#### Пример запроса
+
+<CodeBlock language="bash">
+  {dedent`
+    curl -X POST http://localhost:9006/v1/services/watch \\
+      -H 'Content-Type: application/json' \\
+      -d '{
+        "resourceVersion": "0"
+      }'
+  `}
+</CodeBlock>
+
+#### Поля ответа
+
+<table>
+  <thead>
+    <tr>
+      <th>Поле</th>
+      <th>Тип</th>
+      <th>Описание</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><code>refs[]</code></td>
+      <td><code>ResourceRef[]</code></td>
+      <td>{DICTIONARY.refs.short}</td>
+    </tr>
+  </tbody>
+</table>
+
+#### Пример ответа
+
+<CodeBlock language="json">
+  {dedent`
+    {
+      "type": "MODIFIED",
+      "services": [
+        {
+          "metadata": {
+            "uid": "e5f6a7b8-c9d0-1234-efab-345678901234",
+            "name": "web-service",
+            "namespace": "production",
+            "resourceVersion": "2"
+          },
+          "spec": {
+            "displayName": "Web Service",
+            "comment": "HTTP и HTTPS сервис (обновлено)",
+            "description": "Веб-сервис для фронтенд-приложений",
+            "transports": [
+              {
+                "protocol": "TCP",
+                "IPv": "IPv4",
+                "entries": [
+                  {
+                    "description": "HTTP",
+                    "ports": "80"
+                  },
+                  {
+                    "description": "HTTPS",
+                    "ports": "443"
+                  },
+                  {
+                    "description": "HTTP/2",
+                    "ports": "8443"
+                  }
+                ]
+              }
+            ]
+          },
+          "refs": [
+            {
+              "name": "web-servers",
+              "namespace": "production",
+              "resType": "AddressGroup"
+            }
+          ]
+        }
+      ]
+    }
+  `}
+</CodeBlock>
+
+<Restrictions items={[
+  { label: 'selectors', rules: RESTRICTIONS.selectors },
+]} />
+
+<Codes codes={['invalidArgument', 'internal']} />
+
+</ApiOperation>

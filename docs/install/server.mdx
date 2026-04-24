@@ -1,0 +1,261 @@
+---
+id: server
+sidebar_position: 1
+title: SG-Server
+---
+
+import CodeBlock from '@theme/CodeBlock'
+import dedent from 'ts-dedent'
+
+# SG-Server
+
+Центральный компонент системы — хранит конфигурацию сетевых политик в PostgreSQL
+и предоставляет gRPC / REST API для управления ресурсами.
+
+## Требования
+
+- Go 1.25+
+- Make
+- Docker 24+ (для контейнерной сборки)
+- Доступ к репозиториям [sgroups](https://github.com/PRO-Robotech/sgroups) и [sgroups-proto](https://github.com/PRO-Robotech/sgroups-proto)
+
+## Сборка из исходного кода
+
+<CodeBlock language="bash">
+  {dedent`
+    git clone https://github.com/PRO-Robotech/sgroups.git
+    cd sgroups
+    make sg-server
+  `}
+</CodeBlock>
+
+Готовый бинарный файл — `bin/sg-server`:
+
+<CodeBlock language="bash">
+  {dedent`
+    ./bin/sg-server --help
+  `}
+</CodeBlock>
+
+## Docker-образ
+
+Проект использует multi-stage сборку (`Dockerfile.server`). Для корректной сборки
+требуется, чтобы репозиторий `sgroups-proto` был доступен как контекст сборки.
+
+<CodeBlock language="bash">
+  {dedent`
+    # Клонируем оба репозитория рядом
+    git clone https://github.com/PRO-Robotech/sgroups.git
+    git clone https://github.com/PRO-Robotech/sgroups-proto.git
+
+    cd sgroups
+
+    docker build \
+      -f Dockerfile.server \
+      --build-context sgroups-proto=../sgroups-proto \
+      -t sgroups/sg-server:latest \
+      .
+  `}
+</CodeBlock>
+
+:::info
+Финальный этап образа основан на `alpine`, сервер запускается от непривилегированного
+пользователя `app` (UID 101).
+:::
+
+### Запуск контейнера
+
+<CodeBlock language="bash">
+  {dedent`
+    docker run -d \
+      --name sg-server \
+      -p 9000:9000 \
+      -p 9100:9100 \
+      -e SG_SERVER_DB_DSN="postgres://sgroups:secret@db:5432/sgroups?sslmode=disable" \
+      -e SG_SERVER_LOGGER_LEVEL="info" \
+      -v /path/to/config.yaml:/app/config.yaml:ro \
+      sgroups/sg-server:latest
+  `}
+</CodeBlock>
+
+| Порт | Назначение |
+|---|---|
+| `9000` | gRPC API |
+| `9100` | REST (gRPC-Gateway) + метрики |
+
+## Docker Compose
+
+Минимальная конфигурация с PostgreSQL:
+
+<CodeBlock language="yaml">
+  {dedent`
+    services:
+      db:
+        image: postgres:16-alpine
+        environment:
+          POSTGRES_DB: sgroups
+          POSTGRES_USER: sgroups
+          POSTGRES_PASSWORD: secret
+        volumes:
+          - pgdata:/var/lib/postgresql/data
+
+      sg-server:
+        image: sgroups/sg-server:latest
+        ports:
+          - "9000:9000"
+          - "9100:9100"
+        environment:
+          SG_SERVER_DB_DSN: "postgres://sgroups:secret@db:5432/sgroups?sslmode=disable"
+        depends_on:
+          - db
+
+    volumes:
+      pgdata:
+  `}
+</CodeBlock>
+
+<CodeBlock language="bash">
+  {dedent`
+    docker compose up -d
+  `}
+</CodeBlock>
+
+## Конфигурация
+
+sg-server использует [spf13/viper](https://github.com/spf13/viper). Три источника параметров
+с приоритетом:
+
+1. **CLI-флаги** (наивысший)
+2. **Переменные окружения** (префикс `SG_SERVER_`)
+3. **YAML-файл**
+
+### Полный пример YAML
+
+<CodeBlock language="yaml">
+  {dedent`
+    server:
+      grpc:
+        address: "0.0.0.0:9000"
+      gateway:
+        address: "0.0.0.0:9100"
+
+    db:
+      dsn: "postgres://sgroups:secret@localhost:5432/sgroups?sslmode=disable"
+      max_open_conns: 20
+      max_idle_conns: 5
+
+    tls:
+      enabled: false
+      cert_file: "/etc/sg-server/tls/server.crt"
+      key_file: "/etc/sg-server/tls/server.key"
+
+    logger:
+      level: "info"
+      format: "json"
+
+    metrics:
+      enabled: true
+      address: "0.0.0.0:9100"
+      path: "/metrics"
+
+    tracing:
+      enabled: false
+      exporter: "jaeger"
+      endpoint: "http://jaeger:14268/api/traces"
+  `}
+</CodeBlock>
+
+### Параметры: Сервер
+
+| Параметр | Env-переменная | По умолчанию | Описание |
+|---|---|---|---|
+| `server.grpc.address` | `SG_SERVER_GRPC_ADDRESS` | `0.0.0.0:9000` | Адрес gRPC-сервера |
+| `server.gateway.address` | `SG_SERVER_GATEWAY_ADDRESS` | `0.0.0.0:9100` | Адрес REST-gateway |
+
+### Параметры: База данных
+
+| Параметр | Env-переменная | По умолчанию | Описание |
+|---|---|---|---|
+| `db.dsn` | `SG_SERVER_DB_DSN` | — | Строка подключения PostgreSQL |
+| `db.max_open_conns` | `SG_SERVER_DB_MAX_OPEN_CONNS` | `20` | Макс. число открытых соединений |
+| `db.max_idle_conns` | `SG_SERVER_DB_MAX_IDLE_CONNS` | `5` | Макс. число простаивающих соединений |
+
+### Параметры: TLS
+
+| Параметр | Env-переменная | По умолчанию | Описание |
+|---|---|---|---|
+| `tls.enabled` | `SG_SERVER_TLS_ENABLED` | `false` | Включить TLS для gRPC |
+| `tls.cert_file` | `SG_SERVER_TLS_CERT_FILE` | — | Путь к сертификату сервера |
+| `tls.key_file` | `SG_SERVER_TLS_KEY_FILE` | — | Путь к приватному ключу |
+
+### Параметры: Логирование
+
+| Параметр | Env-переменная | По умолчанию | Описание |
+|---|---|---|---|
+| `logger.level` | `SG_SERVER_LOGGER_LEVEL` | `info` | Уровень: debug, info, warn, error |
+| `logger.format` | `SG_SERVER_LOGGER_FORMAT` | `json` | Формат: json, text |
+
+### Параметры: Метрики
+
+| Параметр | Env-переменная | По умолчанию | Описание |
+|---|---|---|---|
+| `metrics.enabled` | `SG_SERVER_METRICS_ENABLED` | `true` | Включить Prometheus-эндпоинт |
+| `metrics.address` | `SG_SERVER_METRICS_ADDRESS` | `0.0.0.0:9100` | Адрес метрик |
+| `metrics.path` | `SG_SERVER_METRICS_PATH` | `/metrics` | HTTP-путь метрик |
+
+### Параметры: Трейсинг
+
+| Параметр | Env-переменная | По умолчанию | Описание |
+|---|---|---|---|
+| `tracing.enabled` | `SG_SERVER_TRACING_ENABLED` | `false` | Включить OpenTelemetry |
+| `tracing.exporter` | `SG_SERVER_TRACING_EXPORTER` | `jaeger` | Тип экспортёра: jaeger, otlp |
+| `tracing.endpoint` | `SG_SERVER_TRACING_ENDPOINT` | — | Адрес коллектора |
+
+## Переменные окружения
+
+Все параметры доступны через переменные окружения с префиксом `SG_SERVER_`.
+Вложенность передаётся через `_`, значения в верхнем регистре:
+
+<CodeBlock language="bash">
+  {dedent`
+    export SG_SERVER_DB_DSN="postgres://sgroups:secret@localhost:5432/sgroups"
+    export SG_SERVER_LOGGER_LEVEL="debug"
+    export SG_SERVER_TLS_ENABLED="true"
+    export SG_SERVER_TLS_CERT_FILE="/etc/sg-server/tls/server.crt"
+    export SG_SERVER_TLS_KEY_FILE="/etc/sg-server/tls/server.key"
+  `}
+</CodeBlock>
+
+## CLI-флаги
+
+<CodeBlock language="bash">
+  {dedent`
+    sg-server \
+      --config /etc/sg-server/config.yaml \
+      --server.grpc.address 0.0.0.0:9000 \
+      --db.dsn "postgres://user:pass@db:5432/sgroups" \
+      --logger.level debug
+  `}
+</CodeBlock>
+
+:::tip
+В production рекомендуется использовать YAML-файл как базовую конфигурацию
+и переопределять чувствительные параметры (DSN, пароли) через переменные окружения.
+:::
+
+## Проверка работоспособности
+
+<CodeBlock language="bash">
+  {dedent`
+    # gRPC (через grpcurl)
+    grpcurl -plaintext localhost:9000 list
+
+    # REST (gRPC-Gateway)
+    curl http://localhost:9100/v1/status
+  `}
+</CodeBlock>
+
+:::caution
+Перед первым запуском необходимо выполнить миграции базы данных.
+Подробнее — в разделе [База данных](/advanced/database).
+:::

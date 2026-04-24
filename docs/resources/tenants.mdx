@@ -1,0 +1,135 @@
+---
+id: tenants
+sidebar_position: 1
+title: Tenant / Namespace
+---
+
+import { DICTIONARY } from '@site/src/constants/dictionary'
+import { RESTRICTIONS } from '@site/src/constants/restrictions'
+import { Restrictions } from '@site/src/components/commonBlocks/Restrictions'
+import CodeBlock from '@theme/CodeBlock'
+import dedent from 'ts-dedent'
+
+# Tenant / Namespace
+
+**Tenant** (в proto-модели — Namespace) — ресурс логической изоляции. Все остальные ресурсы
+SGroups (AddressGroup, Host, Network и т.д.) существуют внутри определённого Tenant, что
+позволяет разделять политики безопасности по средам, командам или проектам.
+
+## API
+
+### Создание / обновление
+
+<CodeBlock>
+  {dedent`
+    POST /v1/namespaces/upsert
+  `}
+</CodeBlock>
+
+### Поля spec
+
+<table>
+  <thead>
+    <tr>
+      <th>Поле</th>
+      <th>Тип</th>
+      <th>Описание</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><code>displayName</code></td>
+      <td><code>string</code></td>
+      <td>{DICTIONARY.displayName.short}</td>
+    </tr>
+    <tr>
+      <td><code>comment</code></td>
+      <td><code>string</code></td>
+      <td>{DICTIONARY.comment.short}</td>
+    </tr>
+    <tr>
+      <td><code>description</code></td>
+      <td><code>string</code></td>
+      <td>{DICTIONARY.description.short}</td>
+    </tr>
+  </tbody>
+</table>
+
+<Restrictions items={[
+  { label: 'spec.displayName', rules: RESTRICTIONS.displayName },
+]} />
+
+### Пример curl
+
+<CodeBlock language="bash">
+  {dedent`
+    curl -X POST http://localhost:9100/v1/namespaces/upsert \\
+      -H "Content-Type: application/json" \\
+      -d '{
+        "name": "production",
+        "spec": {
+          "displayName": "Продуктивная среда",
+          "comment": "Основная рабочая среда",
+          "description": "Тенант для production-сервисов"
+        }
+      }'
+  `}
+</CodeBlock>
+
+## Kubernetes (АГЛ)
+
+### YAML-манифест
+
+<CodeBlock language="yaml">
+  {dedent`
+    apiVersion: sgroups.io/v1alpha1
+    kind: Tenant
+    metadata:
+      name: production
+    spec:
+      displayName: "Продуктивная среда"
+      comment: "Основная рабочая среда"
+      description: "Тенант для production-сервисов"
+  `}
+</CodeBlock>
+
+### Операции kubectl
+
+<CodeBlock language="bash">
+  {dedent`
+    # Создание
+    kubectl apply -f tenant.yaml
+
+    # Просмотр
+    kubectl get tenants
+    kubectl describe tenant production
+
+    # Удаление
+    kubectl delete tenant production
+  `}
+</CodeBlock>
+
+## Связь с nftables
+
+Tenant / Namespace **не транслируются** напрямую в объекты nftables. Они выполняют
+исключительно организационную роль — обеспечивают пространство имён для остальных ресурсов.
+
+Все nftables-объекты (sets, chains, rules) именуются с учётом Tenant, но сам Tenant
+не порождает отдельную таблицу или цепочку.
+
+```mermaid
+graph LR
+    T["Tenant: production"] --> AG["AddressGroup"]
+    T --> H["Host"]
+    T --> N["Network"]
+    T --> S["Service"]
+    T --> R["Rule"]
+
+    AG -->|nftables| SET["set (ipv4_addr)"]
+    R -->|nftables| RULE["rule в цепочке"]
+```
+
+:::info
+Tenant определяет область видимости: ресурсы из разных тенантов изолированы друг от друга.
+Перекрёстные ссылки между тенантами возможны через явное указание `namespace` в привязках.
+:::

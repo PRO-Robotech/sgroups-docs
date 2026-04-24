@@ -1,0 +1,271 @@
+---
+id: agent
+sidebar_position: 2
+title: SG-Agent
+---
+
+import CodeBlock from '@theme/CodeBlock'
+import dedent from 'ts-dedent'
+
+# SG-Agent
+
+Агент устанавливается на каждый управляемый хост и отвечает за применение правил файрвола.
+Подключается к `sg-server` по gRPC, получает конфигурацию и транслирует её в nftables-правила.
+
+:::warning
+sg-agent поддерживает только **Linux** — nftables является компонентом ядра Linux
+и не доступен на других ОС.
+:::
+
+## Сборка из исходного кода
+
+### Требования
+
+- Go ≥ 1.25
+- Linux (кросс-компиляция с `GOOS=linux` возможна, но тестирование — только на Linux)
+
+### Сборка
+
+<CodeBlock language="bash">
+  {dedent`
+    git clone https://github.com/PRO-Robotech/sgroups.git
+    cd sgroups
+    GOOS=linux GOARCH=amd64 go build -o sg-agent ./cmd/sg-agent/
+  `}
+</CodeBlock>
+
+## Docker-образ
+
+Проект предоставляет `Dockerfile.agent` — многоступенчатую сборку на базе Alpine:
+
+<CodeBlock language="bash">
+  {dedent`
+    docker build -f Dockerfile.agent -t sg-agent:latest .
+
+    docker run --rm \
+      --cap-add NET_ADMIN \
+      --network host \
+      -v /path/to/config.yaml:/etc/sg-agent/config.yaml \
+      sg-agent:latest --config /etc/sg-agent/config.yaml
+  `}
+</CodeBlock>
+
+:::caution
+Флаг `--cap-add NET_ADMIN` обязателен — без него агент не сможет управлять nftables.
+При работе с network namespaces также потребуется `--cap-add SYS_ADMIN`.
+:::
+
+## Capabilities
+
+| Capability | Назначение | Обязательна |
+|---|---|---|
+| `CAP_NET_ADMIN` | Управление nftables (создание таблиц, цепочек, правил) | Да |
+| `CAP_SYS_ADMIN` | Работа с network namespaces | Только при использовании netns |
+
+## Установка как systemd-сервис
+
+### 1. Скопируйте бинарный файл
+
+<CodeBlock language="bash">
+  {dedent`
+    sudo install -m 0755 sg-agent /usr/local/bin/sg-agent
+  `}
+</CodeBlock>
+
+### 2. Создайте конфигурацию
+
+<CodeBlock language="bash">
+  {dedent`
+    sudo mkdir -p /etc/sg-agent
+    sudo cp config.yaml /etc/sg-agent/config.yaml
+  `}
+</CodeBlock>
+
+### 3. Создайте unit-файл
+
+<CodeBlock language="ini">
+  {dedent`
+    # /etc/systemd/system/sg-agent.service
+    [Unit]
+    Description=SGroups Agent
+    After=network-online.target
+    Wants=network-online.target
+
+    [Service]
+    Type=simple
+    ExecStart=/usr/local/bin/sg-agent --config /etc/sg-agent/config.yaml
+    Restart=always
+    RestartSec=5
+
+    User=root
+    AmbientCapabilities=CAP_NET_ADMIN
+    NoNewPrivileges=yes
+    ProtectSystem=strict
+    ProtectHome=yes
+    ReadWritePaths=/run
+
+    [Install]
+    WantedBy=multi-user.target
+  `}
+</CodeBlock>
+
+### 4. Запустите сервис
+
+<CodeBlock language="bash">
+  {dedent`
+    sudo systemctl daemon-reload
+    sudo systemctl enable --now sg-agent
+    sudo systemctl status sg-agent
+  `}
+</CodeBlock>
+
+## Конфигурация
+
+sg-agent использует **spf13/viper**. Приоритет источников: CLI-флаги > переменные окружения (`SG_AGENT_`) > YAML-файл.
+
+### Полный пример YAML
+
+<CodeBlock language="yaml">
+  {dedent`
+    server:
+      address: "sg-server.example.com:9100"
+      dial-timeout: 10s
+      tls:
+        enabled: true
+        cert: /etc/sg-agent/tls/client.crt
+        key: /etc/sg-agent/tls/client.key
+        ca: /etc/sg-agent/tls/ca.crt
+
+    sync:
+      interval: 30s
+      initial-backoff: 1s
+      max-backoff: 5m
+      max-retries: 0
+
+    dns:
+      nameservers:
+        - "8.8.8.8:53"
+        - "8.8.4.4:53"
+      timeout: 5s
+      cache-ttl: 60s
+
+    nftables:
+      base-chains:
+        input:
+          policy: drop
+          priority: 0
+        output:
+          policy: accept
+          priority: 0
+        forward:
+          policy: drop
+          priority: 0
+      table-name: sgroups
+
+    netns:
+      enabled: false
+      watch-interval: 15s
+
+    logging:
+      level: info
+      format: json
+      output: stderr
+      file: /var/log/sg-agent.log
+
+    metrics:
+      enabled: true
+      address: ":9650"
+  `}
+</CodeBlock>
+
+### Параметры: Подключение к серверу
+
+| Параметр | Тип | По умолчанию | Описание |
+|---|---|---|---|
+| `server.address` | string | `localhost:9100` | Адрес sg-server (host:port) |
+| `server.dial-timeout` | duration | `10s` | Таймаут подключения к серверу |
+| `server.tls.enabled` | bool | `false` | Включение mTLS |
+| `server.tls.cert` | string | — | Путь к клиентскому сертификату |
+| `server.tls.key` | string | — | Путь к клиентскому приватному ключу |
+| `server.tls.ca` | string | — | Путь к CA-сертификату |
+
+### Параметры: Синхронизация
+
+| Параметр | Тип | По умолчанию | Описание |
+|---|---|---|---|
+| `sync.interval` | duration | `30s` | Интервал между циклами синхронизации |
+| `sync.initial-backoff` | duration | `1s` | Начальный backoff при ошибках |
+| `sync.max-backoff` | duration | `5m` | Максимальный backoff |
+| `sync.max-retries` | int | `0` | Лимит повторных попыток (0 — без лимита) |
+
+### Параметры: DNS
+
+| Параметр | Тип | По умолчанию | Описание |
+|---|---|---|---|
+| `dns.nameservers` | []string | системные | Список DNS-серверов для FQDN-правил |
+| `dns.timeout` | duration | `5s` | Таймаут DNS-запроса |
+| `dns.cache-ttl` | duration | `60s` | Время кеширования DNS-ответов |
+
+### Параметры: Nftables
+
+| Параметр | Тип | По умолчанию | Описание |
+|---|---|---|---|
+| `nftables.table-name` | string | `sgroups` | Имя управляемой nftables-таблицы |
+| `nftables.base-chains.*` | object | — | Конфигурация базовых цепочек (policy, priority) |
+
+### Параметры: Network namespaces
+
+| Параметр | Тип | По умолчанию | Описание |
+|---|---|---|---|
+| `netns.enabled` | bool | `false` | Включить поддержку network namespaces |
+| `netns.watch-interval` | duration | `15s` | Интервал сканирования namespaces |
+
+### Параметры: Логирование
+
+| Параметр | Тип | По умолчанию | Описание |
+|---|---|---|---|
+| `logging.level` | string | `info` | Уровень: debug, info, warn, error |
+| `logging.format` | string | `json` | Формат: json, text |
+| `logging.output` | string | `stderr` | Назначение: stderr, stdout, file |
+
+## Переменные окружения
+
+Все параметры доступны с префиксом `SG_AGENT_` и разделителем `_` вместо точки:
+
+<CodeBlock language="bash">
+  {dedent`
+    export SG_AGENT_SERVER_ADDRESS="sg-server:9100"
+    export SG_AGENT_SYNC_INTERVAL="15s"
+    export SG_AGENT_LOGGING_LEVEL="debug"
+    export SG_AGENT_NFTABLES_TABLE_NAME="sgroups"
+  `}
+</CodeBlock>
+
+:::tip
+Для быстрого старта достаточно минимальной конфигурации:
+
+<CodeBlock language="yaml">
+  {dedent`
+    server:
+      address: "sg-server:9100"
+  `}
+</CodeBlock>
+
+В production рекомендуется включить TLS и настроить DNS-серверы для корректного
+резолвинга FQDN-правил.
+:::
+
+## Проверка работоспособности
+
+<CodeBlock language="bash">
+  {dedent`
+    # Статус процесса
+    systemctl status sg-agent
+
+    # Проверка nftables-правил, созданных агентом
+    sudo nft list ruleset | grep sgroups
+
+    # Логи
+    journalctl -u sg-agent -f
+  `}
+</CodeBlock>

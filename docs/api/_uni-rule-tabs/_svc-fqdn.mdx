@@ -1,0 +1,196 @@
+import { DICTIONARY } from '@site/src/constants/dictionary'
+import { RESTRICTIONS } from '@site/src/constants/restrictions'
+import { Restrictions } from '@site/src/components/commonBlocks/Restrictions'
+import Tabs from '@theme/Tabs'
+import TabItem from '@theme/TabItem'
+import CodeBlock from '@theme/CodeBlock'
+import dedent from 'ts-dedent'
+
+Локальная сторона — сервис, удалённая — доменное имя (`FQDN`).
+Поле `remote.value` **обязательно**. Поля `remote.name` и `remote.namespace` не используются.
+
+<table>
+  <thead>
+    <tr>
+      <th>Параметр</th>
+      <th>Обязательность</th>
+      <th>Тип</th>
+      <th>Описание</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><code>metadata.name</code></td>
+      <td>да</td>
+      <td><code>string</code></td>
+      <td>{DICTIONARY.name.short}</td>
+    </tr>
+    <tr>
+      <td><code>metadata.namespace</code></td>
+      <td>да</td>
+      <td><code>string</code></td>
+      <td>{DICTIONARY.namespace.short}</td>
+    </tr>
+    <tr>
+      <td><code>spec.action</code></td>
+      <td><strong>да</strong></td>
+      <td><code>Enum("ALLOW", "DENY")</code></td>
+      <td>{DICTIONARY.action.short}</td>
+    </tr>
+    <tr>
+      <td><code>spec.session.traffic</code></td>
+      <td>нет</td>
+      <td><code>Enum("BOTH", "INGRESS", "EGRESS")</code></td>
+      <td>{DICTIONARY.traffic.short}</td>
+    </tr>
+    <tr>
+      <td><code>spec.endpoints.local.name</code></td>
+      <td>да</td>
+      <td><code>string</code></td>
+      <td>{DICTIONARY.endpointName.short}</td>
+    </tr>
+    <tr>
+      <td><code>spec.endpoints.local.namespace</code></td>
+      <td>да</td>
+      <td><code>string</code></td>
+      <td>{DICTIONARY.endpointNamespace.short}</td>
+    </tr>
+    <tr>
+      <td><code>spec.endpoints.local.type</code></td>
+      <td>да</td>
+      <td><code>Enum("SERVICE")</code></td>
+      <td>{DICTIONARY.endpointType.short}</td>
+    </tr>
+    <tr>
+      <td><code>spec.endpoints.remote.type</code></td>
+      <td>да</td>
+      <td><code>Enum("FQDN")</code></td>
+      <td>{DICTIONARY.endpointType.short}</td>
+    </tr>
+    <tr>
+      <td><code>spec.endpoints.remote.value</code></td>
+      <td><strong>да</strong></td>
+      <td><code>Enum("ADDRESS_GROUP", "SERVICE")</code></td>
+      <td>{DICTIONARY.remoteValue.short}</td>
+    </tr>
+    <tr>
+      <td><code>spec.transport.protocol</code></td>
+      <td>да</td>
+      <td><code>Enum("TCP", "UDP", "ICMP")</code></td>
+      <td>{DICTIONARY.protocol.short}</td>
+    </tr>
+    <tr>
+      <td><code>spec.transport.ipv</code></td>
+      <td>да</td>
+      <td><code>Enum("IPv4", "IPv6")</code></td>
+      <td>{DICTIONARY.ipv.short}</td>
+    </tr>
+    <tr>
+      <td><code>spec.transport.entries[]</code></td>
+      <td>нет</td>
+      <td><code>Entry[]</code></td>
+      <td>{DICTIONARY.entries.short}</td>
+    </tr>
+  </tbody>
+</table>
+
+<CodeBlock language="bash">
+  {dedent`
+    curl -X POST http://localhost:9006/v1/rules/upsert \\
+      -H 'Content-Type: application/json' \\
+      -d '{
+        "rules": [
+          {
+            "metadata": {
+              "name": "allow-proxy-svc-to-cdn",
+              "namespace": "production"
+            },
+            "spec": {
+              "action": "ALLOW",
+              "session": {
+                "traffic": "EGRESS"
+              },
+              "endpoints": {
+                "local": {
+                  "name": "proxy-service",
+                  "namespace": "production",
+                  "type": "SERVICE"
+                },
+                "remote": {
+                  "type": "FQDN",
+                  "value": "cdn.example.com"
+                }
+              },
+              "transport": {
+                "protocol": "TCP",
+                "IPv": "IPv4",
+                "entries": [
+                  {
+                    "description": "HTTPS",
+                    "ports": "443"
+                  }
+                ]
+              }
+            }
+          }
+        ]
+      }'
+  `}
+</CodeBlock>
+
+**Ответ:**
+
+<CodeBlock language="json">
+  {dedent`
+    {
+      "rules": [
+        {
+          "metadata": {
+            "uid": "a7b8c9d0-e1f2-3456-0123-456789abcdef",
+            "name": "allow-proxy-svc-to-cdn",
+            "namespace": "production",
+            "creationTimestamp": "2025-01-15T11:40:00Z",
+            "resourceVersion": "1"
+          },
+          "spec": {
+            "action": "ALLOW",
+            "session": {
+              "traffic": "EGRESS"
+            },
+            "endpoints": {
+              "local": {
+                "name": "proxy-service",
+                "namespace": "production",
+                "type": "SERVICE"
+              },
+              "remote": {
+                "type": "FQDN",
+                "value": "cdn.example.com"
+              }
+            },
+            "transport": {
+              "protocol": "TCP",
+              "IPv": "IPv4",
+              "entries": [
+                {
+                  "description": "HTTPS",
+                  "ports": "443"
+                }
+              ]
+            }
+          }
+        }
+      ]
+    }
+  `}
+</CodeBlock>
+
+<Restrictions items={[
+  { label: 'metadata / spec', rules: RESTRICTIONS.metadataRequired },
+  { label: 'metadata.name', rules: RESTRICTIONS.name },
+  { label: 'spec.action', rules: RESTRICTIONS.action },
+  { label: 'endpoints.*.type', rules: RESTRICTIONS.endpointType },
+  { label: 'transport.protocol', rules: RESTRICTIONS.protocol },
+  { label: 'remote.value (FQDN)', rules: RESTRICTIONS.fqdn },
+]} />
+

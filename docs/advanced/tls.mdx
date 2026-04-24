@@ -1,0 +1,178 @@
+---
+id: tls
+sidebar_position: 2
+title: Настройка TLS
+---
+
+import CodeBlock from '@theme/CodeBlock'
+import dedent from 'ts-dedent'
+
+# Настройка TLS
+
+sg-server поддерживает TLS-шифрование для gRPC-соединений — как серверный TLS,
+так и взаимную аутентификацию (mTLS) с агентами. В production рекомендуется
+использовать корпоративный CA или cert-manager (Kubernetes).
+
+## Генерация сертификатов
+
+### Создание CA
+
+<CodeBlock language="bash">
+  {dedent`
+    # Приватный ключ CA
+    openssl genrsa -out ca.key 4096
+
+    # Самоподписанный сертификат CA (10 лет)
+    openssl req -x509 -new -nodes \
+      -key ca.key \
+      -sha256 -days 3650 \
+      -subj "/CN=SGroups CA" \
+      -out ca.crt
+  `}
+</CodeBlock>
+
+### Сертификат сервера
+
+<CodeBlock language="bash">
+  {dedent`
+    openssl genrsa -out server.key 2048
+
+    openssl req -new \
+      -key server.key \
+      -subj "/CN=sg-server" \
+      -addext "subjectAltName=DNS:sg-server,DNS:localhost,IP:127.0.0.1" \
+      -out server.csr
+
+    openssl x509 -req \
+      -in server.csr \
+      -CA ca.crt -CAkey ca.key -CAcreateserial \
+      -days 365 -sha256 \
+      -copy_extensions copyall \
+      -out server.crt
+  `}
+</CodeBlock>
+
+### Сертификат агента (mTLS)
+
+<CodeBlock language="bash">
+  {dedent`
+    openssl genrsa -out agent.key 2048
+
+    openssl req -new \
+      -key agent.key \
+      -subj "/CN=sg-agent" \
+      -out agent.csr
+
+    openssl x509 -req \
+      -in agent.csr \
+      -CA ca.crt -CAkey ca.key -CAcreateserial \
+      -days 365 -sha256 \
+      -out agent.crt
+  `}
+</CodeBlock>
+
+## Конфигурация сервера
+
+### Базовый TLS
+
+<CodeBlock language="yaml">
+  {dedent`
+    tls:
+      enabled: true
+      cert_file: "/etc/sg-server/tls/server.crt"
+      key_file: "/etc/sg-server/tls/server.key"
+  `}
+</CodeBlock>
+
+Через переменные окружения:
+
+<CodeBlock language="bash">
+  {dedent`
+    export SG_SERVER_TLS_ENABLED=true
+    export SG_SERVER_TLS_CERT_FILE=/etc/sg-server/tls/server.crt
+    export SG_SERVER_TLS_KEY_FILE=/etc/sg-server/tls/server.key
+  `}
+</CodeBlock>
+
+### mTLS (взаимная аутентификация)
+
+При включении mTLS сервер требует от клиентов (агентов) предъявления
+сертификата, подписанного доверенным CA:
+
+<CodeBlock language="yaml">
+  {dedent`
+    tls:
+      enabled: true
+      cert_file: "/etc/sg-server/tls/server.crt"
+      key_file: "/etc/sg-server/tls/server.key"
+      ca_file: "/etc/sg-server/tls/ca.crt"
+      client_auth: true
+  `}
+</CodeBlock>
+
+## Конфигурация агента
+
+sg-agent подключается к sg-server с использованием TLS / mTLS:
+
+<CodeBlock language="yaml">
+  {dedent`
+    server:
+      address: "sg-server:9000"
+      tls:
+        enabled: true
+        ca_file: "/etc/sg-agent/tls/ca.crt"
+        cert_file: "/etc/sg-agent/tls/agent.crt"
+        key_file: "/etc/sg-agent/tls/agent.key"
+  `}
+</CodeBlock>
+
+## Docker-конфигурация
+
+<CodeBlock language="bash">
+  {dedent`
+    docker run -d \
+      --name sg-server \
+      -p 9000:9000 \
+      -v /path/to/tls:/etc/sg-server/tls:ro \
+      -e SG_SERVER_TLS_ENABLED=true \
+      -e SG_SERVER_TLS_CERT_FILE=/etc/sg-server/tls/server.crt \
+      -e SG_SERVER_TLS_KEY_FILE=/etc/sg-server/tls/server.key \
+      -e SG_SERVER_DB_DSN="postgres://sgroups:secret@db:5432/sgroups" \
+      sgroups/sg-server:latest
+  `}
+</CodeBlock>
+
+## Проверка TLS-соединения
+
+<CodeBlock language="bash">
+  {dedent`
+    # Проверка сертификата сервера
+    openssl s_client -connect localhost:9000 -CAfile ca.crt
+
+    # gRPC с TLS
+    grpcurl -cacert ca.crt localhost:9000 list
+
+    # gRPC с mTLS (клиентский сертификат)
+    grpcurl \
+      -cacert ca.crt \
+      -cert agent.crt \
+      -key agent.key \
+      localhost:9000 hbf.v1.StatusService/Status
+  `}
+</CodeBlock>
+
+## Ротация сертификатов
+
+:::caution
+sg-server загружает сертификаты при старте. При ротации сертификатов
+необходимо перезапустить сервер.
+:::
+
+Рекомендуемый подход:
+
+1. Обновите файлы сертификатов на диске
+2. Выполните graceful restart sg-server
+3. Убедитесь, что новый экземпляр стартовал корректно
+
+В Kubernetes используйте `cert-manager` с автоматическим обновлением Secret
+и перезапуском Pod через аннотацию `checksum` в Deployment.

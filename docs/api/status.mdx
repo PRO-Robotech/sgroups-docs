@@ -1,0 +1,134 @@
+---
+id: status
+sidebar_position: 11
+title: Status API
+---
+
+import { DICTIONARY } from '@site/src/constants/dictionary'
+import { RESTRICTIONS } from '@site/src/constants/restrictions'
+import { Restrictions } from '@site/src/components/commonBlocks/Restrictions'
+import { Codes } from '@site/src/components/commonBlocks/Codes'
+import CodeBlock from '@theme/CodeBlock'
+import dedent from 'ts-dedent'
+
+# Status API
+
+API для получения информации о статусе синхронизации SGroups.
+
+## Получение статуса
+
+<span className="api-method api-method--get">GET</span> <code className="api-endpoint">/v1/status/list</code>
+
+Возвращает текущий статус последней синхронизации.
+
+### Пример запроса
+
+<CodeBlock language="bash">
+  {dedent`
+    curl -X GET http://localhost:9006/v1/status/list \\
+      -H 'Content-Type: application/json'
+  `}
+</CodeBlock>
+
+### Ответ
+
+<table>
+  <thead>
+    <tr>
+      <th>Параметр</th>
+      <th>Тип</th>
+      <th>Описание</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><code>statuses</code></td>
+      <td><code>Status[]</code></td>
+      <td>Массив статусов синхронизации</td>
+    </tr>
+    <tr>
+      <td><code>statuses[].component</code></td>
+      <td><code>string</code></td>
+      <td>Название компонента</td>
+    </tr>
+    <tr>
+      <td><code>statuses[].status</code></td>
+      <td><code>string</code></td>
+      <td>Текущий статус (<code>OK</code>, <code>ERROR</code>, <code>SYNCING</code>)</td>
+    </tr>
+    <tr>
+      <td><code>statuses[].last_sync</code></td>
+      <td><code>Timestamp</code></td>
+      <td>Время последней синхронизации</td>
+    </tr>
+    <tr>
+      <td><code>statuses[].message</code></td>
+      <td><code>string</code></td>
+      <td>Дополнительное сообщение</td>
+    </tr>
+  </tbody>
+</table>
+
+### Пример ответа
+
+<CodeBlock language="json">
+  {dedent`
+    {
+      "statuses": [
+        {
+          "component": "sg-agent-node-01",
+          "status": "OK",
+          "last_sync": "2025-01-15T10:30:00Z",
+          "message": ""
+        },
+        {
+          "component": "sg-agent-node-02",
+          "status": "ERROR",
+          "last_sync": "2025-01-15T10:25:00Z",
+          "message": "connection timeout"
+        }
+      ]
+    }
+  `}
+</CodeBlock>
+
+<Codes codes={['internal']} />
+
+---
+
+## Наблюдение за статусом (Watch)
+
+<span className="api-method api-method--get">GET</span> <code className="api-endpoint">/v1/status/watch</code>
+
+Серверный стриминг — возвращает поток обновлений статуса синхронизации в реальном времени.
+
+### Пример запроса
+
+<CodeBlock language="bash">
+  {dedent`
+    curl -X GET http://localhost:9006/v1/status/watch \\
+      -H 'Content-Type: application/json'
+  `}
+</CodeBlock>
+
+### Ответ
+
+Поток JSON-объектов, каждый из которых содержит обновление статуса:
+
+<CodeBlock language="json">
+  {dedent`
+    {
+      "type": "MODIFIED",
+      "statuses": [
+        {
+          "component": "sg-agent-node-01",
+          "status": "SYNCING",
+          "last_sync": "2025-01-15T10:35:00Z",
+          "message": "applying rules..."
+        }
+      ]
+    }
+  `}
+</CodeBlock>
+
+<Codes codes={['internal']} />

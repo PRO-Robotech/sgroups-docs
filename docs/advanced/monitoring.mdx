@@ -1,0 +1,216 @@
+---
+id: monitoring
+sidebar_position: 1
+title: Мониторинг
+---
+
+import CodeBlock from '@theme/CodeBlock'
+import dedent from 'ts-dedent'
+
+# Мониторинг
+
+Комплексный обзор наблюдаемости SGroups: метрики Prometheus для сервера и агента,
+распределённый трейсинг через OpenTelemetry, проверки здоровья и Grafana-дашборды.
+
+## Метрики sg-server
+
+### Эндпоинт
+
+<CodeBlock>
+  {dedent`
+    GET http://<gateway-address>/metrics
+  `}
+</CodeBlock>
+
+По умолчанию — `http://localhost:9100/metrics`.
+
+### Ключевые метрики
+
+| Метрика | Тип | Описание |
+|---|---|---|
+| `grpc_server_handled_total` | Counter | Общее число обработанных gRPC-вызовов |
+| `grpc_server_handling_seconds` | Histogram | Время обработки gRPC-вызовов |
+| `grpc_server_msg_received_total` | Counter | Число полученных gRPC-сообщений |
+| `grpc_server_msg_sent_total` | Counter | Число отправленных gRPC-сообщений |
+| `db_pool_open_connections` | Gauge | Текущее число открытых соединений с БД |
+| `db_pool_idle_connections` | Gauge | Число простаивающих соединений с БД |
+| `db_query_duration_seconds` | Histogram | Время выполнения SQL-запросов |
+
+## Метрики sg-agent
+
+### Эндпоинт
+
+<CodeBlock language="yaml">
+  {dedent`
+    metrics:
+      enabled: true
+      address: ":9650"
+  `}
+</CodeBlock>
+
+Метрики доступны по `http://<host>:9650/metrics`.
+
+### Метрики синхронизации
+
+| Метрика | Тип | Описание |
+|---|---|---|
+| `sg_agent_sync_total` | Counter | Общее количество циклов синхронизации |
+| `sg_agent_sync_success_total` | Counter | Успешные синхронизации |
+| `sg_agent_sync_errors_total` | Counter | Ошибки синхронизации |
+| `sg_agent_sync_duration_seconds` | Histogram | Длительность цикла синхронизации |
+| `sg_agent_sync_last_success_timestamp` | Gauge | Время последней успешной синхронизации |
+
+### Метрики nftables
+
+| Метрика | Тип | Описание |
+|---|---|---|
+| `sg_agent_nft_rules_total` | Gauge | Количество активных правил |
+| `sg_agent_nft_sets_total` | Gauge | Количество наборов (sets) |
+| `sg_agent_nft_chains_total` | Gauge | Количество цепочек |
+| `sg_agent_nft_apply_duration_seconds` | Histogram | Время применения правил |
+| `sg_agent_nft_apply_errors_total` | Counter | Ошибки применения правил |
+
+### Метрики DNS и gRPC
+
+| Метрика | Тип | Описание |
+|---|---|---|
+| `sg_agent_dns_queries_total` | Counter | Общее количество DNS-запросов |
+| `sg_agent_dns_errors_total` | Counter | Ошибки DNS-резолвинга |
+| `sg_agent_grpc_connected` | Gauge | Статус подключения к sg-server (1/0) |
+| `sg_agent_grpc_reconnects_total` | Counter | Количество переподключений |
+
+## Конфигурация Prometheus
+
+<CodeBlock language="yaml">
+  {dedent`
+    scrape_configs:
+      - job_name: "sg-server"
+        scrape_interval: 15s
+        static_configs:
+          - targets: ["sg-server:9100"]
+
+      - job_name: "sg-agent"
+        scrape_interval: 15s
+        static_configs:
+          - targets: ["agent-01:9650", "agent-02:9650"]
+  `}
+</CodeBlock>
+
+## OpenTelemetry-трейсинг
+
+sg-server поддерживает распределённый трейсинг через OpenTelemetry SDK.
+
+<CodeBlock language="yaml">
+  {dedent`
+    tracing:
+      enabled: true
+      exporter: "otlp"
+      endpoint: "otel-collector:4317"
+  `}
+</CodeBlock>
+
+| Экспортёр | Значение | Протокол |
+|---|---|---|
+| Jaeger | `jaeger` | HTTP Thrift (`/api/traces`) |
+| OTLP | `otlp` | gRPC (4317) или HTTP (4318) |
+
+Трейсятся: все gRPC-вызовы, SQL-запросы, межсервисное взаимодействие.
+
+## Проверки здоровья (Health Check)
+
+<CodeBlock language="bash">
+  {dedent`
+    # gRPC
+    grpcurl -plaintext localhost:9000 hbf.v1.StatusService/Status
+
+    # REST
+    curl http://localhost:9100/v1/status
+  `}
+</CodeBlock>
+
+### Интеграция с Docker / Kubernetes
+
+<CodeBlock language="yaml">
+  {dedent`
+    # Docker Compose
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9100/v1/status"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+  `}
+</CodeBlock>
+
+<CodeBlock language="yaml">
+  {dedent`
+    # Kubernetes
+    livenessProbe:
+      httpGet:
+        path: /v1/status
+        port: 9100
+      initialDelaySeconds: 5
+      periodSeconds: 10
+  `}
+</CodeBlock>
+
+## Примеры PromQL-запросов
+
+| Цель | Запрос |
+|---|---|
+| RPS по методам | `rate(grpc_server_handled_total[5m])` |
+| Ошибки gRPC | `rate(grpc_server_handled_total{grpc_code!="OK"}[5m])` |
+| Латентность P99 | `histogram_quantile(0.99, rate(grpc_server_handling_seconds_bucket[5m]))` |
+| Агент: ошибки синхронизации | `rate(sg_agent_sync_errors_total[5m])` |
+| Агент: время синхронизации P95 | `histogram_quantile(0.95, rate(sg_agent_sync_duration_seconds_bucket[5m]))` |
+
+## Пример алертов
+
+<CodeBlock language="yaml">
+  {dedent`
+    groups:
+      - name: sgroups
+        rules:
+          - alert: SGServerHighErrorRate
+            expr: rate(grpc_server_handled_total{grpc_code!="OK"}[5m]) > 0.1
+            for: 5m
+            labels:
+              severity: warning
+            annotations:
+              summary: "Высокий уровень ошибок gRPC на sg-server"
+
+          - alert: SGAgentSyncFailing
+            expr: time() - sg_agent_sync_last_success_timestamp > 300
+            for: 5m
+            labels:
+              severity: warning
+            annotations:
+              summary: "sg-agent не синхронизируется более 5 минут"
+
+          - alert: SGAgentDisconnected
+            expr: sg_agent_grpc_connected == 0
+            for: 2m
+            labels:
+              severity: critical
+            annotations:
+              summary: "sg-agent потерял связь с sg-server"
+  `}
+</CodeBlock>
+
+## Grafana-дашборд
+
+Рекомендуемые панели:
+
+| Панель | Запрос | Тип |
+|---|---|---|
+| Статус агентов | `sg_agent_grpc_connected` | Stat |
+| RPS сервера | `rate(grpc_server_handled_total[5m])` | Time series |
+| Ошибки синхронизации | `rate(sg_agent_sync_errors_total[5m])` | Time series |
+| Длительность синхронизации | `sg_agent_sync_duration_seconds` | Heatmap |
+| Количество nft-правил | `sg_agent_nft_rules_total` | Gauge |
+| Пул соединений БД | `db_pool_open_connections` | Time series |
+| Латентность P99 | `histogram_quantile(0.99, ...)` | Time series |
+
+:::tip
+Для production рекомендуется формат логов `json` для удобства парсинга
+в системах централизованного логирования (ELK, Loki).
+:::

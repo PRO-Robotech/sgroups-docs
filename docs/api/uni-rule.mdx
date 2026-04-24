@@ -1,0 +1,471 @@
+---
+id: uni-rule
+sidebar_position: 10
+title: UniRule
+---
+
+import { DICTIONARY } from '@site/src/constants/dictionary'
+import { RESTRICTIONS } from '@site/src/constants/restrictions'
+import { Restrictions } from '@site/src/components/commonBlocks/Restrictions'
+import { Codes } from '@site/src/components/commonBlocks/Codes'
+import Tabs from '@theme/Tabs'
+import TabItem from '@theme/TabItem'
+import CodeBlock from '@theme/CodeBlock'
+import dedent from 'ts-dedent'
+import { ApiOperation } from '@site/src/components/commonBlocks/ApiOperation'
+
+import AgAg from './_uni-rule-tabs/_ag-ag.mdx'
+import AgSvc from './_uni-rule-tabs/_ag-svc.mdx'
+import SvcAg from './_uni-rule-tabs/_svc-ag.mdx'
+import SvcSvc from './_uni-rule-tabs/_svc-svc.mdx'
+import AgFqdn from './_uni-rule-tabs/_ag-fqdn.mdx'
+import SvcFqdn from './_uni-rule-tabs/_svc-fqdn.mdx'
+import AgCidr from './_uni-rule-tabs/_ag-cidr.mdx'
+import SvcCidr from './_uni-rule-tabs/_svc-cidr.mdx'
+
+# UniRule
+
+Universal rule — единый метод создания правил для всех комбинаций эндпоинтов.
+Тип правила определяется комбинацией полей `endpoints.local.type` и `endpoints.remote.type`.
+Для `local` допустимы типы `ADDRESS_GROUP` и `SERVICE`, для `remote` — `ADDRESS_GROUP`, `SERVICE`, `FQDN` и `CIDR`.
+
+:::info Общие поля всех комбинаций
+Независимо от типа эндпоинтов каждое правило содержит:
+- `metadata.name`, `metadata.namespace` — обязательные идентификаторы
+- `spec.action` — `ALLOW` или `DENY` (обязательно)
+- `spec.session.traffic` — `BOTH`, `INGRESS` или `EGRESS`
+:::
+
+:::warning Блок transport зависит от комбинации эндпоинтов и направления трафика
+Если одна из сторон правила — ресурс Service, то `transport` может наследоваться из его `transports`:
+
+| Комбинация | Traffic | transport в правиле |
+|---|---|---|
+| AG → AG | любой | **обязателен** |
+| AG → SVC | egress / both | не нужен (из remote Service) |
+| AG → SVC | ingress | **обязателен** |
+| SVC → AG | egress / both | **обязателен** |
+| SVC → AG | ingress | не нужен (из local Service) |
+| SVC → SVC | любой | не нужен (из обоих Service) |
+| AG → FQDN | любой | **обязателен** |
+| SVC → FQDN | любой | **обязателен** |
+| AG → CIDR | любой | **обязателен** |
+| SVC → CIDR | любой | **обязателен** |
+:::
+
+---
+
+## Upsert
+
+<ApiOperation method="POST" endpoint="/v1/rules/upsert">
+
+Создаёт новое правило или обновляет существующее. Тип правила определяется комбинацией `endpoints.local.type` и `endpoints.remote.type` (oneOf):
+
+<Tabs>
+
+<TabItem value="ag-ag" label="AG → AG" default>
+<AgAg />
+</TabItem>
+
+<TabItem value="ag-svc" label="AG → Service">
+<AgSvc />
+</TabItem>
+
+<TabItem value="svc-ag" label="Service → AG">
+<SvcAg />
+</TabItem>
+
+<TabItem value="svc-svc" label="Service → Service">
+<SvcSvc />
+</TabItem>
+
+<TabItem value="ag-fqdn" label="AG → FQDN">
+<AgFqdn />
+</TabItem>
+
+<TabItem value="svc-fqdn" label="Service → FQDN">
+<SvcFqdn />
+</TabItem>
+
+<TabItem value="ag-cidr" label="AG → CIDR">
+<AgCidr />
+</TabItem>
+
+<TabItem value="svc-cidr" label="Service → CIDR">
+<SvcCidr />
+</TabItem>
+
+</Tabs>
+
+<Codes codes={['invalidArgument', 'notFound', 'internal']} />
+
+</ApiOperation>
+
+---
+
+## Delete
+
+<ApiOperation method="POST" endpoint="/v1/rules/delete">
+
+Удаляет правило по `uid` или по комбинации `name` + `namespace`. Операция общая для всех типов правил.
+
+#### Тело запроса
+
+<table>
+  <thead>
+    <tr>
+      <th>Параметр</th>
+      <th>Обязательность</th>
+      <th>Тип</th>
+      <th>Описание</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><code>uid</code></td>
+      <td>нет*</td>
+      <td><code>string</code></td>
+      <td>{DICTIONARY.uid.short}</td>
+    </tr>
+    <tr>
+      <td><code>name</code></td>
+      <td>нет*</td>
+      <td><code>string</code></td>
+      <td>{DICTIONARY.name.short}</td>
+    </tr>
+    <tr>
+      <td><code>namespace</code></td>
+      <td>нет*</td>
+      <td><code>string</code></td>
+      <td>{DICTIONARY.namespace.short}</td>
+    </tr>
+  </tbody>
+</table>
+
+> *Необходимо указать `uid` **или** комбинацию `name` + `namespace`.
+
+#### Удаление по uid
+
+<CodeBlock language="bash">
+  {dedent`
+    curl -X POST http://localhost:9006/v1/rules/delete \\
+      -H 'Content-Type: application/json' \\
+      -d '{
+        "rules": [
+          {
+            "metadata": {
+              "uid": "c9d0e1f2-a3b4-5678-cdef-789012345678"
+            }
+          }
+        ]
+      }'
+  `}
+</CodeBlock>
+
+#### Удаление по name + namespace
+
+<CodeBlock language="bash">
+  {dedent`
+    curl -X POST http://localhost:9006/v1/rules/delete \\
+      -H 'Content-Type: application/json' \\
+      -d '{
+        "rules": [
+          {
+            "metadata": {
+              "name": "allow-web-to-db",
+              "namespace": "production"
+            }
+          }
+        ]
+      }'
+  `}
+</CodeBlock>
+
+#### Пример ответа
+
+<CodeBlock language="json">
+  {dedent`
+    {}
+  `}
+</CodeBlock>
+
+<Restrictions items={[
+  { label: 'delete', rules: RESTRICTIONS.deleteWithNamespace },
+]} />
+
+<Codes codes={['invalidArgument', 'notFound', 'internal']} />
+
+</ApiOperation>
+
+---
+
+## List
+
+<ApiOperation method="POST" endpoint="/v1/rules/list">
+
+Возвращает список правил с возможностью фильтрации. Ответ содержит правила всех типов.
+
+#### Тело запроса
+
+<table>
+  <thead>
+    <tr>
+      <th>Параметр</th>
+      <th>Обязательность</th>
+      <th>Тип</th>
+      <th>Описание</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><code>selectors[].fieldSelector.name</code></td>
+      <td>нет</td>
+      <td><code>string</code></td>
+      <td>{DICTIONARY.fieldSelector.short}</td>
+    </tr>
+    <tr>
+      <td><code>selectors[].fieldSelector.namespace</code></td>
+      <td>нет</td>
+      <td><code>string</code></td>
+      <td>{DICTIONARY.namespace.short}</td>
+    </tr>
+    <tr>
+      <td><code>selectors[].labelSelector</code></td>
+      <td>нет</td>
+      <td><code>map&lt;string, string&gt;</code></td>
+      <td>{DICTIONARY.labelSelector.short}</td>
+    </tr>
+  </tbody>
+</table>
+
+#### Пример запроса
+
+<CodeBlock language="bash">
+  {dedent`
+    curl -X POST http://localhost:9006/v1/rules/list \\
+      -H 'Content-Type: application/json' \\
+      -d '{
+        "selectors": [
+          {
+            "fieldSelector": {
+              "namespace": "production"
+            },
+            "labelSelector": {
+              "policy": "web-access"
+            }
+          }
+        ]
+      }'
+  `}
+</CodeBlock>
+
+#### Поля ответа
+
+<table>
+  <thead>
+    <tr>
+      <th>Поле</th>
+      <th>Тип</th>
+      <th>Описание</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><code>resourceVersion</code></td>
+      <td><code>string</code></td>
+      <td>{DICTIONARY.resourceVersion.short}</td>
+    </tr>
+  </tbody>
+</table>
+
+#### Пример ответа
+
+<CodeBlock language="json">
+  {dedent`
+    {
+      "resourceVersion": "42",
+      "rules": [
+        {
+          "metadata": {
+            "uid": "c9d0e1f2-a3b4-5678-cdef-789012345678",
+            "name": "allow-web-to-db",
+            "namespace": "production",
+            "labels": {
+              "policy": "web-access"
+            },
+            "creationTimestamp": "2025-01-15T10:40:00Z",
+            "resourceVersion": "1"
+          },
+          "spec": {
+            "displayName": "Allow Web to DB",
+            "action": "ALLOW",
+            "session": {
+              "traffic": "EGRESS"
+            },
+            "endpoints": {
+              "local": {
+                "name": "web-servers",
+                "namespace": "production",
+                "type": "ADDRESS_GROUP"
+              },
+              "remote": {
+                "name": "db-servers",
+                "namespace": "production",
+                "type": "ADDRESS_GROUP"
+              }
+            },
+            "transport": {
+              "protocol": "TCP",
+              "IPv": "IPv4",
+              "entries": [
+                {
+                  "description": "PostgreSQL",
+                  "ports": "5432"
+                }
+              ]
+            }
+          }
+        }
+      ]
+    }
+  `}
+</CodeBlock>
+
+<Restrictions items={[
+  { label: 'selectors', rules: RESTRICTIONS.selectors },
+]} />
+
+<Codes codes={['invalidArgument', 'internal']} />
+
+</ApiOperation>
+
+---
+
+## Watch
+
+<ApiOperation method="POST" endpoint="/v1/rules/watch">
+
+Серверный стриминг — возвращает поток изменений правил в реальном времени.
+
+#### Тело запроса
+
+<table>
+  <thead>
+    <tr>
+      <th>Параметр</th>
+      <th>Обязательность</th>
+      <th>Тип</th>
+      <th>Описание</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><code>selectors[].fieldSelector.name</code></td>
+      <td>нет</td>
+      <td><code>string</code></td>
+      <td>{DICTIONARY.fieldSelector.short}</td>
+    </tr>
+    <tr>
+      <td><code>selectors[].fieldSelector.namespace</code></td>
+      <td>нет</td>
+      <td><code>string</code></td>
+      <td>{DICTIONARY.namespace.short}</td>
+    </tr>
+    <tr>
+      <td><code>selectors[].labelSelector</code></td>
+      <td>нет</td>
+      <td><code>map&lt;string, string&gt;</code></td>
+      <td>{DICTIONARY.labelSelector.short}</td>
+    </tr>
+    <tr>
+      <td><code>resourceVersion</code></td>
+      <td>нет</td>
+      <td><code>string</code></td>
+      <td>{DICTIONARY.resourceVersion.short}</td>
+    </tr>
+  </tbody>
+</table>
+
+#### Пример запроса
+
+<CodeBlock language="bash">
+  {dedent`
+    curl -X POST http://localhost:9006/v1/rules/watch \\
+      -H 'Content-Type: application/json' \\
+      -d '{
+        "selectors": [
+          {
+            "fieldSelector": {
+              "namespace": "production"
+            }
+          }
+        ],
+        "resourceVersion": "0"
+      }'
+  `}
+</CodeBlock>
+
+#### Пример ответа
+
+<CodeBlock language="json">
+  {dedent`
+    {
+      "type": "MODIFIED",
+      "rules": [
+        {
+          "metadata": {
+            "uid": "c9d0e1f2-a3b4-5678-cdef-789012345678",
+            "name": "allow-web-to-db",
+            "namespace": "production",
+            "labels": {
+              "policy": "web-access"
+            },
+            "resourceVersion": "2"
+          },
+          "spec": {
+            "displayName": "Allow Web to DB",
+            "comment": "Разрешить трафик от веб-серверов к БД (обновлено)",
+            "action": "ALLOW",
+            "session": {
+              "traffic": "BOTH"
+            },
+            "endpoints": {
+              "local": {
+                "name": "web-servers",
+                "namespace": "production",
+                "type": "ADDRESS_GROUP"
+              },
+              "remote": {
+                "name": "db-servers",
+                "namespace": "production",
+                "type": "ADDRESS_GROUP"
+              }
+            },
+            "transport": {
+              "protocol": "TCP",
+              "IPv": "IPv4",
+              "entries": [
+                {
+                  "description": "PostgreSQL",
+                  "ports": "5432"
+                },
+                {
+                  "description": "PostgreSQL Replication",
+                  "ports": "5433"
+                }
+              ]
+            }
+          }
+        }
+      ]
+    }
+  `}
+</CodeBlock>
+
+<Restrictions items={[
+  { label: 'selectors', rules: RESTRICTIONS.selectors },
+]} />
+
+<Codes codes={['invalidArgument', 'internal']} />
+
+</ApiOperation>

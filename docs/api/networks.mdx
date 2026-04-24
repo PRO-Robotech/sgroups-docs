@@ -1,0 +1,483 @@
+---
+id: networks
+sidebar_position: 5
+title: Networks
+---
+
+import { DICTIONARY } from '@site/src/constants/dictionary'
+import { RESTRICTIONS } from '@site/src/constants/restrictions'
+import { Restrictions } from '@site/src/components/commonBlocks/Restrictions'
+import { Codes } from '@site/src/components/commonBlocks/Codes'
+import CodeBlock from '@theme/CodeBlock'
+import dedent from 'ts-dedent'
+import { ApiOperation } from '@site/src/components/commonBlocks/ApiOperation'
+
+# Networks
+
+Сети описывают сетевые подсети в формате CIDR. Используются для привязки к группам адресов через Network Bindings.
+
+---
+
+## Upsert
+
+<ApiOperation method="POST" endpoint="/v1/networks/upsert">
+
+Создаёт новую сеть или обновляет существующую.
+
+#### Тело запроса
+
+<table>
+  <thead>
+    <tr>
+      <th>Параметр</th>
+      <th>Обязательность</th>
+      <th>Тип</th>
+      <th>Описание</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><code>metadata.name</code></td>
+      <td>да</td>
+      <td><code>string</code></td>
+      <td>{DICTIONARY.name.short}</td>
+    </tr>
+    <tr>
+      <td><code>metadata.namespace</code></td>
+      <td>да</td>
+      <td><code>string</code></td>
+      <td>{DICTIONARY.namespace.short}</td>
+    </tr>
+    <tr>
+      <td><code>metadata.labels</code></td>
+      <td>нет</td>
+      <td><code>map&lt;string, string&gt;</code></td>
+      <td>{DICTIONARY.labels.short}</td>
+    </tr>
+    <tr>
+      <td><code>metadata.annotations</code></td>
+      <td>нет</td>
+      <td><code>map&lt;string, string&gt;</code></td>
+      <td>{DICTIONARY.annotations.short}</td>
+    </tr>
+    <tr>
+      <td><code>spec.displayName</code></td>
+      <td>нет</td>
+      <td><code>string</code></td>
+      <td>{DICTIONARY.displayName.short}</td>
+    </tr>
+    <tr>
+      <td><code>spec.comment</code></td>
+      <td>нет</td>
+      <td><code>string</code></td>
+      <td>{DICTIONARY.comment.short}</td>
+    </tr>
+    <tr>
+      <td><code>spec.description</code></td>
+      <td>нет</td>
+      <td><code>string</code></td>
+      <td>{DICTIONARY.description.short}</td>
+    </tr>
+    <tr>
+      <td><code>spec.CIDR</code></td>
+      <td><strong>да</strong></td>
+      <td><code>string</code></td>
+      <td>{DICTIONARY.cidr.short}</td>
+    </tr>
+  </tbody>
+</table>
+
+#### Пример запроса
+
+<CodeBlock language="bash">
+  {dedent`
+    curl -X POST http://localhost:9006/v1/networks/upsert \\
+      -H 'Content-Type: application/json' \\
+      -d '{
+        "networks": [
+          {
+            "metadata": {
+              "name": "internal-net",
+              "namespace": "production",
+              "labels": {
+                "zone": "internal"
+              }
+            },
+            "spec": {
+              "displayName": "Internal Network",
+              "comment": "Внутренняя сеть",
+              "description": "Внутренняя сеть продуктивного окружения",
+              "CIDR": "10.0.0.0/24"
+            }
+          }
+        ]
+      }'
+  `}
+</CodeBlock>
+
+#### Пример ответа
+
+<CodeBlock language="json">
+  {dedent`
+    {
+      "networks": [
+        {
+          "metadata": {
+            "uid": "d4e5f6a7-b8c9-0123-defa-234567890123",
+            "name": "internal-net",
+            "namespace": "production",
+            "labels": {
+              "zone": "internal"
+            },
+            "creationTimestamp": "2025-01-15T10:15:00Z",
+            "resourceVersion": "1"
+          },
+          "spec": {
+            "displayName": "Internal Network",
+            "comment": "Внутренняя сеть",
+            "description": "Внутренняя сеть продуктивного окружения",
+            "CIDR": "10.0.0.0/24"
+          }
+        }
+      ]
+    }
+  `}
+</CodeBlock>
+
+<Restrictions items={[
+  { label: 'metadata / spec', rules: RESTRICTIONS.metadataRequired },
+  { label: 'upsert batch', rules: RESTRICTIONS.upsertBatch },
+  { label: 'metadata.name', rules: RESTRICTIONS.name },
+  { label: 'metadata.namespace', rules: RESTRICTIONS.namespace },
+  { label: 'spec.displayName', rules: RESTRICTIONS.displayName },
+  { label: 'spec.CIDR', rules: RESTRICTIONS.cidr },
+]} />
+
+<Codes codes={['invalidArgument', 'notFound', 'internal']} />
+
+</ApiOperation>
+
+---
+
+## Delete
+
+<ApiOperation method="POST" endpoint="/v1/networks/delete">
+
+Удаляет сеть по `uid` или по комбинации `name` + `namespace`.
+
+#### Тело запроса
+
+<table>
+  <thead>
+    <tr>
+      <th>Параметр</th>
+      <th>Обязательность</th>
+      <th>Тип</th>
+      <th>Описание</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><code>uid</code></td>
+      <td>нет*</td>
+      <td><code>string</code></td>
+      <td>{DICTIONARY.uid.short}</td>
+    </tr>
+    <tr>
+      <td><code>name</code></td>
+      <td>нет*</td>
+      <td><code>string</code></td>
+      <td>{DICTIONARY.name.short}</td>
+    </tr>
+    <tr>
+      <td><code>namespace</code></td>
+      <td>нет*</td>
+      <td><code>string</code></td>
+      <td>{DICTIONARY.namespace.short}</td>
+    </tr>
+  </tbody>
+</table>
+
+> *Необходимо указать `uid` **или** комбинацию `name` + `namespace`.
+
+#### Пример запроса
+
+<CodeBlock language="bash">
+  {dedent`
+    curl -X POST http://localhost:9006/v1/networks/delete \\
+      -H 'Content-Type: application/json' \\
+      -d '{
+        "networks": [
+          {
+            "metadata": {
+              "name": "internal-net",
+              "namespace": "production"
+            }
+          }
+        ]
+      }'
+  `}
+</CodeBlock>
+
+#### Пример ответа
+
+<CodeBlock language="json">
+  {dedent`
+    {}
+  `}
+</CodeBlock>
+
+<Restrictions items={[
+  { label: 'delete', rules: RESTRICTIONS.deleteWithNamespace },
+]} />
+
+<Codes codes={['invalidArgument', 'notFound', 'internal']} />
+
+</ApiOperation>
+
+---
+
+## List
+
+<ApiOperation method="POST" endpoint="/v1/networks/list">
+
+Возвращает список сетей с возможностью фильтрации.
+
+#### Тело запроса
+
+<table>
+  <thead>
+    <tr>
+      <th>Параметр</th>
+      <th>Обязательность</th>
+      <th>Тип</th>
+      <th>Описание</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><code>selector.fieldSelector.name</code></td>
+      <td>нет</td>
+      <td><code>string</code></td>
+      <td>{DICTIONARY.fieldSelector.short}</td>
+    </tr>
+    <tr>
+      <td><code>selector.fieldSelector.namespace</code></td>
+      <td>нет</td>
+      <td><code>string</code></td>
+      <td>{DICTIONARY.namespace.short}</td>
+    </tr>
+    <tr>
+      <td><code>selector.labelSelector.match_labels</code></td>
+      <td>нет</td>
+      <td><code>map&lt;string, string&gt;</code></td>
+      <td>{DICTIONARY.labelSelector.short}</td>
+    </tr>
+  </tbody>
+</table>
+
+#### Пример запроса
+
+<CodeBlock language="bash">
+  {dedent`
+    curl -X POST http://localhost:9006/v1/networks/list \\
+      -H 'Content-Type: application/json' \\
+      -d '{
+        "selectors": [
+          {
+            "fieldSelector": {
+              "namespace": "production"
+            }
+          }
+        ]
+      }'
+  `}
+</CodeBlock>
+
+#### Поля ответа
+
+<table>
+  <thead>
+    <tr>
+      <th>Поле</th>
+      <th>Тип</th>
+      <th>Описание</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><code>resourceVersion</code></td>
+      <td><code>string</code></td>
+      <td>{DICTIONARY.resourceVersion.short}</td>
+    </tr>
+    <tr>
+      <td><code>refs[]</code></td>
+      <td><code>ResourceRef[]</code></td>
+      <td>{DICTIONARY.refs.short}</td>
+    </tr>
+  </tbody>
+</table>
+
+#### Пример ответа
+
+<CodeBlock language="json">
+  {dedent`
+    {
+      "resourceVersion": "42",
+      "networks": [
+        {
+          "metadata": {
+            "uid": "d4e5f6a7-b8c9-0123-defa-234567890123",
+            "name": "internal-net",
+            "namespace": "production",
+            "labels": {
+              "zone": "internal"
+            },
+            "creationTimestamp": "2025-01-15T10:15:00Z",
+            "resourceVersion": "1"
+          },
+          "spec": {
+            "displayName": "Internal Network",
+            "comment": "Внутренняя сеть",
+            "description": "Внутренняя сеть продуктивного окружения",
+            "CIDR": "10.0.0.0/24"
+          },
+          "refs": [
+            {
+              "name": "web-servers",
+              "namespace": "production",
+              "resType": "AddressGroup"
+            }
+          ]
+        }
+      ]
+    }
+  `}
+</CodeBlock>
+
+<Restrictions items={[
+  { label: 'selectors', rules: RESTRICTIONS.selectors },
+]} />
+
+<Codes codes={['invalidArgument', 'internal']} />
+
+</ApiOperation>
+
+---
+
+## Watch
+
+<ApiOperation method="POST" endpoint="/v1/networks/watch">
+
+Серверный стриминг — возвращает поток изменений сетей в реальном времени.
+
+#### Тело запроса
+
+<table>
+  <thead>
+    <tr>
+      <th>Параметр</th>
+      <th>Обязательность</th>
+      <th>Тип</th>
+      <th>Описание</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><code>selector.fieldSelector.name</code></td>
+      <td>нет</td>
+      <td><code>string</code></td>
+      <td>{DICTIONARY.fieldSelector.short}</td>
+    </tr>
+    <tr>
+      <td><code>selector.fieldSelector.namespace</code></td>
+      <td>нет</td>
+      <td><code>string</code></td>
+      <td>{DICTIONARY.namespace.short}</td>
+    </tr>
+    <tr>
+      <td><code>selector.labelSelector.match_labels</code></td>
+      <td>нет</td>
+      <td><code>map&lt;string, string&gt;</code></td>
+      <td>{DICTIONARY.labelSelector.short}</td>
+    </tr>
+    <tr>
+      <td><code>resource_version</code></td>
+      <td>нет</td>
+      <td><code>int64</code></td>
+      <td>{DICTIONARY.resourceVersion.short}</td>
+    </tr>
+  </tbody>
+</table>
+
+#### Пример запроса
+
+<CodeBlock language="bash">
+  {dedent`
+    curl -X POST http://localhost:9006/v1/networks/watch \\
+      -H 'Content-Type: application/json' \\
+      -d '{
+        "resourceVersion": "0"
+      }'
+  `}
+</CodeBlock>
+
+#### Поля ответа
+
+<table>
+  <thead>
+    <tr>
+      <th>Поле</th>
+      <th>Тип</th>
+      <th>Описание</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><code>refs[]</code></td>
+      <td><code>ResourceRef[]</code></td>
+      <td>{DICTIONARY.refs.short}</td>
+    </tr>
+  </tbody>
+</table>
+
+#### Пример ответа
+
+<CodeBlock language="json">
+  {dedent`
+    {
+      "type": "MODIFIED",
+      "networks": [
+        {
+          "metadata": {
+            "uid": "d4e5f6a7-b8c9-0123-defa-234567890123",
+            "name": "internal-net",
+            "namespace": "production",
+            "resourceVersion": "2"
+          },
+          "spec": {
+            "displayName": "Internal Network",
+            "comment": "Внутренняя сеть (обновлено)",
+            "description": "Внутренняя сеть продуктивного окружения",
+            "CIDR": "10.0.0.0/16"
+          },
+          "refs": [
+            {
+              "name": "web-servers",
+              "namespace": "production",
+              "resType": "AddressGroup"
+            }
+          ]
+        }
+      ]
+    }
+  `}
+</CodeBlock>
+
+<Restrictions items={[
+  { label: 'selectors', rules: RESTRICTIONS.selectors },
+]} />
+
+<Codes codes={['invalidArgument', 'internal']} />
+
+</ApiOperation>

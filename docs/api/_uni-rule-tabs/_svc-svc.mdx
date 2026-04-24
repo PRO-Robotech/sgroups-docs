@@ -1,0 +1,167 @@
+import { DICTIONARY } from '@site/src/constants/dictionary'
+import { RESTRICTIONS } from '@site/src/constants/restrictions'
+import { Restrictions } from '@site/src/components/commonBlocks/Restrictions'
+import Tabs from '@theme/Tabs'
+import TabItem from '@theme/TabItem'
+import CodeBlock from '@theme/CodeBlock'
+import dedent from 'ts-dedent'
+
+Обе стороны — сервисы (`SERVICE`). Транспортная конфигурация берётся из ресурсов Service обеих сторон — блок `transport` **не указывается**.
+
+:::info Transport не указывается
+Блок `spec.transport` отсутствует. Протоколы, порты и ICMP-типы определяются полем `transports` ресурсов Service, на которые ссылаются `local` и `remote`.
+:::
+
+<table>
+  <thead>
+    <tr>
+      <th>Параметр</th>
+      <th>Обязательность</th>
+      <th>Тип</th>
+      <th>Описание</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><code>metadata.name</code></td>
+      <td>да</td>
+      <td><code>string</code></td>
+      <td>{DICTIONARY.name.short}</td>
+    </tr>
+    <tr>
+      <td><code>metadata.namespace</code></td>
+      <td>да</td>
+      <td><code>string</code></td>
+      <td>{DICTIONARY.namespace.short}</td>
+    </tr>
+    <tr>
+      <td><code>spec.action</code></td>
+      <td><strong>да</strong></td>
+      <td><code>Enum("ALLOW", "DENY")</code></td>
+      <td>{DICTIONARY.action.short}</td>
+    </tr>
+    <tr>
+      <td><code>spec.session.traffic</code></td>
+      <td>нет</td>
+      <td><code>Enum("BOTH", "INGRESS", "EGRESS")</code></td>
+      <td>{DICTIONARY.traffic.short}</td>
+    </tr>
+    <tr>
+      <td><code>spec.endpoints.local.name</code></td>
+      <td>да</td>
+      <td><code>string</code></td>
+      <td>{DICTIONARY.endpointName.short}</td>
+    </tr>
+    <tr>
+      <td><code>spec.endpoints.local.namespace</code></td>
+      <td>да</td>
+      <td><code>string</code></td>
+      <td>{DICTIONARY.endpointNamespace.short}</td>
+    </tr>
+    <tr>
+      <td><code>spec.endpoints.local.type</code></td>
+      <td>да</td>
+      <td><code>Enum("SERVICE")</code></td>
+      <td>{DICTIONARY.endpointType.short}</td>
+    </tr>
+    <tr>
+      <td><code>spec.endpoints.remote.name</code></td>
+      <td>да</td>
+      <td><code>string</code></td>
+      <td>{DICTIONARY.endpointName.short}</td>
+    </tr>
+    <tr>
+      <td><code>spec.endpoints.remote.namespace</code></td>
+      <td>да</td>
+      <td><code>string</code></td>
+      <td>{DICTIONARY.endpointNamespace.short}</td>
+    </tr>
+    <tr>
+      <td><code>spec.endpoints.remote.type</code></td>
+      <td>да</td>
+      <td><code>Enum("SERVICE")</code></td>
+      <td>{DICTIONARY.endpointType.short}</td>
+    </tr>
+  </tbody>
+</table>
+
+<CodeBlock language="bash">
+  {dedent`
+    curl -X POST http://localhost:9006/v1/rules/upsert \\
+      -H 'Content-Type: application/json' \\
+      -d '{
+        "rules": [
+          {
+            "metadata": {
+              "name": "allow-api-to-cache",
+              "namespace": "production"
+            },
+            "spec": {
+              "action": "ALLOW",
+              "session": {
+                "traffic": "BOTH"
+              },
+              "endpoints": {
+                "local": {
+                  "name": "api-service",
+                  "namespace": "production",
+                  "type": "SERVICE"
+                },
+                "remote": {
+                  "name": "cache-service",
+                  "namespace": "production",
+                  "type": "SERVICE"
+                }
+              }
+            }
+          }
+        ]
+      }'
+  `}
+</CodeBlock>
+
+**Ответ:**
+
+<CodeBlock language="json">
+  {dedent`
+    {
+      "rules": [
+        {
+          "metadata": {
+            "uid": "e5f6a7b8-c9d0-1234-ef01-23456789abcd",
+            "name": "allow-api-to-cache",
+            "namespace": "production",
+            "creationTimestamp": "2025-01-15T11:20:00Z",
+            "resourceVersion": "1"
+          },
+          "spec": {
+            "action": "ALLOW",
+            "session": {
+              "traffic": "BOTH"
+            },
+            "endpoints": {
+              "local": {
+                "name": "api-service",
+                "namespace": "production",
+                "type": "SERVICE"
+              },
+              "remote": {
+                "name": "cache-service",
+                "namespace": "production",
+                "type": "SERVICE"
+              }
+            }
+          }
+        }
+      ]
+    }
+  `}
+</CodeBlock>
+
+<Restrictions items={[
+  { label: 'metadata / spec', rules: RESTRICTIONS.metadataRequired },
+  { label: 'metadata.name', rules: RESTRICTIONS.name },
+  { label: 'spec.action', rules: RESTRICTIONS.action },
+  { label: 'endpoints.*.type', rules: RESTRICTIONS.endpointType },
+]} />
+

@@ -1,0 +1,253 @@
+---
+id: overview
+sidebar_position: 1
+title: Обзор API
+---
+
+import { DICTIONARY } from '@site/src/constants/dictionary'
+import { RESTRICTIONS } from '@site/src/constants/restrictions'
+import { Restrictions } from '@site/src/components/commonBlocks/Restrictions'
+import { Codes } from '@site/src/components/commonBlocks/Codes'
+import CodeBlock from '@theme/CodeBlock'
+import dedent from 'ts-dedent'
+
+# Обзор API
+
+SGroups предоставляет единый API для управления сетевыми группами безопасности. API доступен по двум транспортам:
+
+- **gRPC** — основной протокол, определённый через Protocol Buffers
+- **REST** — автоматически сгенерированный через gRPC-Gateway, доступен по префиксу `/v1/*`
+
+## Базовый URL
+
+<CodeBlock>
+  {dedent`
+    # REST (gRPC-Gateway)
+    http://localhost:9006/v1/
+
+    # gRPC
+    localhost:9000
+  `}
+</CodeBlock>
+
+## Аутентификация
+
+Все запросы к API должны содержать заголовок аутентификации. Конкретный механизм аутентификации зависит от конфигурации развёртывания.
+
+<CodeBlock language="bash">
+  {dedent`
+    curl -H 'Authorization: Bearer <token>' http://localhost:9006/v1/namespaces/list
+  `}
+</CodeBlock>
+
+## Ресурсная модель
+
+API следует ресурсной модели, аналогичной Kubernetes. Каждый ресурс состоит из двух основных частей:
+
+### Metadata
+
+Метаданные присутствуют у каждого ресурса:
+
+<table>
+  <thead>
+    <tr>
+      <th>Поле</th>
+      <th>Тип</th>
+      <th>Описание</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><code>uid</code></td>
+      <td><code>string</code></td>
+      <td>{DICTIONARY.uid.short}</td>
+    </tr>
+    <tr>
+      <td><code>name</code></td>
+      <td><code>string</code></td>
+      <td>{DICTIONARY.name.short}</td>
+    </tr>
+    <tr>
+      <td><code>namespace</code></td>
+      <td><code>string</code></td>
+      <td>{DICTIONARY.namespace.short}</td>
+    </tr>
+    <tr>
+      <td><code>labels</code></td>
+      <td><code>map&lt;string, string&gt;</code></td>
+      <td>{DICTIONARY.labels.short}</td>
+    </tr>
+    <tr>
+      <td><code>annotations</code></td>
+      <td><code>map&lt;string, string&gt;</code></td>
+      <td>{DICTIONARY.annotations.short}</td>
+    </tr>
+    <tr>
+      <td><code>creation_timestamp</code></td>
+      <td><code>Timestamp</code></td>
+      <td>Время создания ресурса (только для чтения)</td>
+    </tr>
+    <tr>
+      <td><code>resource_version</code></td>
+      <td><code>int64</code></td>
+      <td>{DICTIONARY.resourceVersion.short}</td>
+    </tr>
+  </tbody>
+</table>
+
+### Spec
+
+Специфичные для ресурса поля, определяющие его конфигурацию.
+
+## Типы ресурсов
+
+<table>
+  <thead>
+    <tr>
+      <th>Ресурс</th>
+      <th>Описание</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><strong>Namespace</strong></td>
+      <td>Пространство имён для логической изоляции ресурсов</td>
+    </tr>
+    <tr>
+      <td><strong>Address Group</strong></td>
+      <td>Группа безопасности с политикой по умолчанию</td>
+    </tr>
+    <tr>
+      <td><strong>Host</strong></td>
+      <td>Управляемый узел инфраструктуры</td>
+    </tr>
+    <tr>
+      <td><strong>Network</strong></td>
+      <td>Сетевая подсеть (CIDR)</td>
+    </tr>
+    <tr>
+      <td><strong>Service</strong></td>
+      <td>Описание сетевого сервиса (порты и протоколы)</td>
+    </tr>
+    <tr>
+      <td><strong>Host Binding</strong></td>
+      <td>Привязка хоста к группе безопасности</td>
+    </tr>
+    <tr>
+      <td><strong>Network Binding</strong></td>
+      <td>Привязка сети к группе безопасности</td>
+    </tr>
+    <tr>
+      <td><strong>Service Binding</strong></td>
+      <td>Привязка сервиса к группе безопасности</td>
+    </tr>
+    <tr>
+      <td><strong>Rule</strong></td>
+      <td>Правило сетевого доступа между группами</td>
+    </tr>
+  </tbody>
+</table>
+
+## Стандартные операции
+
+Для каждого ресурса доступен набор стандартных операций:
+
+### Upsert (создание / обновление)
+
+<span className="api-method api-method--post">POST</span> <code className="api-endpoint">/v1/&#123;resource&#125;/upsert</code>
+
+Создаёт ресурс или обновляет существующий. Если ресурс с указанным `name` и `namespace` уже существует — он будет обновлён.
+
+### Delete (удаление)
+
+<span className="api-method api-method--post">POST</span> <code className="api-endpoint">/v1/&#123;resource&#125;/delete</code>
+
+Удаляет ресурс по `uid` или комбинации `name` + `namespace`.
+
+### List (получение списка)
+
+<span className="api-method api-method--post">POST</span> <code className="api-endpoint">/v1/&#123;resource&#125;/list</code>
+
+Возвращает список ресурсов с фильтрацией через селекторы.
+
+### Watch (наблюдение за изменениями)
+
+<span className="api-method api-method--post">POST</span> <code className="api-endpoint">/v1/&#123;resource&#125;/watch</code>
+
+Серверный стриминг (server-side streaming) — возвращает поток изменений ресурсов в реальном времени.
+
+## Селекторы
+
+Операции List и Watch поддерживают фильтрацию через селекторы:
+
+### FieldSelector
+
+Фильтрация по полям ресурса:
+
+<table>
+  <thead>
+    <tr>
+      <th>Поле</th>
+      <th>Тип</th>
+      <th>Описание</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><code>name</code></td>
+      <td><code>string</code></td>
+      <td>{DICTIONARY.fieldSelector.short}</td>
+    </tr>
+    <tr>
+      <td><code>namespace</code></td>
+      <td><code>string</code></td>
+      <td>{DICTIONARY.namespace.short}</td>
+    </tr>
+  </tbody>
+</table>
+
+### LabelSelector
+
+Фильтрация по меткам:
+
+<table>
+  <thead>
+    <tr>
+      <th>Поле</th>
+      <th>Тип</th>
+      <th>Описание</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><code>match_labels</code></td>
+      <td><code>map&lt;string, string&gt;</code></td>
+      <td>{DICTIONARY.labelSelector.short}</td>
+    </tr>
+  </tbody>
+</table>
+
+## Watch и resource_version
+
+Механизм Watch позволяет получать изменения ресурсов в реальном времени:
+
+1. Клиент отправляет запрос Watch с опциональным `resource_version`
+2. Если `resource_version` указан — сервер отправляет все изменения, произошедшие после этой версии
+3. Если не указан — сервер начинает с текущего состояния и далее отправляет изменения
+4. Каждое событие содержит обновлённый `resource_version` для отслеживания позиции
+
+<CodeBlock language="json">
+  {dedent`
+    {
+      "resource": {
+        "metadata": {
+          "resourceVersion": "42"
+        }
+      }
+    }
+  `}
+</CodeBlock>
+
+## Коды ошибок
+
+<Codes codes={['ok', 'invalidArgument', 'notFound', 'alreadyExists', 'permissionDenied', 'unauthenticated', 'internal']} />

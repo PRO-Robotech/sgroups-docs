@@ -1,0 +1,705 @@
+---
+id: hosts
+sidebar_position: 4
+title: Hosts
+---
+
+import { DICTIONARY } from '@site/src/constants/dictionary'
+import { RESTRICTIONS } from '@site/src/constants/restrictions'
+import { Restrictions } from '@site/src/components/commonBlocks/Restrictions'
+import { Codes } from '@site/src/components/commonBlocks/Codes'
+import CodeBlock from '@theme/CodeBlock'
+import dedent from 'ts-dedent'
+import { ApiOperation } from '@site/src/components/commonBlocks/ApiOperation'
+
+# Hosts
+
+Хосты представляют управляемые узлы инфраструктуры. Помимо стандартных операций, доступны специальные эндпоинты для обновления IP-адресов и метаинформации.
+
+---
+
+## Upsert
+
+<ApiOperation method="POST" endpoint="/v1/hosts/upsert">
+
+Создаёт новый хост или обновляет существующий.
+
+#### Тело запроса
+
+<table>
+  <thead>
+    <tr>
+      <th>Параметр</th>
+      <th>Обязательность</th>
+      <th>Тип</th>
+      <th>Описание</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><code>metadata.name</code></td>
+      <td>да</td>
+      <td><code>string</code></td>
+      <td>{DICTIONARY.name.short}</td>
+    </tr>
+    <tr>
+      <td><code>metadata.namespace</code></td>
+      <td>да</td>
+      <td><code>string</code></td>
+      <td>{DICTIONARY.namespace.short}</td>
+    </tr>
+    <tr>
+      <td><code>metadata.labels</code></td>
+      <td>нет</td>
+      <td><code>map&lt;string, string&gt;</code></td>
+      <td>{DICTIONARY.labels.short}</td>
+    </tr>
+    <tr>
+      <td><code>metadata.annotations</code></td>
+      <td>нет</td>
+      <td><code>map&lt;string, string&gt;</code></td>
+      <td>{DICTIONARY.annotations.short}</td>
+    </tr>
+    <tr>
+      <td><code>spec.displayName</code></td>
+      <td>нет</td>
+      <td><code>string</code></td>
+      <td>{DICTIONARY.displayName.short}</td>
+    </tr>
+    <tr>
+      <td><code>spec.comment</code></td>
+      <td>нет</td>
+      <td><code>string</code></td>
+      <td>{DICTIONARY.comment.short}</td>
+    </tr>
+    <tr>
+      <td><code>spec.description</code></td>
+      <td>нет</td>
+      <td><code>string</code></td>
+      <td>{DICTIONARY.description.short}</td>
+    </tr>
+  </tbody>
+</table>
+
+:::info Поля только для чтения
+Поля `ips` и `metaInfo` заполняются автоматически через специальные операции `upd-ips` и `upd-metainfo`, и не могут быть установлены через upsert.
+:::
+
+#### Пример запроса
+
+<CodeBlock language="bash">
+  {dedent`
+    curl -X POST http://localhost:9006/v1/hosts/upsert \\
+      -H 'Content-Type: application/json' \\
+      -d '{
+        "hosts": [
+          {
+            "metadata": {
+              "name": "node-01",
+              "namespace": "production",
+              "labels": {
+                "role": "worker"
+              }
+            },
+            "spec": {
+              "displayName": "Node 01",
+              "comment": "Рабочий узел",
+              "description": "Первый рабочий узел кластера"
+            }
+          }
+        ]
+      }'
+  `}
+</CodeBlock>
+
+#### Пример ответа
+
+<CodeBlock language="json">
+  {dedent`
+    {
+      "hosts": [
+        {
+          "metadata": {
+            "uid": "c3d4e5f6-a7b8-9012-cdef-123456789012",
+            "name": "node-01",
+            "namespace": "production",
+            "labels": {
+              "role": "worker"
+            },
+            "creationTimestamp": "2025-01-15T10:10:00Z",
+            "resourceVersion": "1"
+          },
+          "spec": {
+            "displayName": "Node 01",
+            "comment": "Рабочий узел",
+            "description": "Первый рабочий узел кластера"
+          }
+        }
+      ]
+    }
+  `}
+</CodeBlock>
+
+<Restrictions items={[
+  { label: 'metadata / spec', rules: RESTRICTIONS.metadataRequired },
+  { label: 'upsert batch', rules: RESTRICTIONS.upsertBatch },
+  { label: 'metadata.name', rules: RESTRICTIONS.name },
+  { label: 'metadata.namespace', rules: RESTRICTIONS.namespace },
+  { label: 'spec.displayName', rules: RESTRICTIONS.displayName },
+]} />
+
+<Codes codes={['invalidArgument', 'notFound', 'internal']} />
+
+</ApiOperation>
+
+---
+
+## Delete
+
+<ApiOperation method="POST" endpoint="/v1/hosts/delete">
+
+Удаляет хост по `uid` или по комбинации `name` + `namespace`.
+
+#### Тело запроса
+
+<table>
+  <thead>
+    <tr>
+      <th>Параметр</th>
+      <th>Обязательность</th>
+      <th>Тип</th>
+      <th>Описание</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><code>uid</code></td>
+      <td>нет*</td>
+      <td><code>string</code></td>
+      <td>{DICTIONARY.uid.short}</td>
+    </tr>
+    <tr>
+      <td><code>name</code></td>
+      <td>нет*</td>
+      <td><code>string</code></td>
+      <td>{DICTIONARY.name.short}</td>
+    </tr>
+    <tr>
+      <td><code>namespace</code></td>
+      <td>нет*</td>
+      <td><code>string</code></td>
+      <td>{DICTIONARY.namespace.short}</td>
+    </tr>
+  </tbody>
+</table>
+
+> *Необходимо указать `uid` **или** комбинацию `name` + `namespace`.
+
+#### Пример запроса
+
+<CodeBlock language="bash">
+  {dedent`
+    curl -X POST http://localhost:9006/v1/hosts/delete \\
+      -H 'Content-Type: application/json' \\
+      -d '{
+        "hosts": [
+          {
+            "metadata": {
+              "name": "node-01",
+              "namespace": "production"
+            }
+          }
+        ]
+      }'
+  `}
+</CodeBlock>
+
+#### Пример ответа
+
+<CodeBlock language="json">
+  {dedent`
+    {}
+  `}
+</CodeBlock>
+
+<Restrictions items={[
+  { label: 'delete', rules: RESTRICTIONS.deleteWithNamespace },
+]} />
+
+<Codes codes={['invalidArgument', 'notFound', 'internal']} />
+
+</ApiOperation>
+
+---
+
+## List
+
+<ApiOperation method="POST" endpoint="/v1/hosts/list">
+
+Возвращает список хостов с возможностью фильтрации. Ответ включает поля только для чтения: `ips` и `metaInfo`.
+
+#### Тело запроса
+
+<table>
+  <thead>
+    <tr>
+      <th>Параметр</th>
+      <th>Обязательность</th>
+      <th>Тип</th>
+      <th>Описание</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><code>selector.fieldSelector.name</code></td>
+      <td>нет</td>
+      <td><code>string</code></td>
+      <td>{DICTIONARY.fieldSelector.short}</td>
+    </tr>
+    <tr>
+      <td><code>selector.fieldSelector.namespace</code></td>
+      <td>нет</td>
+      <td><code>string</code></td>
+      <td>{DICTIONARY.namespace.short}</td>
+    </tr>
+    <tr>
+      <td><code>selector.labelSelector.match_labels</code></td>
+      <td>нет</td>
+      <td><code>map&lt;string, string&gt;</code></td>
+      <td>{DICTIONARY.labelSelector.short}</td>
+    </tr>
+  </tbody>
+</table>
+
+#### Пример запроса
+
+<CodeBlock language="bash">
+  {dedent`
+    curl -X POST http://localhost:9006/v1/hosts/list \\
+      -H 'Content-Type: application/json' \\
+      -d '{
+        "selectors": [
+          {
+            "fieldSelector": {
+              "namespace": "production"
+            }
+          }
+        ]
+      }'
+  `}
+</CodeBlock>
+
+#### Поля ответа
+
+<table>
+  <thead>
+    <tr>
+      <th>Поле</th>
+      <th>Тип</th>
+      <th>Описание</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><code>resourceVersion</code></td>
+      <td><code>string</code></td>
+      <td>{DICTIONARY.resourceVersion.short}</td>
+    </tr>
+    <tr>
+      <td><code>refs[]</code></td>
+      <td><code>ResourceRef[]</code></td>
+      <td>{DICTIONARY.refs.short}</td>
+    </tr>
+  </tbody>
+</table>
+
+#### Пример ответа
+
+<CodeBlock language="json">
+  {dedent`
+    {
+      "resourceVersion": "42",
+      "hosts": [
+        {
+          "metadata": {
+            "uid": "c3d4e5f6-a7b8-9012-cdef-123456789012",
+            "name": "node-01",
+            "namespace": "production",
+            "labels": {
+              "role": "worker"
+            },
+            "creationTimestamp": "2025-01-15T10:10:00Z",
+            "resourceVersion": "3"
+          },
+          "spec": {
+            "displayName": "Node 01",
+            "comment": "Рабочий узел",
+            "description": "Первый рабочий узел кластера"
+          },
+          "ips": {
+            "ipv4": [
+              "10.0.1.10",
+              "10.0.1.11"
+            ],
+            "ipv6": [
+              "fd00::1:10"
+            ]
+          },
+          "metaInfo": {
+            "hostName": "node-01.example.com",
+            "os": "linux",
+            "platform": "ubuntu",
+            "platformVersion": "22.04",
+            "kernelVersion": "5.15.0-91-generic",
+            "kernelArch": "x86_64"
+          },
+          "refs": [
+            {
+              "name": "web-servers",
+              "namespace": "production",
+              "resType": "AddressGroup"
+            }
+          ]
+        }
+      ]
+    }
+  `}
+</CodeBlock>
+
+<Restrictions items={[
+  { label: 'selectors', rules: RESTRICTIONS.selectors },
+]} />
+
+<Codes codes={['invalidArgument', 'internal']} />
+
+</ApiOperation>
+
+---
+
+## Watch
+
+<ApiOperation method="POST" endpoint="/v1/hosts/watch">
+
+Серверный стриминг — возвращает поток изменений хостов в реальном времени.
+
+#### Тело запроса
+
+<table>
+  <thead>
+    <tr>
+      <th>Параметр</th>
+      <th>Обязательность</th>
+      <th>Тип</th>
+      <th>Описание</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><code>selector.fieldSelector.name</code></td>
+      <td>нет</td>
+      <td><code>string</code></td>
+      <td>{DICTIONARY.fieldSelector.short}</td>
+    </tr>
+    <tr>
+      <td><code>selector.fieldSelector.namespace</code></td>
+      <td>нет</td>
+      <td><code>string</code></td>
+      <td>{DICTIONARY.namespace.short}</td>
+    </tr>
+    <tr>
+      <td><code>selector.labelSelector.match_labels</code></td>
+      <td>нет</td>
+      <td><code>map&lt;string, string&gt;</code></td>
+      <td>{DICTIONARY.labelSelector.short}</td>
+    </tr>
+    <tr>
+      <td><code>resource_version</code></td>
+      <td>нет</td>
+      <td><code>int64</code></td>
+      <td>{DICTIONARY.resourceVersion.short}</td>
+    </tr>
+  </tbody>
+</table>
+
+#### Пример запроса
+
+<CodeBlock language="bash">
+  {dedent`
+    curl -X POST http://localhost:9006/v1/hosts/watch \\
+      -H 'Content-Type: application/json' \\
+      -d '{
+        "resourceVersion": "0"
+      }'
+  `}
+</CodeBlock>
+
+#### Поля ответа
+
+<table>
+  <thead>
+    <tr>
+      <th>Поле</th>
+      <th>Тип</th>
+      <th>Описание</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><code>refs[]</code></td>
+      <td><code>ResourceRef[]</code></td>
+      <td>{DICTIONARY.refs.short}</td>
+    </tr>
+  </tbody>
+</table>
+
+#### Пример ответа
+
+<CodeBlock language="json">
+  {dedent`
+    {
+      "type": "MODIFIED",
+      "hosts": [
+        {
+          "metadata": {
+            "uid": "c3d4e5f6-a7b8-9012-cdef-123456789012",
+            "name": "node-01",
+            "namespace": "production",
+            "resourceVersion": "4"
+          },
+          "spec": {
+            "displayName": "Node 01",
+            "comment": "Рабочий узел",
+            "description": "Первый рабочий узел кластера"
+          },
+          "ips": {
+            "ipv4": [
+              "10.0.1.10",
+              "10.0.1.11",
+              "10.0.1.12"
+            ],
+            "ipv6": [
+              "fd00::1:10"
+            ]
+          },
+          "metaInfo": {
+            "hostName": "node-01.example.com",
+            "os": "linux",
+            "platform": "ubuntu",
+            "platformVersion": "22.04",
+            "kernelVersion": "5.15.0-91-generic",
+            "kernelArch": "x86_64"
+          },
+          "refs": [
+            {
+              "name": "web-servers",
+              "namespace": "production",
+              "resType": "AddressGroup"
+            }
+          ]
+        }
+      ]
+    }
+  `}
+</CodeBlock>
+
+<Restrictions items={[
+  { label: 'selectors', rules: RESTRICTIONS.selectors },
+]} />
+
+<Codes codes={['invalidArgument', 'internal']} />
+
+</ApiOperation>
+
+---
+
+## Обновление IP-адресов
+
+<ApiOperation method="POST" endpoint="/v1/hosts/upd-ips">
+
+Обновляет список IP-адресов хоста. Это специальная операция — поле `ips` доступно только для чтения через стандартный upsert.
+
+#### Тело запроса
+
+<table>
+  <thead>
+    <tr>
+      <th>Параметр</th>
+      <th>Обязательность</th>
+      <th>Тип</th>
+      <th>Описание</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><code>name</code></td>
+      <td>да</td>
+      <td><code>string</code></td>
+      <td>{DICTIONARY.name.short}</td>
+    </tr>
+    <tr>
+      <td><code>namespace</code></td>
+      <td>да</td>
+      <td><code>string</code></td>
+      <td>{DICTIONARY.namespace.short}</td>
+    </tr>
+    <tr>
+      <td><code>ips.ipv4</code></td>
+      <td>нет</td>
+      <td><code>string[]</code></td>
+      <td>{DICTIONARY.ipv4.short}</td>
+    </tr>
+    <tr>
+      <td><code>ips.ipv6</code></td>
+      <td>нет</td>
+      <td><code>string[]</code></td>
+      <td>{DICTIONARY.ipv6.short}</td>
+    </tr>
+  </tbody>
+</table>
+
+#### Пример запроса
+
+<CodeBlock language="bash">
+  {dedent`
+    curl -X POST http://localhost:9006/v1/hosts/upd-ips \\
+      -H 'Content-Type: application/json' \\
+      -d '{
+        "name": "node-01",
+        "namespace": "production",
+        "ips": {
+          "ipv4": [
+            "10.0.1.10",
+            "10.0.1.11",
+            "10.0.1.12"
+          ],
+          "ipv6": [
+            "fd00::1:10"
+          ]
+        }
+      }'
+  `}
+</CodeBlock>
+
+#### Пример ответа
+
+<CodeBlock language="json">
+  {dedent`
+    {}
+  `}
+</CodeBlock>
+
+<Restrictions items={[
+  { label: 'identify', rules: RESTRICTIONS.deleteWithNamespace },
+]} />
+
+<Codes codes={['invalidArgument', 'notFound', 'internal']} />
+
+</ApiOperation>
+
+---
+
+## Обновление метаинформации
+
+<ApiOperation method="POST" endpoint="/v1/hosts/upd-metainfo">
+
+Обновляет метаинформацию хоста. Это специальная операция — поле `metaInfo` доступно только для чтения через стандартный upsert.
+
+#### Тело запроса
+
+<table>
+  <thead>
+    <tr>
+      <th>Параметр</th>
+      <th>Обязательность</th>
+      <th>Тип</th>
+      <th>Описание</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><code>name</code></td>
+      <td>да</td>
+      <td><code>string</code></td>
+      <td>{DICTIONARY.name.short}</td>
+    </tr>
+    <tr>
+      <td><code>namespace</code></td>
+      <td>да</td>
+      <td><code>string</code></td>
+      <td>{DICTIONARY.namespace.short}</td>
+    </tr>
+    <tr>
+      <td><code>metaInfo.hostName</code></td>
+      <td>нет</td>
+      <td><code>string</code></td>
+      <td>FQDN хоста</td>
+    </tr>
+    <tr>
+      <td><code>metaInfo.os</code></td>
+      <td>нет</td>
+      <td><code>string</code></td>
+      <td>{DICTIONARY.os.short}</td>
+    </tr>
+    <tr>
+      <td><code>metaInfo.platform</code></td>
+      <td>нет</td>
+      <td><code>string</code></td>
+      <td>{DICTIONARY.platform.short}</td>
+    </tr>
+    <tr>
+      <td><code>metaInfo.platformVersion</code></td>
+      <td>нет</td>
+      <td><code>string</code></td>
+      <td>{DICTIONARY.platformVersion.short}</td>
+    </tr>
+    <tr>
+      <td><code>metaInfo.kernelVersion</code></td>
+      <td>нет</td>
+      <td><code>string</code></td>
+      <td>{DICTIONARY.kernelVersion.short}</td>
+    </tr>
+    <tr>
+      <td><code>metaInfo.kernelArch</code></td>
+      <td>нет</td>
+      <td><code>string</code></td>
+      <td>{DICTIONARY.kernelVersion.short}</td>
+    </tr>
+  </tbody>
+</table>
+
+#### Пример запроса
+
+<CodeBlock language="bash">
+  {dedent`
+    curl -X POST http://localhost:9006/v1/hosts/upd-metainfo \\
+      -H 'Content-Type: application/json' \\
+      -d '{
+        "name": "node-01",
+        "namespace": "production",
+        "metaInfo": {
+          "hostName": "node-01.example.com",
+          "os": "linux",
+          "platform": "ubuntu",
+          "platformVersion": "22.04",
+          "kernelVersion": "5.15.0-91-generic",
+          "kernelArch": "x86_64"
+        }
+      }'
+  `}
+</CodeBlock>
+
+#### Пример ответа
+
+<CodeBlock language="json">
+  {dedent`
+    {}
+  `}
+</CodeBlock>
+
+<Restrictions items={[
+  { label: 'identify', rules: RESTRICTIONS.deleteWithNamespace },
+]} />
+
+<Codes codes={['invalidArgument', 'notFound', 'internal']} />
+
+</ApiOperation>

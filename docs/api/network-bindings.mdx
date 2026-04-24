@@ -1,0 +1,425 @@
+---
+id: network-bindings
+sidebar_position: 8
+title: Network Bindings
+---
+
+import { DICTIONARY } from '@site/src/constants/dictionary'
+import { RESTRICTIONS } from '@site/src/constants/restrictions'
+import { Restrictions } from '@site/src/components/commonBlocks/Restrictions'
+import { Codes } from '@site/src/components/commonBlocks/Codes'
+import CodeBlock from '@theme/CodeBlock'
+import dedent from 'ts-dedent'
+import { ApiOperation } from '@site/src/components/commonBlocks/ApiOperation'
+
+# Network Bindings
+
+Привязки сетей связывают сети с группами адресов. Каждая привязка определяет, какая сеть входит в какую группу безопасности.
+
+---
+
+## Upsert
+
+<ApiOperation method="POST" endpoint="/v1/network-bindings/upsert">
+
+Создаёт новую привязку сети или обновляет существующую.
+
+#### Тело запроса
+
+<table>
+  <thead>
+    <tr>
+      <th>Параметр</th>
+      <th>Обязательность</th>
+      <th>Тип</th>
+      <th>Описание</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><code>metadata.name</code></td>
+      <td>да</td>
+      <td><code>string</code></td>
+      <td>{DICTIONARY.name.short}</td>
+    </tr>
+    <tr>
+      <td><code>metadata.namespace</code></td>
+      <td>да</td>
+      <td><code>string</code></td>
+      <td>{DICTIONARY.namespace.short}</td>
+    </tr>
+    <tr>
+      <td><code>metadata.labels</code></td>
+      <td>нет</td>
+      <td><code>map&lt;string, string&gt;</code></td>
+      <td>{DICTIONARY.labels.short}</td>
+    </tr>
+    <tr>
+      <td><code>metadata.annotations</code></td>
+      <td>нет</td>
+      <td><code>map&lt;string, string&gt;</code></td>
+      <td>{DICTIONARY.annotations.short}</td>
+    </tr>
+    <tr>
+      <td><code>spec.addressGroup</code></td>
+      <td><strong>да</strong></td>
+      <td><code>string</code></td>
+      <td>{DICTIONARY.addressGroup.short}</td>
+    </tr>
+    <tr>
+      <td><code>spec.network</code></td>
+      <td><strong>да</strong></td>
+      <td><code>string</code></td>
+      <td>{DICTIONARY.network.short}</td>
+    </tr>
+  </tbody>
+</table>
+
+#### Пример запроса
+
+<CodeBlock language="bash">
+  {dedent`
+    curl -X POST http://localhost:9006/v1/network-bindings/upsert \\
+      -H 'Content-Type: application/json' \\
+      -d '{
+        "networkBindings": [
+          {
+            "metadata": {
+              "name": "web-servers-internal-net",
+              "namespace": "production",
+              "labels": {
+                "binding-type": "network"
+              }
+            },
+            "spec": {
+              "addressGroup": "web-servers",
+              "network": "internal-net"
+            }
+          }
+        ]
+      }'
+  `}
+</CodeBlock>
+
+#### Пример ответа
+
+<CodeBlock language="json">
+  {dedent`
+    {
+      "networkBindings": [
+        {
+          "metadata": {
+            "uid": "a7b8c9d0-e1f2-3456-abcd-567890123456",
+            "name": "web-servers-internal-net",
+            "namespace": "production",
+            "labels": {
+              "binding-type": "network"
+            },
+            "creationTimestamp": "2025-01-15T10:30:00Z",
+            "resourceVersion": "1"
+          },
+          "spec": {
+            "addressGroup": "web-servers",
+            "network": "internal-net"
+          }
+        }
+      ]
+    }
+  `}
+</CodeBlock>
+
+<Restrictions items={[
+  { label: 'metadata / spec', rules: RESTRICTIONS.metadataRequired },
+  { label: 'upsert batch', rules: RESTRICTIONS.upsertBatch },
+  { label: 'metadata.name', rules: RESTRICTIONS.name },
+  { label: 'metadata.namespace', rules: RESTRICTIONS.namespace },
+  { label: 'spec.addressGroup', rules: RESTRICTIONS.addressGroupRef },
+  { label: 'spec.network', rules: RESTRICTIONS.networkRef },
+]} />
+
+<Codes codes={['invalidArgument', 'notFound', 'internal']} />
+
+</ApiOperation>
+
+---
+
+## Delete
+
+<ApiOperation method="POST" endpoint="/v1/network-bindings/delete">
+
+Удаляет привязку сети по `uid` или по комбинации `name` + `namespace`.
+
+#### Тело запроса
+
+<table>
+  <thead>
+    <tr>
+      <th>Параметр</th>
+      <th>Обязательность</th>
+      <th>Тип</th>
+      <th>Описание</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><code>uid</code></td>
+      <td>нет*</td>
+      <td><code>string</code></td>
+      <td>{DICTIONARY.uid.short}</td>
+    </tr>
+    <tr>
+      <td><code>name</code></td>
+      <td>нет*</td>
+      <td><code>string</code></td>
+      <td>{DICTIONARY.name.short}</td>
+    </tr>
+    <tr>
+      <td><code>namespace</code></td>
+      <td>нет*</td>
+      <td><code>string</code></td>
+      <td>{DICTIONARY.namespace.short}</td>
+    </tr>
+  </tbody>
+</table>
+
+> *Необходимо указать `uid` **или** комбинацию `name` + `namespace`.
+
+#### Пример запроса
+
+<CodeBlock language="bash">
+  {dedent`
+    curl -X POST http://localhost:9006/v1/network-bindings/delete \\
+      -H 'Content-Type: application/json' \\
+      -d '{
+        "networkBindings": [
+          {
+            "metadata": {
+              "name": "web-servers-internal-net",
+              "namespace": "production"
+            }
+          }
+        ]
+      }'
+  `}
+</CodeBlock>
+
+#### Пример ответа
+
+<CodeBlock language="json">
+  {dedent`
+    {}
+  `}
+</CodeBlock>
+
+<Restrictions items={[
+  { label: 'delete', rules: RESTRICTIONS.deleteWithNamespace },
+]} />
+
+<Codes codes={['invalidArgument', 'notFound', 'internal']} />
+
+</ApiOperation>
+
+---
+
+## List
+
+<ApiOperation method="POST" endpoint="/v1/network-bindings/list">
+
+Возвращает список привязок сетей с возможностью фильтрации.
+
+#### Тело запроса
+
+<table>
+  <thead>
+    <tr>
+      <th>Параметр</th>
+      <th>Обязательность</th>
+      <th>Тип</th>
+      <th>Описание</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><code>selector.fieldSelector.name</code></td>
+      <td>нет</td>
+      <td><code>string</code></td>
+      <td>{DICTIONARY.fieldSelector.short}</td>
+    </tr>
+    <tr>
+      <td><code>selector.fieldSelector.namespace</code></td>
+      <td>нет</td>
+      <td><code>string</code></td>
+      <td>{DICTIONARY.namespace.short}</td>
+    </tr>
+    <tr>
+      <td><code>selector.labelSelector.match_labels</code></td>
+      <td>нет</td>
+      <td><code>map&lt;string, string&gt;</code></td>
+      <td>{DICTIONARY.labelSelector.short}</td>
+    </tr>
+  </tbody>
+</table>
+
+#### Пример запроса
+
+<CodeBlock language="bash">
+  {dedent`
+    curl -X POST http://localhost:9006/v1/network-bindings/list \\
+      -H 'Content-Type: application/json' \\
+      -d '{
+        "selectors": [
+          {
+            "fieldSelector": {
+              "namespace": "production"
+            }
+          }
+        ]
+      }'
+  `}
+</CodeBlock>
+
+#### Поля ответа
+
+<table>
+  <thead>
+    <tr>
+      <th>Поле</th>
+      <th>Тип</th>
+      <th>Описание</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><code>resourceVersion</code></td>
+      <td><code>string</code></td>
+      <td>{DICTIONARY.resourceVersion.short}</td>
+    </tr>
+  </tbody>
+</table>
+
+#### Пример ответа
+
+<CodeBlock language="json">
+  {dedent`
+    {
+      "resourceVersion": "42",
+      "networkBindings": [
+        {
+          "metadata": {
+            "uid": "a7b8c9d0-e1f2-3456-abcd-567890123456",
+            "name": "web-servers-internal-net",
+            "namespace": "production",
+            "labels": {
+              "binding-type": "network"
+            },
+            "creationTimestamp": "2025-01-15T10:30:00Z",
+            "resourceVersion": "1"
+          },
+          "spec": {
+            "addressGroup": "web-servers",
+            "network": "internal-net"
+          }
+        }
+      ]
+    }
+  `}
+</CodeBlock>
+
+<Restrictions items={[
+  { label: 'selectors', rules: RESTRICTIONS.selectors },
+]} />
+
+<Codes codes={['invalidArgument', 'internal']} />
+
+</ApiOperation>
+
+---
+
+## Watch
+
+<ApiOperation method="POST" endpoint="/v1/network-bindings/watch">
+
+Серверный стриминг — возвращает поток изменений привязок сетей в реальном времени.
+
+#### Тело запроса
+
+<table>
+  <thead>
+    <tr>
+      <th>Параметр</th>
+      <th>Обязательность</th>
+      <th>Тип</th>
+      <th>Описание</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><code>selector.fieldSelector.name</code></td>
+      <td>нет</td>
+      <td><code>string</code></td>
+      <td>{DICTIONARY.fieldSelector.short}</td>
+    </tr>
+    <tr>
+      <td><code>selector.fieldSelector.namespace</code></td>
+      <td>нет</td>
+      <td><code>string</code></td>
+      <td>{DICTIONARY.namespace.short}</td>
+    </tr>
+    <tr>
+      <td><code>selector.labelSelector.match_labels</code></td>
+      <td>нет</td>
+      <td><code>map&lt;string, string&gt;</code></td>
+      <td>{DICTIONARY.labelSelector.short}</td>
+    </tr>
+    <tr>
+      <td><code>resource_version</code></td>
+      <td>нет</td>
+      <td><code>int64</code></td>
+      <td>{DICTIONARY.resourceVersion.short}</td>
+    </tr>
+  </tbody>
+</table>
+
+#### Пример запроса
+
+<CodeBlock language="bash">
+  {dedent`
+    curl -X POST http://localhost:9006/v1/network-bindings/watch \\
+      -H 'Content-Type: application/json' \\
+      -d '{
+        "resourceVersion": "0"
+      }'
+  `}
+</CodeBlock>
+
+#### Пример ответа
+
+<CodeBlock language="json">
+  {dedent`
+    {
+      "type": "MODIFIED",
+      "networkBindings": [
+        {
+          "metadata": {
+            "uid": "a7b8c9d0-e1f2-3456-abcd-567890123456",
+            "name": "web-servers-internal-net",
+            "namespace": "production",
+            "resourceVersion": "2"
+          },
+          "spec": {
+            "addressGroup": "web-servers",
+            "network": "dmz-net"
+          }
+        }
+      ]
+    }
+  `}
+</CodeBlock>
+
+<Restrictions items={[
+  { label: 'selectors', rules: RESTRICTIONS.selectors },
+]} />
+
+<Codes codes={['invalidArgument', 'internal']} />
+
+</ApiOperation>
