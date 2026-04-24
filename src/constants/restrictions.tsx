@@ -17,8 +17,9 @@ export const RESTRICTIONS: TRestrictions = {
   ],
 
   uid: [
-    'Формат UUID v4 в uppercase hex.',
-    <>Паттерн: <code>{'^[0-9A-F]{8}-[0-9A-F]{4}-4[0-9A-F]{3}-[89AB][0-9A-F]{3}-[0-9A-F]{12}$'}</code>.</>,
+    'Формат UUID v4.',
+    <>Канонический паттерн: <code>{'^[0-9A-F]{8}-[0-9A-F]{4}-4[0-9A-F]{3}-[89AB][0-9A-F]{3}-[0-9A-F]{12}$'}</code>.</>,
+    'Парсер API принимает hex-символы в любом регистре, но в ответах обычно используется канонический формат.',
     'При создании не указывается — генерируется сервером.',
     'При обновлении обязателен для идентификации ресурса.',
   ],
@@ -47,7 +48,7 @@ export const RESTRICTIONS: TRestrictions = {
   ],
 
   traffic: [
-    <>Допустимые значения: <code>BOTH</code> (1), <code>INGRESS</code> (2), <code>EGRESS</code> (3).</>,
+    <>Допустимые значения: <code>BOTH</code>, <code>INGRESS</code>, <code>EGRESS</code>.</>,
     'Необязательное поле.',
   ],
 
@@ -56,7 +57,7 @@ export const RESTRICTIONS: TRestrictions = {
   ],
 
   ipv: [
-    <>Допустимые значения: <code>IPv4</code> (1), <code>IPv6</code> (2).</>,
+    <>Допустимые значения: <code>IPV4</code> и <code>IPV6</code>.</>,
   ],
 
   endpointType: [
@@ -88,6 +89,7 @@ export const RESTRICTIONS: TRestrictions = {
 
   icmpType: [
     <>Целое число <code>uint32</code> — код типа ICMP-сообщения.</>,
+    <>Фактически допустимый диапазон значений: <code>0..255</code>.</>,
     <>Примеры: <code>0</code> — echo-reply, <code>8</code> — echo-request, <code>3</code> — destination-unreachable.</>,
     <>Применимо только для протокола <code>ICMP</code>.</>,
   ],
@@ -129,14 +131,12 @@ export const RESTRICTIONS: TRestrictions = {
     <>Поле <code>host</code> обязательно: <code>required: true</code>.</>,
     <>Должны быть указаны <code>name</code> и <code>namespace</code>.</>,
     <>Ресурс <code>Host</code> с указанными <code>name</code> и <code>namespace</code> должен существовать на момент создания связи.</>,
-    <>Ресурсы <code>Host</code> и <code>AddressGroup</code> должны находиться в одном namespace.</>,
   ],
 
   networkRef: [
     <>Поле <code>network</code> обязательно: <code>required: true</code>.</>,
     <>Должны быть указаны <code>name</code> и <code>namespace</code>.</>,
     <>Ресурс <code>Network</code> с указанными <code>name</code> и <code>namespace</code> должен существовать на момент создания связи.</>,
-    <>Ресурсы <code>Network</code> и <code>AddressGroup</code> должны находиться в одном namespace.</>,
   ],
 
   serviceRef: [

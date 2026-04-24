@@ -6,8 +6,6 @@ title: Status API
 
 import { DICTIONARY } from '@site/src/constants/dictionary'
 import { TYPES } from '@site/src/constants/types'
-import { RESTRICTIONS } from '@site/src/constants/restrictions'
-import { Restrictions } from '@site/src/components/commonBlocks/Restrictions'
 import { Codes } from '@site/src/components/commonBlocks/Codes'
 import CodeBlock from '@theme/CodeBlock'
 import dedent from 'ts-dedent'
@@ -43,29 +41,9 @@ API для получения информации о статусе синхр�
   </thead>
   <tbody>
     <tr>
-      <td><code>statuses</code></td>
-      <td><code>Status[]</code></td>
-      <td>Массив статусов синхронизации</td>
-    </tr>
-    <tr>
-      <td><code>statuses[].component</code></td>
-      <td><code>{TYPES.string}</code></td>
-      <td>Название компонента</td>
-    </tr>
-    <tr>
-      <td><code>statuses[].status</code></td>
-      <td><code>{TYPES.string}</code></td>
-      <td>Текущий статус (<code>OK</code>, <code>ERROR</code>, <code>SYNCING</code>)</td>
-    </tr>
-    <tr>
-      <td><code>statuses[].last_sync</code></td>
+      <td><code>updatedAt</code></td>
       <td><code>{TYPES.timestamp}</code></td>
-      <td>Время последней синхронизации</td>
-    </tr>
-    <tr>
-      <td><code>statuses[].message</code></td>
-      <td><code>{TYPES.string}</code></td>
-      <td>Дополнительное сообщение</td>
+      <td>Время последнего успешно завершенного обновления БД.</td>
     </tr>
   </tbody>
 </table>
@@ -75,20 +53,7 @@ API для получения информации о статусе синхр�
 <CodeBlock language="json">
   {dedent`
     {
-      "statuses": [
-        {
-          "component": "sg-agent-node-01",
-          "status": "OK",
-          "last_sync": "2025-01-15T10:30:00Z",
-          "message": ""
-        },
-        {
-          "component": "sg-agent-node-02",
-          "status": "ERROR",
-          "last_sync": "2025-01-15T10:25:00Z",
-          "message": "connection timeout"
-        }
-      ]
+      "updatedAt": "2025-01-15T10:30:00Z"
     }
   `}
 </CodeBlock>
@@ -114,20 +79,12 @@ API для получения информации о статусе синхр�
 
 ### Ответ
 
-Поток JSON-объектов, каждый из которых содержит обновление статуса:
+Поток JSON-объектов, каждый из которых содержит время последнего успешно завершенного обновления:
 
 <CodeBlock language="json">
   {dedent`
     {
-      "type": "MODIFIED",
-      "statuses": [
-        {
-          "component": "sg-agent-node-01",
-          "status": "SYNCING",
-          "last_sync": "2025-01-15T10:35:00Z",
-          "message": "applying rules..."
-        }
-      ]
+      "updatedAt": "2025-01-15T10:35:00Z"
     }
   `}
 </CodeBlock>

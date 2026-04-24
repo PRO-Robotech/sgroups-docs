@@ -85,7 +85,7 @@ import { ApiOperation } from '@site/src/components/commonBlocks/ApiOperation'
 </table>
 
 :::info Поля только для чтения
-Поля `ips` и `metaInfo` заполняются автоматически через специальные операции `upd-ips` и `upd-metainfo`, и не могут быть установлены через upsert.
+Поля `spec.IPs` и `spec.metaInfo` заполняются автоматически через специальные операции `upd-ips` и `upd-metainfo`, и не могут быть установлены через upsert.
 :::
 
 #### Пример запроса
@@ -241,7 +241,7 @@ import { ApiOperation } from '@site/src/components/commonBlocks/ApiOperation'
 
 <ApiOperation method="POST" endpoint="/v1/hosts/list">
 
-Возвращает список хостов с возможностью фильтрации. Ответ включает поля только для чтения: `ips` и `metaInfo`.
+Возвращает список хостов с возможностью фильтрации. Ответ включает поля только для чтения: `spec.IPs` и `spec.metaInfo`.
 
 #### Тело запроса
 
@@ -288,7 +288,6 @@ import { ApiOperation } from '@site/src/components/commonBlocks/ApiOperation'
 - Внутри одного `selectors[]` элемента `fieldSelector` и `labelSelector` объединяются по **И** (AND).
 - Между элементами массива `selectors[]` действует логическое **ИЛИ** (OR).
 - Для хоста в `refs[]` допустим только `resType: "AddressGroup"`.
-- Пустое тело запроса возвращает все хосты.
 :::
 
 <Tabs groupId="host-list">
@@ -461,24 +460,24 @@ import { ApiOperation } from '@site/src/components/commonBlocks/ApiOperation'
           "spec": {
             "displayName": "Node 01",
             "comment": "Рабочий узел",
-            "description": "Первый рабочий узел кластера"
-          },
-          "ips": {
-            "ipv4": [
-              "10.0.1.10",
-              "10.0.1.11"
-            ],
-            "ipv6": [
-              "fd00::1:10"
-            ]
-          },
-          "metaInfo": {
-            "hostName": "node-01.example.com",
-            "os": "linux",
-            "platform": "ubuntu",
-            "platformVersion": "22.04",
-            "kernelVersion": "5.15.0-91-generic",
-            "kernelArch": "x86_64"
+            "description": "Первый рабочий узел кластера",
+            "IPs": {
+              "IPv4": [
+                "10.0.1.10",
+                "10.0.1.11"
+              ],
+              "IPv6": [
+                "fd00::1:10"
+              ]
+            },
+            "metaInfo": {
+              "hostName": "node-01.example.com",
+              "os": "linux",
+              "platform": "ubuntu",
+              "platformFamily": "debian",
+              "platformVersion": "22.04",
+              "kernelVersion": "5.15.0-91-generic"
+            }
           },
           "refs": [
             {
@@ -548,7 +547,7 @@ import { ApiOperation } from '@site/src/components/commonBlocks/ApiOperation'
     <tr>
       <td><code>resourceVersion</code></td>
       <td>нет</td>
-      <td><code>{TYPES.int64}</code></td>
+      <td><code>{TYPES.string}</code></td>
       <td>{DICTIONARY.resourceVersion.short}</td>
     </tr>
   </tbody>
@@ -719,25 +718,25 @@ import { ApiOperation } from '@site/src/components/commonBlocks/ApiOperation'
           "spec": {
             "displayName": "Node 01",
             "comment": "Рабочий узел",
-            "description": "Первый рабочий узел кластера"
-          },
-          "ips": {
-            "ipv4": [
-              "10.0.1.10",
-              "10.0.1.11",
-              "10.0.1.12"
-            ],
-            "ipv6": [
-              "fd00::1:10"
-            ]
-          },
-          "metaInfo": {
-            "hostName": "node-01.example.com",
-            "os": "linux",
-            "platform": "ubuntu",
-            "platformVersion": "22.04",
-            "kernelVersion": "5.15.0-91-generic",
-            "kernelArch": "x86_64"
+            "description": "Первый рабочий узел кластера",
+            "IPs": {
+              "IPv4": [
+                "10.0.1.10",
+                "10.0.1.11",
+                "10.0.1.12"
+              ],
+              "IPv6": [
+                "fd00::1:10"
+              ]
+            },
+            "metaInfo": {
+              "hostName": "node-01.example.com",
+              "os": "linux",
+              "platform": "ubuntu",
+              "platformFamily": "debian",
+              "platformVersion": "22.04",
+              "kernelVersion": "5.15.0-91-generic"
+            }
           },
           "refs": [
             {
@@ -782,19 +781,19 @@ import { ApiOperation } from '@site/src/components/commonBlocks/ApiOperation'
   <tbody>
     <tr>
       <td><code>hosts</code></td>
-      <td>да</td>
+      <td>нет*</td>
       <td><code>Host[]</code></td>
       <td>Массив хостов для обновления IP-адресов</td>
     </tr>
     <tr>
       <td><code>hosts[].metadata.name</code></td>
-      <td>да</td>
+      <td>нет*</td>
       <td><code>{TYPES.string}</code></td>
       <td>{DICTIONARY.name.short}</td>
     </tr>
     <tr>
       <td><code>hosts[].metadata.namespace</code></td>
-      <td>да</td>
+      <td>нет*</td>
       <td><code>{TYPES.string}</code></td>
       <td>{DICTIONARY.namespace.short}</td>
     </tr>
@@ -818,6 +817,8 @@ import { ApiOperation } from '@site/src/components/commonBlocks/ApiOperation'
     </tr>
   </tbody>
 </table>
+
+> *Необходимо указать `uid` **или** комбинацию `name` + `namespace`.
 
 #### Пример запроса
 
@@ -853,7 +854,27 @@ import { ApiOperation } from '@site/src/components/commonBlocks/ApiOperation'
 
 <CodeBlock language="json">
   {dedent`
-    {}
+    {
+      "hosts": [
+        {
+          "metadata": {
+            "uid": "f315d9db-691e-4e9c-9bfc-546d59d35a68",
+            "name": "host-3",
+            "namespace": "namespace-1"
+          },
+          "spec": {
+            "IPs": {
+              "IPv4": [
+                "127.0.0.1"
+              ],
+              "IPv6": [
+                "::1"
+              ]
+            }
+          }
+        }
+      ]
+    }
   `}
 </CodeBlock>
 
@@ -887,19 +908,19 @@ import { ApiOperation } from '@site/src/components/commonBlocks/ApiOperation'
   <tbody>
     <tr>
       <td><code>hosts</code></td>
-      <td>да</td>
+      <td>нет*</td>
       <td><code>Host[]</code></td>
       <td>Массив хостов для обновления метаинформации</td>
     </tr>
     <tr>
       <td><code>hosts[].metadata.name</code></td>
-      <td>да</td>
+      <td>нет*</td>
       <td><code>{TYPES.string}</code></td>
       <td>{DICTIONARY.name.short}</td>
     </tr>
     <tr>
       <td><code>hosts[].metadata.namespace</code></td>
-      <td>да</td>
+      <td>нет*</td>
       <td><code>{TYPES.string}</code></td>
       <td>{DICTIONARY.namespace.short}</td>
     </tr>
@@ -928,6 +949,12 @@ import { ApiOperation } from '@site/src/components/commonBlocks/ApiOperation'
       <td>{DICTIONARY.platform.short}</td>
     </tr>
     <tr>
+      <td><code>hosts[].spec.metaInfo.platformFamily</code></td>
+      <td>нет</td>
+      <td><code>{TYPES.string}</code></td>
+      <td>{DICTIONARY.platformFamily.short}</td>
+    </tr>
+    <tr>
       <td><code>hosts[].spec.metaInfo.platformVersion</code></td>
       <td>нет</td>
       <td><code>{TYPES.string}</code></td>
@@ -939,14 +966,10 @@ import { ApiOperation } from '@site/src/components/commonBlocks/ApiOperation'
       <td><code>{TYPES.string}</code></td>
       <td>{DICTIONARY.kernelVersion.short}</td>
     </tr>
-    <tr>
-      <td><code>hosts[].spec.metaInfo.kernelArch</code></td>
-      <td>нет</td>
-      <td><code>{TYPES.string}</code></td>
-      <td>{DICTIONARY.kernelVersion.short}</td>
-    </tr>
   </tbody>
 </table>
+
+> *Необходимо указать `uid` **или** комбинацию `name` + `namespace`.
 
 #### Пример запроса
 
@@ -967,9 +990,9 @@ import { ApiOperation } from '@site/src/components/commonBlocks/ApiOperation'
                 "hostName": "node-01.example.com",
                 "os": "linux",
                 "platform": "ubuntu",
+                "platformFamily": "debian",
                 "platformVersion": "22.04",
-                "kernelVersion": "5.15.0-91-generic",
-                "kernelArch": "x86_64"
+                "kernelVersion": "5.15.0-91-generic"
               }
             }
           }
@@ -982,7 +1005,27 @@ import { ApiOperation } from '@site/src/components/commonBlocks/ApiOperation'
 
 <CodeBlock language="json">
   {dedent`
-    {}
+    {
+      "hosts": [
+        {
+          "metadata": {
+            "uid": "f315d9db-691e-4e9c-9bfc-546d59d35a68",
+            "name": "node-01",
+            "namespace": "production"
+          },
+          "spec": {
+            "metaInfo": {
+              "hostName": "node-01.example.com",
+              "os": "linux",
+              "platform": "ubuntu",
+              "platformFamily": "debian",
+              "platformVersion": "22.04",
+              "kernelVersion": "5.15.0-91-generic"
+            }
+          }
+        }
+      ]
+    }
   `}
 </CodeBlock>
 
