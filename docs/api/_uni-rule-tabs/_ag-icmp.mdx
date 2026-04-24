@@ -252,6 +252,9 @@ import dedent from 'ts-dedent'
 <Restrictions items={[
   { label: 'metadata / spec', rules: RESTRICTIONS.metadataRequired },
   { label: 'metadata.name', rules: RESTRICTIONS.name },
+  { label: 'spec.displayName', rules: RESTRICTIONS.displayName },
+  { label: 'spec.comment', rules: RESTRICTIONS.comment },
+  { label: 'spec.description', rules: RESTRICTIONS.description },
   { label: 'spec.action', rules: RESTRICTIONS.action },
   { label: 'endpoints.local.type', rules: RESTRICTIONS.endpointType },
   { label: 'transport.protocol', rules: RESTRICTIONS.protocol },

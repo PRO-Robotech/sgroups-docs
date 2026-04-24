@@ -31,15 +31,6 @@ SGroups предоставляет единый API для управления 
   `}
 </CodeBlock>
 
-## Аутентификация
-
-Все запросы к API должны содержать заголовок аутентификации. Конкретный механизм аутентификации зависит от конфигурации развертывания.
-
-<CodeBlock language="bash">
-  {dedent`
-    curl -H 'Authorization: Bearer <token>' http://localhost:9006/v1/namespaces/list
-  `}
-</CodeBlock>
 
 ## Ресурсная модель
 
@@ -155,15 +146,15 @@ API следует ресурсной модели, аналогичной Kuber
     </tr>
     <tr>
       <td><code>resType</code></td>
-      <td><code>{TYPES.string}</code></td>
-      <td>Тип связанного ресурса (Host, Network, Service, AddressGroup, Rule)</td>
+      <td><code>{TYPES.enumResType}</code></td>
+      <td>{DICTIONARY.resType.short}</td>
     </tr>
   </tbody>
 </table>
 
 ### Transport
 
-Транспортная конфигурация. Используется в ресурсе Service (поле `transports[]`) и в UniRule (поле `spec.transport`).
+L4-параметры: протокол (TCP/UDP/ICMP), IP-семейство (IPv4/IPv6) и набор портов или типов ICMP. Используется в ресурсе Service (поле `transports[]`) и в UniRule (поле `spec.transport`).
 
 <table>
   <thead>
@@ -194,13 +185,21 @@ API следует ресурсной модели, аналогичной Kuber
 
 ### Entry
 
-Запись внутри Transport. Описывает порты (для TCP/UDP) или типы сообщений (для ICMP).
+Запись внутри Transport. Набор актуальных полей определяется значением `protocol` родительского `Transport` — **oneOf**:
+
+| `protocol` родителя | Актуальное поле | Игнорируется |
+| --- | --- | --- |
+| `TCP`, `UDP` | `ports` | `types` |
+| `ICMP` | `types` | `ports` |
+
+Поля `description` и `comment` общие — применимы для любого протокола.
 
 <table>
   <thead>
     <tr>
       <th>Поле</th>
       <th>Тип</th>
+      <th>Применимо при</th>
       <th>Описание</th>
     </tr>
   </thead>
@@ -208,25 +207,33 @@ API следует ресурсной модели, аналогичной Kuber
     <tr>
       <td><code>description</code></td>
       <td><code>{TYPES.string}</code></td>
+      <td>—</td>
       <td>{DICTIONARY.description.short}</td>
     </tr>
     <tr>
       <td><code>comment</code></td>
       <td><code>{TYPES.string}</code></td>
+      <td>—</td>
       <td>{DICTIONARY.comment.short}</td>
     </tr>
     <tr>
       <td><code>ports</code></td>
       <td><code>{TYPES.string}</code></td>
+      <td><code>protocol ∈ {'{'} TCP, UDP {'}'}</code></td>
       <td>{DICTIONARY.ports.short}</td>
     </tr>
     <tr>
       <td><code>types</code></td>
       <td><code>{TYPES.uint32}</code></td>
+      <td><code>protocol = ICMP</code></td>
       <td>{DICTIONARY.icmpTypes.short}</td>
     </tr>
   </tbody>
 </table>
+
+:::info oneOf по `protocol`
+Entry следует шаблону protobuf `oneOf`: указание обоих полей одновременно некорректно. Валидатор сервера примет только совместимое с родительским `Transport.protocol` поле, противоположное — игнорируется.
+:::
 
 ### Session
 
@@ -248,6 +255,17 @@ API следует ресурсной модели, аналогичной Kuber
     </tr>
   </tbody>
 </table>
+
+:::info Семантика значений `traffic`
+
+| Значение | Направление потока | Что открывает |
+| --- | --- | --- |
+| `INGRESS` | `remote → local` | Разрешает трафик, **входящий** к локальной стороне правила. |
+| `EGRESS` | `local → remote` | Разрешает трафик, **исходящий** от локальной стороны к удалённой. |
+| `BOTH` | `local ↔ remote`, инициатор — `local` | Как `EGRESS` (поток инициирует локальная сторона), но **дополнительно открывает встречный доступ** с удалённой стороны. Используется, когда взаимодействие требует ответного подключения в обратном направлении. |
+
+`BOTH` — это **не** «одновременно INGRESS и EGRESS как две независимые политики», а именно расширение `EGRESS` встречным разрешением.
+:::
 
 ### Endpoints
 
@@ -277,44 +295,64 @@ API следует ресурсной модели, аналогичной Kuber
 
 ### Endpoint
 
-Описание одной стороны правила (local или remote).
+Описание одной стороны правила (`local` или `remote`). Набор актуальных полей определяется значением `type` — **oneOf**:
+
+| `type` | Идентификация через | Игнорируется |
+| --- | --- | --- |
+| `ADDRESS_GROUP`, `SERVICE` | `name` + `namespace` (ссылка на существующий ресурс) | `value` |
+| `FQDN`, `CIDR` | `value` (литеральное значение — домен или подсеть) | `name`, `namespace` |
+
+Для `local` допустимы только `ADDRESS_GROUP` и `SERVICE`; для `remote` — все четыре типа.
 
 <table>
   <thead>
     <tr>
       <th>Поле</th>
       <th>Тип</th>
+      <th>Применимо при</th>
       <th>Описание</th>
     </tr>
   </thead>
   <tbody>
     <tr>
+      <td><code>type</code></td>
+      <td><code>{TYPES.enumEndpointRemote}</code></td>
+      <td>—</td>
+      <td>{DICTIONARY.endpointType.short}</td>
+    </tr>
+    <tr>
       <td><code>name</code></td>
       <td><code>{TYPES.string}</code></td>
+      <td><code>type ∈ {'{'} ADDRESS_GROUP, SERVICE {'}'}</code></td>
       <td>{DICTIONARY.endpointName.short}</td>
     </tr>
     <tr>
       <td><code>namespace</code></td>
       <td><code>{TYPES.string}</code></td>
+      <td><code>type ∈ {'{'} ADDRESS_GROUP, SERVICE {'}'}</code></td>
       <td>{DICTIONARY.endpointNamespace.short}</td>
-    </tr>
-    <tr>
-      <td><code>type</code></td>
-      <td><code>{TYPES.enumEndpointRemote}</code></td>
-      <td>{DICTIONARY.endpointType.short}</td>
     </tr>
     <tr>
       <td><code>value</code></td>
       <td><code>{TYPES.string}</code></td>
+      <td><code>type ∈ {'{'} FQDN, CIDR {'}'}</code></td>
       <td>{DICTIONARY.remoteValue.short}</td>
     </tr>
     <tr>
       <td><code>labels</code></td>
       <td><code>{TYPES.mapStringString}</code></td>
+      <td>—</td>
       <td>{DICTIONARY.labels.short}</td>
     </tr>
   </tbody>
 </table>
+
+:::info oneOf по `type`
+Endpoint следует шаблону protobuf `oneOf`: пара `{name, namespace}` и поле `value` взаимоисключающи. Сервер валидирует только поля, совместимые с выбранным `type`; противоположные игнорируются.
+
+- `ADDRESS_GROUP`, `SERVICE` — ресурс с указанными `name` и `namespace` **должен существовать** на момент применения правила.
+- `FQDN`, `CIDR` — существование не проверяется; `value` обязателен. `FQDN` резолвится агентом в IP при применении.
+:::
 
 ## Типы ресурсов
 
@@ -328,39 +366,39 @@ API следует ресурсной модели, аналогичной Kuber
   <tbody>
     <tr>
       <td><strong>Namespace</strong></td>
-      <td>{DICTIONARY.resourceNamespace.short}</td>
+      <td>{DICTIONARY.resourceNamespace.full}</td>
     </tr>
     <tr>
       <td><strong>AddressGroup</strong></td>
-      <td>{DICTIONARY.resourceAddressGroup.short}</td>
+      <td>{DICTIONARY.resourceAddressGroup.full}</td>
     </tr>
     <tr>
       <td><strong>Host</strong></td>
-      <td>{DICTIONARY.resourceHost.short}</td>
+      <td>{DICTIONARY.resourceHost.full}</td>
     </tr>
     <tr>
       <td><strong>Network</strong></td>
-      <td>{DICTIONARY.resourceNetwork.short}</td>
+      <td>{DICTIONARY.resourceNetwork.full}</td>
     </tr>
     <tr>
       <td><strong>Service</strong></td>
-      <td>{DICTIONARY.resourceService.short}</td>
+      <td>{DICTIONARY.resourceService.full}</td>
     </tr>
     <tr>
       <td><strong>HostBinding</strong></td>
-      <td>{DICTIONARY.resourceHostBinding.short}</td>
+      <td>{DICTIONARY.resourceHostBinding.full}</td>
     </tr>
     <tr>
       <td><strong>NetworkBinding</strong></td>
-      <td>{DICTIONARY.resourceNetworkBinding.short}</td>
+      <td>{DICTIONARY.resourceNetworkBinding.full}</td>
     </tr>
     <tr>
       <td><strong>ServiceBinding</strong></td>
-      <td>{DICTIONARY.resourceServiceBinding.short}</td>
+      <td>{DICTIONARY.resourceServiceBinding.full}</td>
     </tr>
     <tr>
       <td><strong>UniRule</strong></td>
-      <td>{DICTIONARY.resourceUniRule.short}</td>
+      <td>{DICTIONARY.resourceUniRule.full}</td>
     </tr>
   </tbody>
 </table>
