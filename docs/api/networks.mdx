@@ -293,7 +293,6 @@ import { ApiOperation } from '@site/src/components/commonBlocks/ApiOperation'
 - Внутри одного `selectors[]` элемента `fieldSelector` и `labelSelector` объединяются по **И** (AND).
 - Между элементами массива `selectors[]` действует логическое **ИЛИ** (OR).
 - Для сети в `refs[]` допустим только `resType: "AddressGroup"`.
-- Пустое тело запроса возвращает все сети.
 :::
 
 <Tabs groupId="net-list">
@@ -534,7 +533,7 @@ import { ApiOperation } from '@site/src/components/commonBlocks/ApiOperation'
     <tr>
       <td><code>resourceVersion</code></td>
       <td>нет</td>
-      <td><code>{TYPES.int64}</code></td>
+      <td><code>{TYPES.string}</code></td>
       <td>{DICTIONARY.resourceVersion.short}</td>
     </tr>
   </tbody>

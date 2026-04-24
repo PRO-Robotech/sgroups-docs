@@ -273,7 +273,6 @@ import dedent from 'ts-dedent'
 :::info Правила комбинирования
 - Внутри одного `selectors[]` элемента `fieldSelector` и `labelSelector` объединяются по **И** (AND).
 - Между элементами массива `selectors[]` действует логическое **ИЛИ** (OR).
-- Пустое тело запроса возвращает все namespace.
 :::
 
 <Tabs groupId="ns-list">
@@ -453,7 +452,7 @@ import dedent from 'ts-dedent'
     <tr>
       <td><code>resourceVersion</code></td>
       <td>нет</td>
-      <td><code>{TYPES.int64}</code></td>
+      <td><code>{TYPES.string}</code></td>
       <td>{DICTIONARY.resourceVersion.short}</td>
     </tr>
   </tbody>

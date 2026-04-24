@@ -327,7 +327,6 @@ import { ApiOperation } from '@site/src/components/commonBlocks/ApiOperation'
 - Внутри одного `selectors[]` элемента `fieldSelector` и `labelSelector` объединяются по **И** (AND).
 - Между элементами массива `selectors[]` действует логическое **ИЛИ** (OR).
 - Элементы массива `refs[]` внутри одного `fieldSelector` объединяются по **И** — AG должна быть связана со всеми перечисленными ресурсами.
-- Пустое тело запроса возвращает все группы адресов.
 :::
 
 <Tabs groupId="ag-list">
@@ -591,7 +590,7 @@ import { ApiOperation } from '@site/src/components/commonBlocks/ApiOperation'
     <tr>
       <td><code>resourceVersion</code></td>
       <td>нет</td>
-      <td><code>{TYPES.int64}</code></td>
+      <td><code>{TYPES.string}</code></td>
       <td>{DICTIONARY.resourceVersion.short}</td>
     </tr>
   </tbody>

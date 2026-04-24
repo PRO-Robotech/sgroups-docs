@@ -185,7 +185,7 @@ import { ApiOperation } from '@site/src/components/commonBlocks/ApiOperation'
               "transports": [
                 {
                   "protocol": "TCP",
-                  "IPv": "IPv4",
+                  "IPv": "IPV4",
                   "entries": [
                     {
                       "description": "HTTP",
@@ -201,7 +201,7 @@ import { ApiOperation } from '@site/src/components/commonBlocks/ApiOperation'
                 },
                 {
                   "protocol": "TCP",
-                  "IPv": "IPv4",
+                  "IPv": "IPV4",
                   "entries": [
                     {
                       "description": "Приложение",
@@ -241,7 +241,7 @@ import { ApiOperation } from '@site/src/components/commonBlocks/ApiOperation'
             "transports": [
               {
                 "protocol": "TCP",
-                "IPv": "IPv4",
+                "IPv": "IPV4",
                 "entries": [
                   {
                     "description": "HTTP",
@@ -257,7 +257,7 @@ import { ApiOperation } from '@site/src/components/commonBlocks/ApiOperation'
               },
               {
                 "protocol": "TCP",
-                "IPv": "IPv4",
+                "IPv": "IPV4",
                 "entries": [
                   {
                     "description": "Приложение",
@@ -420,7 +420,6 @@ import { ApiOperation } from '@site/src/components/commonBlocks/ApiOperation'
 - Внутри одного `selectors[]` элемента `fieldSelector` и `labelSelector` объединяются по **И** (AND).
 - Между элементами массива `selectors[]` действует логическое **ИЛИ** (OR).
 - Для сервиса в `refs[]` допустимы `resType: "AddressGroup"` и `resType: "Rule"`.
-- Пустое тело запроса возвращает все сервисы.
 :::
 
 <Tabs groupId="svc-list">
@@ -601,7 +600,7 @@ import { ApiOperation } from '@site/src/components/commonBlocks/ApiOperation'
             "transports": [
               {
                 "protocol": "TCP",
-                "IPv": "IPv4",
+                "IPv": "IPV4",
                 "entries": [
                   {
                     "description": "HTTP",
@@ -683,7 +682,7 @@ import { ApiOperation } from '@site/src/components/commonBlocks/ApiOperation'
     <tr>
       <td><code>resourceVersion</code></td>
       <td>нет</td>
-      <td><code>{TYPES.int64}</code></td>
+      <td><code>{TYPES.string}</code></td>
       <td>{DICTIONARY.resourceVersion.short}</td>
     </tr>
   </tbody>
@@ -858,7 +857,7 @@ import { ApiOperation } from '@site/src/components/commonBlocks/ApiOperation'
             "transports": [
               {
                 "protocol": "TCP",
-                "IPv": "IPv4",
+                "IPv": "IPV4",
                 "entries": [
                   {
                     "description": "HTTP",
