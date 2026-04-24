@@ -14,7 +14,7 @@ import dedent from 'ts-dedent'
 
 # Namespaces
 
-Пространства имён обеспечивают логическую изоляцию ресурсов. Каждый ресурс (кроме самих Namespace) принадлежит какому-либо пространству имён.
+{DICTIONARY.resourceNamespace.full}
 
 ---
 
@@ -22,7 +22,7 @@ import dedent from 'ts-dedent'
 
 <ApiOperation method="POST" endpoint="/v1/namespaces/upsert">
 
-Создаёт новое пространство имён или обновляет существующее.
+Создает новое пространство имен или обновляет существующее.
 
 #### Тело запроса
 
@@ -93,7 +93,7 @@ import dedent from 'ts-dedent'
             "spec": {
               "displayName": "Production",
               "comment": "Продуктивное окружение",
-              "description": "Пространство имён для продуктивных сервисов"
+              "description": "Пространство имен для продуктивных сервисов"
             }
           }
         ]
@@ -120,7 +120,7 @@ import dedent from 'ts-dedent'
           "spec": {
             "displayName": "Production",
             "comment": "Продуктивное окружение",
-            "description": "Пространство имён для продуктивных сервисов"
+            "description": "Пространство имен для продуктивных сервисов"
           }
         }
       ]
@@ -145,7 +145,7 @@ import dedent from 'ts-dedent'
 
 <ApiOperation method="POST" endpoint="/v1/namespaces/delete">
 
-Удаляет пространство имён по `uid` или по `name`.
+Удаляет пространство имен по `uid` или по `name`.
 
 #### Тело запроса
 
@@ -234,7 +234,7 @@ import dedent from 'ts-dedent'
 
 <ApiOperation method="POST" endpoint="/v1/namespaces/list">
 
-Возвращает список пространств имён с возможностью фильтрации.
+Возвращает список пространств имен с возможностью фильтрации.
 
 #### Тело запроса
 
@@ -320,7 +320,7 @@ import dedent from 'ts-dedent'
           "spec": {
             "displayName": "Production",
             "comment": "Продуктивное окружение",
-            "description": "Пространство имён для продуктивных сервисов"
+            "description": "Пространство имен для продуктивных сервисов"
           }
         }
       ]
@@ -342,7 +342,7 @@ import dedent from 'ts-dedent'
 
 <ApiOperation method="POST" endpoint="/v1/namespaces/watch">
 
-Серверный стриминг — возвращает поток изменений пространств имён в реальном времени.
+Серверный стриминг — возвращает поток изменений пространств имен в реальном времени.
 
 #### Тело запроса
 
@@ -409,7 +409,7 @@ import dedent from 'ts-dedent'
           "spec": {
             "displayName": "Production",
             "comment": "Продуктивное окружение (обновлено)",
-            "description": "Пространство имён для продуктивных сервисов"
+            "description": "Пространство имен для продуктивных сервисов"
           }
         }
       ]

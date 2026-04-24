@@ -6,7 +6,7 @@ import TabItem from '@theme/TabItem'
 import CodeBlock from '@theme/CodeBlock'
 import dedent from 'ts-dedent'
 
-Обе стороны — сервисы (`SERVICE`). Транспортная конфигурация берётся из ресурсов Service обеих сторон — блок `transport` **не указывается**.
+Обе стороны — сервисы (`SERVICE`). Транспортная конфигурация берется из ресурсов Service обеих сторон — блок `transport` **не указывается**.
 
 :::info Transport не указывается
 Блок `spec.transport` отсутствует. Протоколы, порты и ICMP-типы определяются полем `transports` ресурсов Service, на которые ссылаются `local` и `remote`.

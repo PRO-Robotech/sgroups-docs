@@ -25,9 +25,7 @@ import SvcCidr from './_uni-rule-tabs/_svc-cidr.mdx'
 
 # UniRule
 
-Universal rule — единый метод создания правил для всех комбинаций эндпоинтов.
-Тип правила определяется комбинацией полей `endpoints.local.type` и `endpoints.remote.type`.
-Для `local` допустимы типы `ADDRESS_GROUP` и `SERVICE`, для `remote` — `ADDRESS_GROUP`, `SERVICE`, `FQDN` и `CIDR`.
+{DICTIONARY.resourceUniRule.full}
 
 :::info Общие поля всех комбинаций
 Независимо от типа эндпоинтов каждое правило содержит:
@@ -59,7 +57,7 @@ Universal rule — единый метод создания правил для 
 
 <ApiOperation method="POST" endpoint="/v1/rules/upsert">
 
-Создаёт новое правило или обновляет существующее. Тип правила определяется комбинацией `endpoints.local.type` и `endpoints.remote.type` (oneOf):
+Создает новое правило или обновляет существующее. Тип правила определяется комбинацией `endpoints.local.type` и `endpoints.remote.type` (oneOf):
 
 <Tabs>
 

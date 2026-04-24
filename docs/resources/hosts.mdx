@@ -12,8 +12,7 @@ import dedent from 'ts-dedent'
 
 # Hosts
 
-**Host** — ресурс, представляющий физический или виртуальный узел. IP-адреса и системная
-метаинформация хоста являются read-only полями, обновляемыми через отдельные API-операции.
+{DICTIONARY.resourceHost.full}
 
 ## API
 
@@ -207,7 +206,7 @@ import dedent from 'ts-dedent'
 
 ## Связь с nftables
 
-Сам ресурс Host не создаёт nftables-объектов. IP-адреса хоста добавляются как элементы
+Сам ресурс Host не создает nftables-объектов. IP-адреса хоста добавляются как элементы
 в set родительской AddressGroup при создании **HostBinding**.
 
 <CodeBlock language="bash">

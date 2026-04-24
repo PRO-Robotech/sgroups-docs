@@ -10,7 +10,7 @@ import dedent from 'ts-dedent'
 # Мониторинг
 
 Комплексный обзор наблюдаемости SGroups: метрики Prometheus для сервера и агента,
-распределённый трейсинг через OpenTelemetry, проверки здоровья и Grafana-дашборды.
+распределенный трейсинг через OpenTelemetry, проверки здоровья и Grafana-дашборды.
 
 ## Метрики sg-server
 
@@ -98,7 +98,7 @@ import dedent from 'ts-dedent'
 
 ## OpenTelemetry-трейсинг
 
-sg-server поддерживает распределённый трейсинг через OpenTelemetry SDK.
+sg-server поддерживает распределенный трейсинг через OpenTelemetry SDK.
 
 <CodeBlock language="yaml">
   {dedent`
@@ -109,7 +109,7 @@ sg-server поддерживает распределённый трейсинг
   `}
 </CodeBlock>
 
-| Экспортёр | Значение | Протокол |
+| Экспортер | Значение | Протокол |
 |---|---|---|
 | Jaeger | `jaeger` | HTTP Thrift (`/api/traces`) |
 | OTLP | `otlp` | gRPC (4317) или HTTP (4318) |

@@ -6,11 +6,11 @@ import TabItem from '@theme/TabItem'
 import CodeBlock from '@theme/CodeBlock'
 import dedent from 'ts-dedent'
 
-Локальная сторона — адресная группа (`ADDRESS_GROUP`), удалённая — сервис (`SERVICE`).
+Локальная сторона — адресная группа (`ADDRESS_GROUP`), удаленная — сервис (`SERVICE`).
 Поведение `transport` зависит от направления трафика:
 
-- **Egress / Both** — `transport` НЕ указывается. Транспортная конфигурация берётся из ресурса Service (remote).
-- **Ingress** — `transport` ОБЯЗАТЕЛЕН, задаётся явно в правиле.
+- **Egress / Both** — `transport` НЕ указывается. Транспортная конфигурация берется из ресурса Service (remote).
+- **Ingress** — `transport` ОБЯЗАТЕЛЕН, задается явно в правиле.
 
 <Tabs groupId="ag-svc-traffic">
 
@@ -134,7 +134,7 @@ AG отправляет трафик к Service. Порты и протокол 
 
 <TabItem value="ingress" label="Ingress">
 
-Service отправляет трафик к AG. Транспорт задаётся явно в правиле.
+Service отправляет трафик к AG. Транспорт задается явно в правиле.
 
 <table>
   <thead>

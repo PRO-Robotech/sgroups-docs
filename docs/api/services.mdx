@@ -14,18 +14,7 @@ import { ApiOperation } from '@site/src/components/commonBlocks/ApiOperation'
 
 # Services
 
-Ресурс Service логически представляет приложение, развёрнутое на Host. Service описывает, на каких протоколах и портах приложение принимает или генерирует трафик.
-
-Поле `transports` определяет набор транспортных конфигураций: протокол (TCP/UDP/ICMP), семейство IP (IPv4/IPv6) и записи (порты или типы ICMP).
-
-:::info Связь с правилами (UniRule)
-Когда Service используется как эндпоинт в правиле, его `transports` автоматически применяется вместо явного блока `transport`:
-- **AG → SVC (egress/both)**: transport берётся из remote Service
-- **SVC → AG (ingress)**: transport берётся из local Service
-- **SVC → SVC**: transport берётся из обоих Service
-
-В остальных комбинациях (ingress/egress с явным transport) блок `spec.transport` задаётся в самом правиле.
-:::
+{DICTIONARY.resourceService.full}
 
 ---
 
@@ -33,7 +22,7 @@ import { ApiOperation } from '@site/src/components/commonBlocks/ApiOperation'
 
 <ApiOperation method="POST" endpoint="/v1/services/upsert">
 
-Создаёт новый сервис или обновляет существующий.
+Создает новый сервис или обновляет существующий.
 
 #### Тело запроса
 

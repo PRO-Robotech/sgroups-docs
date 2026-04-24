@@ -12,9 +12,7 @@ import dedent from 'ts-dedent'
 
 # Address Groups
 
-**AddressGroup** — центральный ресурс модели SGroups. Группа адресов объединяет хосты,
-сети и сервисы через механизм привязок (Bindings) и определяет действие по умолчанию
-для трафика, не покрытого явными правилами.
+{DICTIONARY.resourceAddressGroup.full}
 
 ## API
 
@@ -140,7 +138,7 @@ import dedent from 'ts-dedent'
 ## Связь с nftables
 
 AddressGroup транслируется в **nftables set** — именованное множество IP-адресов.
-Для каждого семейства адресов создаётся отдельный set:
+Для каждого семейства адресов создается отдельный set:
 
 <table>
   <thead>

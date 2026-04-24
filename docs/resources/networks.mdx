@@ -12,8 +12,7 @@ import dedent from 'ts-dedent'
 
 # Networks
 
-**Network** — ресурс, описывающий сетевой сегмент в формате CIDR. Сети привязываются
-к AddressGroup через NetworkBinding, добавляя свой CIDR в nftables set группы.
+{DICTIONARY.resourceNetwork.full}
 
 ## API
 
@@ -116,7 +115,7 @@ import dedent from 'ts-dedent'
 
 ## Связь с nftables
 
-Сам ресурс Network не создаёт собственных nftables-объектов. CIDR сети добавляется как
+Сам ресурс Network не создает собственных nftables-объектов. CIDR сети добавляется как
 элемент в set родительской AddressGroup при создании **NetworkBinding**.
 
 <CodeBlock language="bash">

@@ -193,7 +193,7 @@ API-сервер требует TLS-сертификат для обслужив
 ```mermaid
 graph LR
     CM["cert-manager"] -->|"выпускает"| CERT["Certificate<br/>sgroups-k8s-api-tls"]
-    CERT -->|"создаёт"| SECRET["Secret<br/>tls.crt + tls.key"]
+    CERT -->|"создает"| SECRET["Secret<br/>tls.crt + tls.key"]
     SECRET -->|"монтируется в"| POD["sgroups-k8s-api Pod"]
     POD -->|"TLS :8443"| KUBE["kube-apiserver"]
 ```

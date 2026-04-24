@@ -12,19 +12,7 @@ import dedent from 'ts-dedent'
 
 # Services
 
-**Service** — ресурс, логически представляющий приложение, развёрнутое на Host.
-Service описывает, на каких протоколах и портах приложение слушает входящий трафик
-или генерирует исходящий.
-
-Поле `transports` содержит массив транспортных конфигураций: протокол (TCP/UDP/ICMP),
-семейство IP (IPv4/IPv6) и записи (порты или ICMP-типы).
-
-Service привязывается к AddressGroup через ServiceBinding и играет ключевую роль
-в правилах (UniRule):
-
-- Когда Service выступает **получателем трафика** (remote при egress/both), его `transports` автоматически определяет протоколы и порты — явный блок `transport` в правиле не нужен.
-- Когда Service выступает **источником трафика** (local при ingress), аналогично — `transports` из Service используется автоматически.
-- В случае **SVC → SVC** — `transport` берётся из обоих ресурсов Service.
+{DICTIONARY.resourceService.full}
 
 ## API
 
@@ -220,7 +208,7 @@ Service привязывается к AddressGroup через ServiceBinding и 
 ## Связь с nftables
 
 Service определяет **критерии транспортного совпадения** в правилах nftables.
-Сам по себе ресурс Service не создаёт nftables-объектов, но при использовании в Rule
+Сам по себе ресурс Service не создает nftables-объектов, но при использовании в Rule
 его конфигурация транслируется в протокол и порты:
 
 <table>

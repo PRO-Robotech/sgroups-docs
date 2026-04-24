@@ -208,13 +208,13 @@ sg-server использует [spf13/viper](https://github.com/spf13/viper). Т
 | Параметр | Env-переменная | По умолчанию | Описание |
 |---|---|---|---|
 | `tracing.enabled` | `SG_SERVER_TRACING_ENABLED` | `false` | Включить OpenTelemetry |
-| `tracing.exporter` | `SG_SERVER_TRACING_EXPORTER` | `jaeger` | Тип экспортёра: jaeger, otlp |
+| `tracing.exporter` | `SG_SERVER_TRACING_EXPORTER` | `jaeger` | Тип экспортера: jaeger, otlp |
 | `tracing.endpoint` | `SG_SERVER_TRACING_ENDPOINT` | — | Адрес коллектора |
 
 ## Переменные окружения
 
 Все параметры доступны через переменные окружения с префиксом `SG_SERVER_`.
-Вложенность передаётся через `_`, значения в верхнем регистре:
+Вложенность передается через `_`, значения в верхнем регистре:
 
 <CodeBlock language="bash">
   {dedent`
