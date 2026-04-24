@@ -7,12 +7,19 @@ import TabItem from '@theme/TabItem'
 import CodeBlock from '@theme/CodeBlock'
 import dedent from 'ts-dedent'
 
-Локальная сторона — сервис, удаленная — IP-подсеть (`CIDR`).
-Поле `remote.value` **обязательно**. Поля `remote.name` и `remote.namespace` не используются.
+Локальная сторона — сервис (`SERVICE`), удалённая — IP-подсеть (`CIDR`).
+Поле `remote.value` **обязательно**. Поведение `transport` зависит от направления трафика:
 
 :::warning Transport и Traffic
-Блок `spec.transport` **обязателен**. Направление трафика — `INGRESS` или `EGRESS` (значение `BOTH` недопустимо для CIDR).
+- **Egress** — блок `spec.transport` **обязателен**, задаётся явно. Service отправляет трафик к CIDR.
+- **Ingress** — блок `spec.transport` **не указывается**. Транспортная конфигурация наследуется из `transports` ресурса Service (local). CIDR отправляет трафик к Service.
 :::
+
+<Tabs groupId="svc-cidr-traffic">
+
+<TabItem value="egress" label="Egress" default>
+
+Service отправляет трафик к CIDR. Транспорт задаётся явно в правиле.
 
 <table>
   <thead>
@@ -45,7 +52,7 @@ import dedent from 'ts-dedent'
     <tr>
       <td><code>spec.session.traffic</code></td>
       <td><strong>да</strong></td>
-      <td><code>{TYPES.enumTrafficIngressEgress}</code></td>
+      <td><code>{TYPES.enumTrafficEgress}</code></td>
       <td>{DICTIONARY.traffic.short}</td>
     </tr>
     <tr>
@@ -177,59 +184,125 @@ import dedent from 'ts-dedent'
   `}
 </CodeBlock>
 
-**Ответ:**
+</TabItem>
 
-<CodeBlock language="json">
+<TabItem value="ingress" label="Ingress">
+
+CIDR отправляет трафик к Service. Порты и протокол определяются ресурсом Service — блок `transport` не нужен.
+
+<table>
+  <thead>
+    <tr>
+      <th>Параметр</th>
+      <th>Обязательность</th>
+      <th>Тип</th>
+      <th>Описание</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><code>metadata.name</code></td>
+      <td>да</td>
+      <td><code>{TYPES.string}</code></td>
+      <td>{DICTIONARY.name.short}</td>
+    </tr>
+    <tr>
+      <td><code>metadata.namespace</code></td>
+      <td>да</td>
+      <td><code>{TYPES.string}</code></td>
+      <td>{DICTIONARY.namespace.short}</td>
+    </tr>
+    <tr>
+      <td><code>spec.action</code></td>
+      <td><strong>да</strong></td>
+      <td><code>{TYPES.enumAction}</code></td>
+      <td>{DICTIONARY.action.short}</td>
+    </tr>
+    <tr>
+      <td><code>spec.session.traffic</code></td>
+      <td><strong>да</strong></td>
+      <td><code>{TYPES.enumTrafficIngress}</code></td>
+      <td>{DICTIONARY.traffic.short}</td>
+    </tr>
+    <tr>
+      <td><code>spec.endpoints.local.name</code></td>
+      <td>да</td>
+      <td><code>{TYPES.string}</code></td>
+      <td>{DICTIONARY.endpointName.short}</td>
+    </tr>
+    <tr>
+      <td><code>spec.endpoints.local.namespace</code></td>
+      <td>да</td>
+      <td><code>{TYPES.string}</code></td>
+      <td>{DICTIONARY.endpointNamespace.short}</td>
+    </tr>
+    <tr>
+      <td><code>spec.endpoints.local.type</code></td>
+      <td>да</td>
+      <td><code>{TYPES.enumEndpointSVC}</code></td>
+      <td>{DICTIONARY.endpointType.short}</td>
+    </tr>
+    <tr>
+      <td><code>spec.endpoints.remote.type</code></td>
+      <td>да</td>
+      <td><code>{TYPES.enumEndpointCIDR}</code></td>
+      <td>{DICTIONARY.endpointType.short}</td>
+    </tr>
+    <tr>
+      <td><code>spec.endpoints.remote.value</code></td>
+      <td><strong>да</strong></td>
+      <td><code>{TYPES.string}</code></td>
+      <td>{DICTIONARY.remoteValue.short}</td>
+    </tr>
+  </tbody>
+</table>
+
+:::info Transport не указывается
+Блок `spec.transport` отсутствует — транспортная конфигурация наследуется из поля `transports` ресурса Service, на который ссылается `local`.
+:::
+
+<CodeBlock language="bash">
   {dedent`
-    {
-      "rules": [
-        {
-          "metadata": {
-            "uid": "c9d0e1f2-a3b4-5678-2345-6789abcdef01",
-            "name": "deny-monitoring-to-external",
-            "namespace": "production",
-            "creationTimestamp": "2025-01-15T12:00:00Z",
-            "resourceVersion": "1"
-          },
-          "spec": {
-            "action": "DENY",
-            "session": {
-              "traffic": "EGRESS"
+    curl -X POST http://localhost:9006/v1/rules/upsert \\
+      -H 'Content-Type: application/json' \\
+      -d '{
+        "rules": [
+          {
+            "metadata": {
+              "name": "allow-external-to-api-svc",
+              "namespace": "production"
             },
-            "endpoints": {
-              "local": {
-                "name": "monitoring-service",
-                "namespace": "production",
-                "type": "SERVICE"
+            "spec": {
+              "action": "ALLOW",
+              "session": {
+                "traffic": "INGRESS"
               },
-              "remote": {
-                "type": "CIDR",
-                "value": "0.0.0.0/0"
-              }
-            },
-            "transport": {
-              "protocol": "TCP",
-              "IPv": "IPv4",
-              "entries": [
-                {
-                  "description": "All ports",
-                  "ports": "1-65535"
+              "endpoints": {
+                "local": {
+                  "name": "api-service",
+                  "namespace": "production",
+                  "type": "SERVICE"
+                },
+                "remote": {
+                  "type": "CIDR",
+                  "value": "10.0.0.0/8"
                 }
-              ]
+              }
             }
           }
-        }
-      ]
-    }
+        ]
+      }'
   `}
 </CodeBlock>
+
+</TabItem>
+
+</Tabs>
 
 <Restrictions items={[
   { label: 'metadata / spec', rules: RESTRICTIONS.metadataRequired },
   { label: 'metadata.name', rules: RESTRICTIONS.name },
   { label: 'spec.action', rules: RESTRICTIONS.action },
   { label: 'endpoints.*.type', rules: RESTRICTIONS.endpointType },
-  { label: 'transport.protocol', rules: RESTRICTIONS.protocol },
   { label: 'remote.value (CIDR)', rules: RESTRICTIONS.cidr },
 ]} />
-
