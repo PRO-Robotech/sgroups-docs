@@ -1,0 +1,260 @@
+import { DICTIONARY } from '@site/src/constants/dictionary'
+import { TYPES } from '@site/src/constants/types'
+import { RESTRICTIONS } from '@site/src/constants/restrictions'
+import { Restrictions } from '@site/src/components/commonBlocks/Restrictions'
+import CodeBlock from '@theme/CodeBlock'
+import dedent from 'ts-dedent'
+
+Локальная сторона — адресная группа (`ADDRESS_GROUP`), транспорт — ICMP.
+Удаленная сторона не указывается: правило применяется к ICMP-трафику выбранной адресной группы.
+
+:::warning Transport
+Блок `spec.transport` **обязателен**. Для типа правила AG-ICMP значение `spec.transport.protocol` должно быть `ICMP`, а записи задаются через `types`.
+:::
+
+<table>
+  <thead>
+    <tr>
+      <th>Параметр</th>
+      <th>Обязательность</th>
+      <th>Тип</th>
+      <th>Описание</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><code>metadata.name</code></td>
+      <td>да</td>
+      <td><code>{TYPES.string}</code></td>
+      <td>{DICTIONARY.name.short}</td>
+    </tr>
+    <tr>
+      <td><code>metadata.namespace</code></td>
+      <td>да</td>
+      <td><code>{TYPES.string}</code></td>
+      <td>{DICTIONARY.namespace.short}</td>
+    </tr>
+    <tr>
+      <td><code>metadata.labels</code></td>
+      <td>нет</td>
+      <td><code>{TYPES.mapStringString}</code></td>
+      <td>{DICTIONARY.labels.short}</td>
+    </tr>
+    <tr>
+      <td><code>metadata.annotations</code></td>
+      <td>нет</td>
+      <td><code>{TYPES.mapStringString}</code></td>
+      <td>{DICTIONARY.annotations.short}</td>
+    </tr>
+    <tr>
+      <td><code>spec.displayName</code></td>
+      <td>нет</td>
+      <td><code>{TYPES.string}</code></td>
+      <td>{DICTIONARY.displayName.short}</td>
+    </tr>
+    <tr>
+      <td><code>spec.comment</code></td>
+      <td>нет</td>
+      <td><code>{TYPES.string}</code></td>
+      <td>{DICTIONARY.comment.short}</td>
+    </tr>
+    <tr>
+      <td><code>spec.description</code></td>
+      <td>нет</td>
+      <td><code>{TYPES.string}</code></td>
+      <td>{DICTIONARY.description.short}</td>
+    </tr>
+    <tr>
+      <td><code>spec.action</code></td>
+      <td><strong>да</strong></td>
+      <td><code>{TYPES.enumAction}</code></td>
+      <td>{DICTIONARY.action.short}</td>
+    </tr>
+    <tr>
+      <td><code>spec.session.traffic</code></td>
+      <td>нет</td>
+      <td><code>{TYPES.enumTraffic}</code></td>
+      <td>{DICTIONARY.traffic.short}</td>
+    </tr>
+    <tr>
+      <td><code>spec.endpoints.local.name</code></td>
+      <td>да</td>
+      <td><code>{TYPES.string}</code></td>
+      <td>{DICTIONARY.endpointName.short}</td>
+    </tr>
+    <tr>
+      <td><code>spec.endpoints.local.namespace</code></td>
+      <td>да</td>
+      <td><code>{TYPES.string}</code></td>
+      <td>{DICTIONARY.endpointNamespace.short}</td>
+    </tr>
+    <tr>
+      <td><code>spec.endpoints.local.type</code></td>
+      <td>да</td>
+      <td><code>{TYPES.enumEndpointAG}</code></td>
+      <td>{DICTIONARY.endpointType.short}</td>
+    </tr>
+    <tr>
+      <td><code>spec.transport.protocol</code></td>
+      <td>да</td>
+      <td><code>Enum("ICMP")</code></td>
+      <td>{DICTIONARY.protocol.short}</td>
+    </tr>
+    <tr>
+      <td><code>spec.transport.ipv</code></td>
+      <td>да</td>
+      <td><code>{TYPES.enumIpv}</code></td>
+      <td>{DICTIONARY.ipv.short}</td>
+    </tr>
+    <tr>
+      <td><code>spec.transport.entries[]</code></td>
+      <td>нет</td>
+      <td><code>{TYPES.entry}</code></td>
+      <td>{DICTIONARY.entries.short}</td>
+    </tr>
+  </tbody>
+</table>
+
+**Структура Entry:**
+
+<table>
+  <thead>
+    <tr>
+      <th>Поле</th>
+      <th>Тип</th>
+      <th>Описание</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><code>description</code></td>
+      <td><code>{TYPES.string}</code></td>
+      <td>{DICTIONARY.description.short}</td>
+    </tr>
+    <tr>
+      <td><code>comment</code></td>
+      <td><code>{TYPES.string}</code></td>
+      <td>{DICTIONARY.comment.short}</td>
+    </tr>
+    <tr>
+      <td><code>types</code></td>
+      <td><code>{TYPES.uint32}</code></td>
+      <td>{DICTIONARY.icmpTypes.short}</td>
+    </tr>
+  </tbody>
+</table>
+
+<CodeBlock language="bash">
+  {dedent`
+    curl -X POST http://localhost:9006/v1/rules/upsert \\
+      -H 'Content-Type: application/json' \\
+      -d '{
+        "rules": [
+          {
+            "metadata": {
+              "name": "allow-monitoring-icmp-egress",
+              "namespace": "production",
+              "annotations": {
+                "linux-agent.sgroups.io/logs": "true",
+                "linux-agent.sgroups.io/trace": "false",
+                "linux-agent.sgroups.io/priority": "200"
+              }
+            },
+            "spec": {
+              "displayName": "Allow Monitoring ICMP Egress",
+              "action": "ALLOW",
+              "session": {
+                "traffic": "EGRESS"
+              },
+              "endpoints": {
+                "local": {
+                  "name": "monitoring-agents",
+                  "namespace": "production",
+                  "type": "ADDRESS_GROUP"
+                }
+              },
+              "transport": {
+                "protocol": "ICMP",
+                "IPv": "IPv4",
+                "entries": [
+                  {
+                    "description": "Ping and diagnostics",
+                    "comment": "ICMP echo and error messages",
+                    "types": [
+                      3,
+                      8,
+                      11
+                    ]
+                  }
+                ]
+              }
+            }
+          }
+        ]
+      }'
+  `}
+</CodeBlock>
+
+**Ответ:**
+
+<CodeBlock language="json">
+  {dedent`
+    {
+      "rules": [
+        {
+          "metadata": {
+            "uid": "c9d0e1f2-a3b4-5678-cdef-789012345678",
+            "name": "allow-monitoring-icmp-egress",
+            "namespace": "production",
+            "annotations": {
+              "linux-agent.sgroups.io/logs": "true",
+              "linux-agent.sgroups.io/trace": "false",
+              "linux-agent.sgroups.io/priority": "200"
+            },
+            "creationTimestamp": "2025-01-15T10:40:00Z",
+            "resourceVersion": "1"
+          },
+          "spec": {
+            "displayName": "Allow Monitoring ICMP Egress",
+            "action": "ALLOW",
+            "session": {
+              "traffic": "EGRESS"
+            },
+            "endpoints": {
+              "local": {
+                "name": "monitoring-agents",
+                "namespace": "production",
+                "type": "ADDRESS_GROUP"
+              }
+            },
+            "transport": {
+              "protocol": "ICMP",
+              "IPv": "IPv4",
+              "entries": [
+                {
+                  "description": "Ping and diagnostics",
+                  "comment": "ICMP echo and error messages",
+                  "types": [
+                    3,
+                    8,
+                    11
+                  ]
+                }
+              ]
+            }
+          }
+        }
+      ]
+    }
+  `}
+</CodeBlock>
+
+<Restrictions items={[
+  { label: 'metadata / spec', rules: RESTRICTIONS.metadataRequired },
+  { label: 'metadata.name', rules: RESTRICTIONS.name },
+  { label: 'spec.action', rules: RESTRICTIONS.action },
+  { label: 'endpoints.local.type', rules: RESTRICTIONS.endpointType },
+  { label: 'transport.protocol', rules: RESTRICTIONS.protocol },
+  { label: 'transport.ipv', rules: RESTRICTIONS.ipv },
+  { label: 'entries[].types', rules: RESTRICTIONS.icmpType },
+]} />
