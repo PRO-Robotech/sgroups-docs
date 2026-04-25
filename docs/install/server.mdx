@@ -78,10 +78,24 @@ import dedent from 'ts-dedent'
   `}
 </CodeBlock>
 
-| Порт | Назначение |
-|---|---|
-| `9000` | gRPC API |
-| `9100` | REST (gRPC-Gateway) + метрики |
+<table>
+  <thead>
+    <tr>
+      <th>Порт</th>
+      <th>Назначение</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><code>9000</code></td>
+      <td>gRPC API</td>
+    </tr>
+    <tr>
+      <td><code>9100</code></td>
+      <td>REST (gRPC-Gateway) + метрики</td>
+    </tr>
+  </tbody>
+</table>
 
 ## Docker Compose
 
@@ -167,49 +181,189 @@ sg-server использует [spf13/viper](https://github.com/spf13/viper). Т
 
 ### Параметры: Сервер
 
-| Параметр | Env-переменная | По умолчанию | Описание |
-|---|---|---|---|
-| `server.grpc.address` | `SG_SERVER_GRPC_ADDRESS` | `0.0.0.0:9000` | Адрес gRPC-сервера |
-| `server.gateway.address` | `SG_SERVER_GATEWAY_ADDRESS` | `0.0.0.0:9100` | Адрес REST-gateway |
+<table>
+  <thead>
+    <tr>
+      <th>Параметр</th>
+      <th>Env-переменная</th>
+      <th>По умолчанию</th>
+      <th>Описание</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><code>server.grpc.address</code></td>
+      <td><code>SG_SERVER_GRPC_ADDRESS</code></td>
+      <td><code>0.0.0.0:9000</code></td>
+      <td>Адрес gRPC-сервера</td>
+    </tr>
+    <tr>
+      <td><code>server.gateway.address</code></td>
+      <td><code>SG_SERVER_GATEWAY_ADDRESS</code></td>
+      <td><code>0.0.0.0:9100</code></td>
+      <td>Адрес REST-gateway</td>
+    </tr>
+  </tbody>
+</table>
 
 ### Параметры: База данных
 
-| Параметр | Env-переменная | По умолчанию | Описание |
-|---|---|---|---|
-| `db.dsn` | `SG_SERVER_DB_DSN` | — | Строка подключения PostgreSQL |
-| `db.max_open_conns` | `SG_SERVER_DB_MAX_OPEN_CONNS` | `20` | Макс. число открытых соединений |
-| `db.max_idle_conns` | `SG_SERVER_DB_MAX_IDLE_CONNS` | `5` | Макс. число простаивающих соединений |
+<table>
+  <thead>
+    <tr>
+      <th>Параметр</th>
+      <th>Env-переменная</th>
+      <th>По умолчанию</th>
+      <th>Описание</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><code>db.dsn</code></td>
+      <td><code>SG_SERVER_DB_DSN</code></td>
+      <td>—</td>
+      <td>Строка подключения PostgreSQL</td>
+    </tr>
+    <tr>
+      <td><code>db.max_open_conns</code></td>
+      <td><code>SG_SERVER_DB_MAX_OPEN_CONNS</code></td>
+      <td><code>20</code></td>
+      <td>Макс. число открытых соединений</td>
+    </tr>
+    <tr>
+      <td><code>db.max_idle_conns</code></td>
+      <td><code>SG_SERVER_DB_MAX_IDLE_CONNS</code></td>
+      <td><code>5</code></td>
+      <td>Макс. число простаивающих соединений</td>
+    </tr>
+  </tbody>
+</table>
 
 ### Параметры: TLS
 
-| Параметр | Env-переменная | По умолчанию | Описание |
-|---|---|---|---|
-| `tls.enabled` | `SG_SERVER_TLS_ENABLED` | `false` | Включить TLS для gRPC |
-| `tls.cert_file` | `SG_SERVER_TLS_CERT_FILE` | — | Путь к сертификату сервера |
-| `tls.key_file` | `SG_SERVER_TLS_KEY_FILE` | — | Путь к приватному ключу |
+<table>
+  <thead>
+    <tr>
+      <th>Параметр</th>
+      <th>Env-переменная</th>
+      <th>По умолчанию</th>
+      <th>Описание</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><code>tls.enabled</code></td>
+      <td><code>SG_SERVER_TLS_ENABLED</code></td>
+      <td><code>false</code></td>
+      <td>Включить TLS для gRPC</td>
+    </tr>
+    <tr>
+      <td><code>tls.cert_file</code></td>
+      <td><code>SG_SERVER_TLS_CERT_FILE</code></td>
+      <td>—</td>
+      <td>Путь к сертификату сервера</td>
+    </tr>
+    <tr>
+      <td><code>tls.key_file</code></td>
+      <td><code>SG_SERVER_TLS_KEY_FILE</code></td>
+      <td>—</td>
+      <td>Путь к приватному ключу</td>
+    </tr>
+  </tbody>
+</table>
 
 ### Параметры: Логирование
 
-| Параметр | Env-переменная | По умолчанию | Описание |
-|---|---|---|---|
-| `logger.level` | `SG_SERVER_LOGGER_LEVEL` | `info` | Уровень: debug, info, warn, error |
-| `logger.format` | `SG_SERVER_LOGGER_FORMAT` | `json` | Формат: json, text |
+<table>
+  <thead>
+    <tr>
+      <th>Параметр</th>
+      <th>Env-переменная</th>
+      <th>По умолчанию</th>
+      <th>Описание</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><code>logger.level</code></td>
+      <td><code>SG_SERVER_LOGGER_LEVEL</code></td>
+      <td><code>info</code></td>
+      <td>Уровень: debug, info, warn, error</td>
+    </tr>
+    <tr>
+      <td><code>logger.format</code></td>
+      <td><code>SG_SERVER_LOGGER_FORMAT</code></td>
+      <td><code>json</code></td>
+      <td>Формат: json, text</td>
+    </tr>
+  </tbody>
+</table>
 
 ### Параметры: Метрики
 
-| Параметр | Env-переменная | По умолчанию | Описание |
-|---|---|---|---|
-| `metrics.enabled` | `SG_SERVER_METRICS_ENABLED` | `true` | Включить Prometheus-эндпоинт |
-| `metrics.address` | `SG_SERVER_METRICS_ADDRESS` | `0.0.0.0:9100` | Адрес метрик |
-| `metrics.path` | `SG_SERVER_METRICS_PATH` | `/metrics` | HTTP-путь метрик |
+<table>
+  <thead>
+    <tr>
+      <th>Параметр</th>
+      <th>Env-переменная</th>
+      <th>По умолчанию</th>
+      <th>Описание</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><code>metrics.enabled</code></td>
+      <td><code>SG_SERVER_METRICS_ENABLED</code></td>
+      <td><code>true</code></td>
+      <td>Включить Prometheus-эндпоинт</td>
+    </tr>
+    <tr>
+      <td><code>metrics.address</code></td>
+      <td><code>SG_SERVER_METRICS_ADDRESS</code></td>
+      <td><code>0.0.0.0:9100</code></td>
+      <td>Адрес метрик</td>
+    </tr>
+    <tr>
+      <td><code>metrics.path</code></td>
+      <td><code>SG_SERVER_METRICS_PATH</code></td>
+      <td><code>/metrics</code></td>
+      <td>HTTP-путь метрик</td>
+    </tr>
+  </tbody>
+</table>
 
 ### Параметры: Трейсинг
 
-| Параметр | Env-переменная | По умолчанию | Описание |
-|---|---|---|---|
-| `tracing.enabled` | `SG_SERVER_TRACING_ENABLED` | `false` | Включить OpenTelemetry |
-| `tracing.exporter` | `SG_SERVER_TRACING_EXPORTER` | `jaeger` | Тип экспортера: jaeger, otlp |
-| `tracing.endpoint` | `SG_SERVER_TRACING_ENDPOINT` | — | Адрес коллектора |
+<table>
+  <thead>
+    <tr>
+      <th>Параметр</th>
+      <th>Env-переменная</th>
+      <th>По умолчанию</th>
+      <th>Описание</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><code>tracing.enabled</code></td>
+      <td><code>SG_SERVER_TRACING_ENABLED</code></td>
+      <td><code>false</code></td>
+      <td>Включить OpenTelemetry</td>
+    </tr>
+    <tr>
+      <td><code>tracing.exporter</code></td>
+      <td><code>SG_SERVER_TRACING_EXPORTER</code></td>
+      <td><code>jaeger</code></td>
+      <td>Тип экспортера: jaeger, otlp</td>
+    </tr>
+    <tr>
+      <td><code>tracing.endpoint</code></td>
+      <td><code>SG_SERVER_TRACING_ENDPOINT</code></td>
+      <td>—</td>
+      <td>Адрес коллектора</td>
+    </tr>
+  </tbody>
+</table>
 
 ## Переменные окружения
 

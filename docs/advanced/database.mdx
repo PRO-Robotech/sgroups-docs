@@ -4,145 +4,669 @@ sidebar_position: 3
 title: База данных
 ---
 
-import CodeBlock from '@theme/CodeBlock'
-import dedent from 'ts-dedent'
+import { DbSchemaDiagram } from '@site/src/components/commonBlocks/DbSchemaDiagram/DbSchemaDiagram'
+import { DATABASE_SCHEMA_DIAGRAM } from '@site/src/constants/database-schema'
 
 # База данных
 
-sg-server использует **PostgreSQL** в качестве единственного хранилища конфигурации
-сетевых политик. Подключение реализовано через драйвер [jackc/pgx/v5](https://github.com/jackc/pgx).
+`sg-server` хранит конфигурацию SGroups в PostgreSQL. База данных здесь не является
+пассивным key-value хранилищем: в ней зафиксированы границы домена, идентичность
+ресурсов, уникальность имён, ссылки между сущностями, правила инкрементальной
+синхронизации и outbox для `List/Watch`.
 
-## Требования
+Эта страница описывает схему как архитектурный контракт. По ней можно повторить
+структуру БД: создать расширения и типы, развернуть таблицы, индексы, ограничения,
+представления, функции синхронизации и триггеры событий в правильном порядке.
 
-- PostgreSQL 14+
-- Отдельная база данных и пользователь для sg-server
-- Расширения не требуются (стандартный SQL)
+Основные таблицы приложения находятся в схеме **`sgroups`**. Таблица `sg_db_ver`
+создаётся отдельно механизмом миграций и хранит состояние применённых миграций.
 
-### Создание базы данных
+## ER-диаграмма
 
-<CodeBlock language="sql">
-  {dedent`
-    CREATE USER sgroups WITH PASSWORD 'secret';
-    CREATE DATABASE sgroups OWNER sgroups;
-  `}
-</CodeBlock>
+<DbSchemaDiagram {...DATABASE_SCHEMA_DIAGRAM} />
 
-## Схема данных
+## Роль БД в архитектуре
 
-Все таблицы создаются в схеме **`sgroups`** и связаны внешними ключами.
-Схема отражает доменную модель из 9 типов ресурсов:
+PostgreSQL выполняет три задачи:
 
-| Таблица | Ресурс | Описание |
-|---|---|---|
-| `tbl_namespace` | Namespace | Пространства имен для изоляции ресурсов |
-| `tbl_ag` | AddressGroup | Группы адресов (security groups) |
-| `tbl_host` | Host | Управляемые хосты (IP-адреса узлов) |
-| `tbl_network` | Network | Сетевые подсети в формате CIDR |
-| `tbl_service` | Service | Описания сервисов (порты, протоколы) |
-| `tbl_host_binding` | HostBinding | Связь хостов с группами адресов |
-| `tbl_network_binding` | NetworkBinding | Связь сетей с группами адресов |
-| `tbl_service_binding` | ServiceBinding | Связь сервисов с группами адресов |
-| `tbl_rule_registry` | RuleRegistry | Реестр правил межсетевого экрана |
+1. **Хранит ресурсную модель**: namespaces, address groups, hosts, networks,
+   services, bindings и rule-таблицы.
+2. **Поддерживает доменные инварианты**: уникальность имён в namespace,
+   целостность ссылок, запрет изменения неизменяемых полей, отсутствие конфликтов
+   transport-диапазонов у сервисов на одном AddressGroup.
+3. **Обеспечивает инкрементальную синхронизацию**: глобальный `resourceVersion`,
+   outbox событий, SQL-view для API-представления и функции `list_*` / `sync_*`.
 
-### ER-диаграмма
+Сервер не должен собирать эти гарантии вручную в памяти. Он работает поверх уже
+нормализованной и проверенной схемы.
 
-```mermaid
-erDiagram
-    tbl_namespace ||--o{ tbl_ag : contains
-    tbl_namespace ||--o{ tbl_host : contains
-    tbl_namespace ||--o{ tbl_network : contains
-    tbl_namespace ||--o{ tbl_service : contains
-    tbl_ag ||--o{ tbl_host_binding : binds
-    tbl_ag ||--o{ tbl_network_binding : binds
-    tbl_ag ||--o{ tbl_service_binding : binds
-    tbl_host ||--o{ tbl_host_binding : referenced
-    tbl_network ||--o{ tbl_network_binding : referenced
-    tbl_service ||--o{ tbl_service_binding : referenced
-    tbl_ag ||--o{ tbl_rule_registry : "src/dst"
-```
+## Порядок развёртывания
 
-## Миграции
+Схему нужно создавать в следующей последовательности:
 
-Управление схемой осуществляется через форк
-[Morwran/goose](https://github.com/Morwran/goose) — инструмент версионных SQL-миграций.
+1. Создать схему `sgroups`.
+2. Подключить расширения PostgreSQL.
+3. Создать enum-типы, домены, composite-типы, агрегаты и общие функции.
+4. Создать служебные таблицы `tbl_global_resource_version`,
+   `tbl_outbox_resource_events`, `tbl_sync_status`.
+5. Создать таблицы ресурсов и binding-таблицы.
+6. Создать базовые SQL-view `vu_*` для API-проекции.
+7. Создать функции `list_*`, `sync_*`, функции outbox и триггеры.
+8. Создать `tbl_rule_registry`.
+9. Создать rule-таблицы.
+10. Добавить индексы обратных ссылок на rule-таблицы.
+11. Переопределить `vu_ag` и `vu_service`, чтобы они учитывали ссылки на правила.
+12. Повесить триггеры `binding_rev`, `rule_rev`, immutable-field и outbox.
 
-### Таблица версий
+Если менять порядок, легко получить временно невалидное состояние: например,
+правила зависят от `tbl_rule_registry`, outbox зависит от view-представлений,
+а `vu_ag` и `vu_service` должны быть пересозданы после появления rule-таблиц.
 
-Goose хранит текущую версию схемы в таблице **`sg_db_ver`** внутри схемы `sgroups`.
-Таблица создается автоматически при первом запуске.
+## PostgreSQL-расширения
 
-### Фрагментированные миграции
+| Расширение | Зачем нужно |
+| --- | --- |
+| `pgcrypto` | Генерация UUID через `gen_random_uuid()`. |
+| `hstore` | Хранение и фильтрация `labels`, `annotations`, selector-объектов. |
+| `btree_gist` | Поддержка индексируемых операций для диапазонов и проверок пересечений. |
+| `citext` | Case-insensitive FQDN для домена `sgroups.fqdn`. |
 
-Каждая миграция может состоять из нескольких SQL-файлов, объединяемых
-скриптом `gen-migration.sh`:
+## Доменные типы
 
-<CodeBlock language="bash">
-  {dedent`
-    ./scripts/gen-migration.sh
-  `}
-</CodeBlock>
+### Enum-типы
 
-### Запуск миграций через Docker
+| Тип | Значения | Назначение |
+| --- | --- | --- |
+| `sgroups.policy_action` | `DENY`, `ALLOW` | Действие политики или правила. |
+| `sgroups.proto` | `tcp`, `udp`, `icmp` | L4-протокол. |
+| `sgroups.traffic` | `both`, `ingress`, `egress` | Направление трафика. |
+| `sgroups.ip_family` | `IPv4`, `IPv6` | IP-семейство правила. |
+| `sgroups.resource_type` | Все ресурсы и rule-типы | Тип объекта в outbox, refs и API-представлениях. |
 
-<CodeBlock language="bash">
-  {dedent`
-    # Сборка образа миграций
-    docker build -f Dockerfile.goose -t sgroups/goose:latest .
+### Домены
 
-    # Применение миграций
-    docker run --rm \
-      -e GOOSE_DRIVER=postgres \
-      -e GOOSE_DBSTRING="postgres://sgroups:secret@db:5432/sgroups?sslmode=disable" \
-      sgroups/goose:latest up
-  `}
-</CodeBlock>
+| Домен | Базовый тип | Инвариант |
+| --- | --- | --- |
+| `sgroups.rname` | `text` | Имя ресурса: непустое, ограниченной длины, пригодное для API. |
+| `sgroups.dname` | `text` | Отображаемое имя. |
+| `sgroups.port_ranges` | `int4multirange` | Диапазоны портов в допустимом интервале. |
+| `sgroups.icmp_types` | `int2[]` | ICMP-типы в диапазоне `0..255`. |
+| `sgroups.fqdn` | `citext` | FQDN без учёта регистра, с проверкой формата и длины. |
 
-### Команды Goose
+### Composite-типы
 
-| Команда | Описание |
-|---|---|
-| `up` | Применить все ожидающие миграции |
-| `down` | Откатить последнюю миграцию |
-| `status` | Показать статус миграций |
-| `version` | Показать текущую версию схемы |
+Схема активно использует composite-типы как контракт между SQL-функциями и сервером:
 
-## Docker Compose с миграциями
+| Тип | Назначение |
+| --- | --- |
+| `sgroups.resource_ref` | Ссылка на другой ресурс: имя, namespace, тип ресурса. |
+| `sgroups.resource_id` | Человеческий идентификатор ресурса: name + namespace. |
+| `sgroups.res_selector` / `field_selector` | Фильтрация ресурсов в `list_*`. |
+| `sgroups.host_info` | Дополнительная информация хоста. |
+| `sgroups.transport` / `transport_entry` | Описание портов/ICMP у Service. |
+| `sgroups.port_entries` / `icmp_entries` | Entries в rule-таблицах. |
+| `sgroups.endpoint` | Endpoint в API-проекции правил. |
+| `sgroups.row_of__*` | Входные DTO для `sync_*` функций. |
 
-<CodeBlock language="yaml">
-  {dedent`
-    services:
-      db:
-        image: postgres:16-alpine
-        environment:
-          POSTGRES_DB: sgroups
-          POSTGRES_USER: sgroups
-          POSTGRES_PASSWORD: secret
+Эти типы важны: они делают SQL-функции устойчивым API-слоем между Go-кодом и
+физическими таблицами.
 
-      migrations:
-        image: sgroups/goose:latest
-        environment:
-          GOOSE_DRIVER: postgres
-          GOOSE_DBSTRING: "postgres://sgroups:secret@db:5432/sgroups?sslmode=disable"
-        depends_on:
-          - db
-        command: ["up"]
+## Служебный контур
 
-      sg-server:
-        image: sgroups/sg-server:latest
-        environment:
-          SG_SERVER_DB_DSN: "postgres://sgroups:secret@db:5432/sgroups?sslmode=disable"
-        depends_on:
-          migrations:
-            condition: service_completed_successfully
-  `}
-</CodeBlock>
+### `tbl_global_resource_version`
 
-:::caution
-Всегда выполняйте миграции **до** запуска sg-server. При несовпадении версии схемы
-сервер откажется стартовать и выведет ошибку с ожидаемой и текущей версиями.
-:::
+Синглтон-таблица глобальной версии ресурсов.
 
-:::tip
-В CI/CD рекомендуется запускать `goose status` перед применением миграций,
-чтобы убедиться в согласованности состояния базы.
-:::
+| Поле | Тип | Ограничения | Назначение |
+| --- | --- | --- | --- |
+| `id` | `int2` | `pk`, значение `1` | Идентификатор singleton-строки. |
+| `v` | `int8` | `not null`, `v >= 0` | Монотонно возрастающий глобальный `resourceVersion`. |
+
+Каждое изменение ресурса получает новую глобальную версию. Эта версия используется
+outbox-таблицей и `Watch/List-after-RV`.
+
+### `tbl_outbox_resource_events`
+
+Outbox событий ресурсов.
+
+| Поле | Тип | Назначение |
+| --- | --- | --- |
+| `event_id` | `int8` | Локальный sequence-id события. |
+| `ts` | `timestamptz` | Время записи события. |
+| `resource_version` | `int8` | Глобальная версия события. |
+| `resource_type` | `sgroups.resource_type` | Тип ресурса. |
+| `event_type` | `text` | Тип события: добавление, изменение, удаление. |
+| `object` | `jsonb` | API-представление ресурса без внутреннего `id`. |
+
+Индексы:
+
+| Индекс | Назначение |
+| --- | --- |
+| `outbox_resource_events_ts_idx` | Очистка устаревших событий по времени. |
+| `outbox_resource_events_type_rv_event_id_idx` | Быстрое чтение событий по типу ресурса и `resourceVersion`. |
+
+Outbox работает вместе с `NOTIFY`: после записи события БД отправляет уведомление
+в канал вида `resource_<type>`, а потребители дочитывают детали через функцию
+списка outbox.
+
+### `tbl_sync_status`
+
+Служебная таблица состояния синхронизации.
+
+| Поле | Назначение |
+| --- | --- |
+| `sync_count` | Счётчик синхронизаций, должен быть больше `0`. |
+| `updated_at` | Время обновления, генерируется через SQL-функцию времени. |
+
+## Общие правила ресурсных таблиц
+
+Большинство ресурсных таблиц имеют одинаковый скелет:
+
+| Поле | Назначение |
+| --- | --- |
+| `id` | Внутренний surrogate PK, не должен попадать наружу. |
+| `uid` | Стабильный внешний идентификатор ресурса. |
+| `name` | Имя ресурса внутри namespace. |
+| `ns` | FK на `tbl_namespace.id`, если ресурс namespaced. |
+| `display_name` | Человекочитаемое имя. |
+| `labels` | Метки для selector-фильтрации. |
+| `annotations` | Произвольные аннотации. |
+| `comment`, `description` | Текстовое описание. |
+| `creation_timestamp` | Время создания. |
+| `resource_version` | Текущая версия ресурса в API-проекции. |
+
+Главный инвариант: **наружу выходит `uid`, а не `id`**. Внутренний `id` нужен
+только для FK и join-операций.
+
+## Ресурсные таблицы
+
+### `tbl_namespace`
+
+Корневой ресурс. Namespace задаёт область имён для остальных ресурсов и правил.
+
+Ключевые ограничения:
+
+| Ограничение | Смысл |
+| --- | --- |
+| `uid unique` | Стабильная глобальная идентичность namespace. |
+| `name unique` | Namespace не имеет родительского namespace, поэтому имя глобально уникально. |
+| GIN на `labels`, `annotations` | Быстрый selector-поиск. |
+
+### `tbl_ag`
+
+AddressGroup — центральная сущность сетевой политики.
+
+Дополнительные поля:
+
+| Поле | Назначение |
+| --- | --- |
+| `default_action` | Действие по умолчанию (`DENY` / `ALLOW`). |
+| `logs` | Включение логирования. |
+| `trace` | Включение трассировки. |
+| `binding_rev` | Ревизия состава bindings. |
+| `rule_rev` | Ревизия набора правил, затрагивающих AG. |
+
+Ограничения:
+
+| Ограничение | Смысл |
+| --- | --- |
+| `(name, ns) unique` | Один AddressGroup с данным именем в namespace. |
+| `ns -> tbl_namespace(id)` | Удаление namespace каскадно удаляет AG. |
+| GIN на `labels`, `annotations` | Фильтрация и поиск. |
+
+`binding_rev` меняется при изменении `HostBinding`, `NetworkBinding`,
+`ServiceBinding`. `rule_rev` меняется при изменении правил, где AG участвует как
+локальный или удалённый endpoint.
+
+### `tbl_network`
+
+Описывает CIDR-сеть. Дополнительное поле `network` хранит CIDR, а `binding_rev`
+показывает ревизию привязок сети к AG.
+
+### `tbl_host`
+
+Описывает хост. Дополнительные поля: `ips` для массива IP-адресов, `meta_info`
+для JSONB-метаданных и `binding_rev` для ревизии привязок.
+
+### `tbl_service`
+
+Описывает сервис и его transport-профиль.
+
+| Поле | Назначение |
+| --- | --- |
+| `transports` | Массив transport-описаний (`tcp`, `udp`, `icmp`). |
+| `binding_rev` | Ревизия привязок сервиса к AG. |
+| `rule_rev` | Ревизия правил, затрагивающих Service. |
+
+Ключевой инвариант: transport-диапазоны внутри сервиса и между сервисами,
+привязанными к одному AG, не должны конфликтовать. Это контролируется CHECK-логикой,
+агрегатами пересечений и триггерами.
+
+## Binding-таблицы
+
+Binding-таблицы связывают AddressGroup с конкретным ресурсом.
+
+| Таблица | Связь | Уникальность |
+| --- | --- | --- |
+| `tbl_host_binding` | `tbl_ag` + `tbl_host` | `(ag, host)` и `(name, ns)` |
+| `tbl_network_binding` | `tbl_ag` + `tbl_network` | `(ag, network)` и `(name, ns)` |
+| `tbl_service_binding` | `tbl_ag` + `tbl_service` | `(ag, service)` и `(name, ns)` |
+
+Общие поля binding’ов такие же, как у ресурсов: `id`, `uid`, `name`, `ns`,
+`display_name`, `labels`, `annotations`, `comment`, `description`,
+`creation_timestamp`, `resource_version`.
+
+Важные инварианты:
+
+1. Один и тот же ресурс нельзя дважды привязать к одному AG.
+2. Binding имеет собственный `uid` и имя.
+3. При изменении binding’ов обновляется `binding_rev` у затронутых AG и ресурса.
+4. Для service binding дополнительно проверяется отсутствие пересечений transport
+   профилей сервисов на одном AG.
+
+## Правила и `tbl_rule_registry`
+
+Правила вынесены в отдельные таблицы по типам. Это осознанный дизайн: каждая
+таблица хранит только поля, которые нужны конкретному виду правила, а общий
+registry обеспечивает единую идентичность и уникальность имени.
+
+### `tbl_rule_registry`
+
+| Поле | Назначение |
+| --- | --- |
+| `uid` | PK правила. |
+| `name` | Имя правила. |
+| `ns` | Namespace правила. |
+
+Ограничение `(name, ns) unique` в registry означает: **в одном namespace не может
+быть двух правил с одинаковым именем, даже если они лежат в разных rule-таблицах**.
+
+Каждая rule-таблица хранит свой `uid`, который является FK на
+`tbl_rule_registry.uid` с каскадным удалением. Поэтому registry — это входная
+точка удаления и cross-type uniqueness.
+
+## Rule-таблицы
+
+Rule-слой разделён на таблицы по типу endpoint’ов и L4-семантике. Это делает
+ограничения проще: таблица с CIDR хранит `cidr`, таблица с FQDN хранит `fqdn`,
+таблица с remote AG/Service хранит FK на remote resource, а ICMP-вариант не
+обязан иметь `proto`.
+
+У всех rule-таблиц есть общий ресурсный каркас:
+
+| Поле | Тип | Назначение |
+| --- | --- | --- |
+| `id` | `int8` | Внутренний PK строки правила. |
+| `uid` | `uuid` | Внешний идентификатор правила; FK на `tbl_rule_registry.uid`. |
+| `name` | `text` | Имя правила. Дублируется с registry для локальной уникальности и удобства чтения. |
+| `ns` | `int8` | Namespace правила. |
+| `display_name` | `text` | Отображаемое имя. |
+| `labels`, `annotations` | `hstore` | Метаданные и selector-атрибуты. |
+| `comment`, `description` | `text` | Человекочитаемые пояснения. |
+| `action` | `sgroups.policy_action` | `DENY` или `ALLOW`. |
+| `traffic` | `sgroups.traffic` | Направление: `ingress`, `egress` или `both`. |
+| `ip_v` | `sgroups.ip_family` | IP-семейство правила. |
+| `creation_timestamp` | `timestamptz` | Время создания строки. |
+| `resource_version` | `text` | Версия ресурса правила для API. |
+
+Общие ограничения:
+
+| Ограничение | Назначение |
+| --- | --- |
+| `uid unique` | Одно физическое правило на один внешний UUID. |
+| `uid -> tbl_rule_registry(uid)` | Связывает физическую rule-таблицу с общим registry. |
+| `(name, ns) unique` | Локальная уникальность имени внутри конкретной rule-таблицы. |
+| `ns -> tbl_namespace(id)` | Правило принадлежит namespace. |
+| GIN на `labels`, `annotations` | Поиск и selector-фильтрация. |
+
+Важно различать две уникальности:
+
+1. `(name, ns)` в самой rule-таблице запрещает дубль внутри одного типа правил.
+2. `(name, ns)` в `tbl_rule_registry` запрещает дубль **между всеми типами правил**.
+
+### Семантика `local`, `remote`, `cidr`, `fqdn`
+
+В rule-таблицах есть локальная сторона и удалённая сторона.
+
+| Поле | Где встречается | Смысл |
+| --- | --- | --- |
+| `aglocal` | AG-based rules | AddressGroup, к которому правило применяется локально. |
+| `agremote` | AG→AG rules | Удалённый AddressGroup. |
+| `svclocal` | Service-based rules | Service, к которому правило применяется локально. |
+| `svcremote` | Service→Service rules | Удалённый Service. |
+| `cidr` | CIDR rules | Удалённый CIDR endpoint без отдельной ресурсной таблицы. |
+| `fqdn` | FQDN rules | Удалённый DNS endpoint, case-insensitive через домен `sgroups.fqdn`. |
+
+Локальная сторона используется для пересчёта `rule_rev` у AG или Service. Remote
+сторона тоже попадает в refs и, если это AG/Service, участвует в обратном поиске
+правил.
+
+### `entries`
+
+`entries` — это массив доменных записей, который задаёт L4-детали правила.
+
+| Тип entries | Где используется | Что хранит |
+| --- | --- | --- |
+| `port_entries[]` | TCP/UDP rules | Диапазоны портов и параметры transport-правила. |
+| `icmp_entries[]` | ICMP rules | ICMP types/codes. |
+
+Для TCP/UDP-правил поле `proto` задаёт протокол. Для ICMP-таблиц протокол
+подразумевается типом таблицы, поэтому отдельное поле `proto` не нужно.
+
+## AddressGroup-based rule-таблицы
+
+### `tbl_ag2ag_rule`
+
+Правило между двумя AddressGroup для TCP/UDP-трафика.
+
+| Поле | Назначение |
+| --- | --- |
+| `aglocal` | Локальный AG, для которого правило применяется. |
+| `agremote` | Удалённый AG. |
+| `proto` | TCP или UDP. В этой таблице обязателен. |
+| `entries` | `port_entries[]`, портовые условия правила. |
+
+Связи:
+
+| FK | Поведение |
+| --- | --- |
+| `aglocal -> tbl_ag(id)` | Удаление AG удаляет правило. |
+| `agremote -> tbl_ag(id)` | Удаление remote AG удаляет правило. |
+| `ns -> tbl_namespace(id)` | Удаление namespace удаляет правило. |
+| `uid -> tbl_rule_registry(uid)` | Удаление записи registry удаляет физическое правило. |
+
+Индексы `aglocal` и `agremote` нужны для быстрого ответа на вопрос: какие правила
+затрагивают конкретный AddressGroup.
+
+### `tbl_ag2ag_icmp_rule`
+
+ICMP-вариант правила между двумя AddressGroup.
+
+| Поле | Назначение |
+| --- | --- |
+| `aglocal` | Локальный AG. |
+| `agremote` | Удалённый AG. |
+| `entries` | `icmp_entries[]`, ICMP-условия. |
+
+`proto` здесь отсутствует: таблица уже означает ICMP. Это снижает риск записать
+логически противоречивое правило вида “ICMP rule с proto=tcp”.
+
+### `tbl_ag2icmp_rule`
+
+Локальное ICMP-правило для AddressGroup без remote resource.
+
+| Поле | Назначение |
+| --- | --- |
+| `aglocal` | AG, к которому относится правило. |
+| `entries` | `icmp_entries[]`. |
+
+Эта таблица нужна для случаев, когда правило не описывает связь “ресурс →
+ресурс” или “ресурс → CIDR/FQDN”, а задаёт ICMP-поведение локального AG.
+
+Remote endpoint отсутствует, поэтому refs строятся только вокруг локального AG и
+самого rule resource.
+
+### `tbl_ag2cidr_rule`
+
+Правило AddressGroup → CIDR для TCP/UDP.
+
+| Поле | Назначение |
+| --- | --- |
+| `aglocal` | Локальный AG. |
+| `cidr` | Удалённая сеть в формате PostgreSQL `cidr`. |
+| `proto` | TCP или UDP. |
+| `entries` | `port_entries[]`. |
+
+CIDR не является отдельным ресурсом SGroups. Поэтому для удалённой стороны нет FK:
+значение хранится непосредственно в строке правила.
+
+### `tbl_ag2cidr_icmp_rule`
+
+ICMP-вариант AddressGroup → CIDR.
+
+| Поле | Назначение |
+| --- | --- |
+| `aglocal` | Локальный AG. |
+| `cidr` | Удалённая сеть. |
+| `entries` | `icmp_entries[]`. |
+
+Как и у других ICMP-таблиц, `proto` не хранится отдельно.
+
+### `tbl_ag2fqdn_rule`
+
+Правило AddressGroup → FQDN.
+
+| Поле | Назначение |
+| --- | --- |
+| `aglocal` | Локальный AG. |
+| `fqdn` | Удалённое DNS-имя через домен `sgroups.fqdn`. |
+| `proto` | TCP или UDP, если правило transport-based. |
+| `entries` | `port_entries[]`. |
+
+`fqdn` основан на `citext`, поэтому сравнение не зависит от регистра. Домен
+также ограничивает формат и длину имени. Это важно: FQDN endpoint хранится как
+значение, а не как FK на отдельную таблицу ресурсов.
+
+## Service-based rule-таблицы
+
+Service-based правила привязываются к `tbl_service`, а не к `tbl_ag`. Их назначение
+— описывать политику на уровне сервисов и их transport-профилей.
+
+### `tbl_svc2svc_rule`
+
+Правило между двумя Service для TCP/UDP.
+
+| Поле | Назначение |
+| --- | --- |
+| `svclocal` | Локальный Service. |
+| `svcremote` | Удалённый Service. |
+| `proto` | TCP или UDP. В этой таблице обязателен. |
+| `entries` | `port_entries[]`. |
+
+Индексы `svclocal` и `svcremote` нужны для `rule_rev` и refs: при изменении
+правила оба сервиса должны знать, что набор затрагивающих правил изменился.
+
+### `tbl_svc2fqdn_rule`
+
+Правило Service → FQDN.
+
+| Поле | Назначение |
+| --- | --- |
+| `svclocal` | Локальный Service. |
+| `fqdn` | Удалённое DNS-имя через `sgroups.fqdn`. |
+| `proto` | TCP или UDP, если правило transport-based. |
+| `entries` | `port_entries[]`. |
+
+Удалённая сторона не имеет FK, потому что FQDN — значение, а не SGroups-ресурс.
+
+### `tbl_svc2cidr_rule`
+
+Правило Service → CIDR для TCP/UDP.
+
+| Поле | Назначение |
+| --- | --- |
+| `svclocal` | Локальный Service. |
+| `cidr` | Удалённая сеть. |
+| `proto` | TCP или UDP. |
+| `entries` | `port_entries[]`. |
+
+Эта таблица используется для правил, где сервис обращается к внешней сети,
+описанной CIDR, без создания отдельного Network-ресурса.
+
+### `tbl_svc2cidr_icmp_rule`
+
+ICMP-вариант Service → CIDR.
+
+| Поле | Назначение |
+| --- | --- |
+| `svclocal` | Локальный Service. |
+| `cidr` | Удалённая сеть. |
+| `entries` | `icmp_entries[]`. |
+
+`proto` отсутствует: ICMP задан типом таблицы.
+
+## Как rule-таблицы влияют на `refs` и ревизии
+
+После создания rule-таблиц миграция `resource_refs` добавляет функции обратного
+поиска правил и пересоздаёт view `vu_ag` / `vu_service`.
+
+Итоговая модель:
+
+| Ресурс | Что попадает в `refs` |
+| --- | --- |
+| `AddressGroup` | Bindings на host/network/service + все AG-based правила, где AG локальный или удалённый. |
+| `Service` | Service bindings + все Service-based правила, где service локальный или удалённый. |
+
+`rule_rev` обновляется триггерами при изменении rule-таблиц. Это позволяет серверу
+и подписчикам отличать изменение самого ресурса от изменения набора правил,
+которые на него ссылаются.
+
+## Внешние ключи и удаление
+
+| Связь | Поведение |
+| --- | --- |
+| Ресурс → namespace | `ON DELETE CASCADE`, `ON UPDATE RESTRICT`. |
+| Binding → AG/resource | `ON DELETE CASCADE`, `ON UPDATE RESTRICT`. |
+| Rule → namespace | `ON DELETE CASCADE`, `ON UPDATE RESTRICT`. |
+| Rule → registry | `ON DELETE CASCADE`. |
+| Rule → local/remote AG или Service | `ON DELETE CASCADE`, `ON UPDATE RESTRICT`. |
+
+Это означает, что удаление namespace удаляет все ресурсы и правила внутри него,
+а удаление AG/Service удаляет связанные bindings и правила, где они участвуют.
+
+## Индексы
+
+| Группа | Индексы | Назначение |
+| --- | --- | --- |
+| Уникальность имени | `(name, ns)` | Быстрое разрешение ресурса по API-идентификатору. |
+| Уникальность UID | `uid unique` | Быстрая синхронизация по стабильному идентификатору. |
+| Selector-поиск | GIN на `labels`, `annotations` | Фильтрация ресурсов. |
+| Binding uniqueness | `(ag, host)`, `(ag, network)`, `(ag, service)` | Запрет дублей binding’ов. |
+| Rule reverse lookup | `aglocal`, `agremote`, `svclocal`, `svcremote` | Быстрый поиск правил, затрагивающих AG/Service. |
+| Outbox cursor | `(resource_type, resource_version, event_id)` | Инкрементальное чтение событий. |
+
+## Представления `vu_*`
+
+Физические таблицы не являются внешним API. Для чтения сервер использует view:
+
+| View | Назначение |
+| --- | --- |
+| `vu_namespace` | Namespace в API-представлении. |
+| `vu_ag` | AddressGroup + namespace + refs binding’ов и правил. |
+| `vu_network` | Network + namespace + refs на binding’и. |
+| `vu_host` | Host + namespace + refs на binding’и. |
+| `vu_service` | Service + namespace + refs binding’ов и правил. |
+| `vu_*_binding` | Binding с развёрнутыми ссылками на AG/resource. |
+| `vu_*_rule` | Rule в API-представлении с endpoint-структурами. |
+
+View выполняют важную нормализацию:
+
+- заменяют внутренние `id` на имена и namespaces;
+- строят `refs`;
+- собирают composite-структуры;
+- формируют JSON-объекты для outbox;
+- скрывают технические колонки, которые не должны попадать во внешний контракт.
+
+После добавления rule-таблиц view `vu_ag` и `vu_service` переопределяются: в их
+`refs` попадают не только bindings, но и правила, которые затрагивают ресурс.
+
+## `list_*` функции
+
+`list_*` функции — слой чтения для сервера.
+
+Ресурсные `list_*` обычно читают из `vu_*` и применяют selector-фильтрацию.
+Binding- и rule-функции читают соответствующие view без сложной selector-логики.
+
+Главная идея: клиент сервера не должен знать физические таблицы. Он запрашивает
+готовую API-проекцию.
+
+## `sync_*` функции
+
+`sync_*` функции — слой записи. Они принимают строки composite-типа `row_of__*`
+и операцию `sync_op`.
+
+| Операция | Поведение |
+| --- | --- |
+| `ups` | Создать или обновить ресурс по `uid` либо по `(name, ns)`. |
+| `del` | Удалить ресурс по `uid` либо по `(name, ns)`. |
+
+Для правил удаление проходит через `tbl_rule_registry`: это позволяет удалять
+логическое правило без знания конкретной rule-таблицы.
+
+## Outbox и Watch
+
+Outbox строится вокруг глобального `resourceVersion`.
+
+Типовой путь изменения:
+
+1. Строка ресурса вставляется, обновляется или удаляется.
+2. BEFORE-триггер увеличивает `tbl_global_resource_version.v`.
+3. AFTER/BEFORE-триггер формирует outbox-событие.
+4. Payload берётся из соответствующего `vu_*`.
+5. Внутренний `id` удаляется из JSON.
+6. БД отправляет `NOTIFY` по каналу ресурса.
+7. Watch-потребитель дочитывает события из `tbl_outbox_resource_events`.
+
+Outbox хранит события ограниченное время. Если клиент приходит со слишком старым
+`resourceVersion`, функция чтения outbox должна вернуть сигнал, что курсор истёк,
+и клиент обязан сделать полный `List`.
+
+## Триггеры
+
+| Триггер / механизм | Где применяется | Назначение |
+| --- | --- | --- |
+| `inc_resource_version_cnt` | Ресурсы, bindings, rules | Выдаёт новую глобальную версию. |
+| `capture_outbox_resource_events_trg` | Ресурсы, bindings, rules | Пишет событие в outbox. |
+| `notify_outbox_resource_events_trg` | Outbox | Отправляет PostgreSQL `NOTIFY`. |
+| `forbid_fields_update_trg` | Ресурсы | Запрещает менять immutable-поля вроде `uid` и `name`. |
+| `upd_binding_refs_trg` | Binding-таблицы | Обновляет `binding_rev` у затронутых ресурсов. |
+| `upd_rule_refs_trg` | Rule-таблицы | Обновляет `rule_rev` у AG/Service. |
+| `check_service_transport_overlap` | Service / ServiceBinding | Запрещает конфликтующие transports на одном AG. |
+
+## Инварианты схемы
+
+1. **`uid` — внешний идентификатор, `id` — внутренний FK.**
+   Наружу нельзя отдавать `id`.
+2. **`resourceVersion` глобален для всей схемы.**
+   Его нельзя делать per-table, иначе `Watch` потеряет общий порядок событий.
+3. **Namespace владеет ресурсами.**
+   Удаление namespace каскадно удаляет зависимые строки.
+4. **Имя ресурса уникально в namespace.**
+   Для namespace имя уникально глобально.
+5. **Rule name уникален между всеми типами правил в одном namespace.**
+   Это обеспечивает `tbl_rule_registry`.
+6. **Bindings не дублируют пары.**
+   Один host/network/service нельзя дважды привязать к одному AG.
+7. **Service transports на одном AG не конфликтуют.**
+   Конфликт портов/ICMP должен блокироваться на уровне БД.
+8. **`refs` должны отражать не только bindings, но и правила.**
+   Поэтому `vu_ag` и `vu_service` зависят от rule-слоя.
+9. **Outbox payload строится из view, а не из raw table.**
+   Это сохраняет внешний контракт API.
+10. **Immutable-поля нельзя менять update’ом.**
+    Для переименования или смены идентичности нужен отдельный контролируемый сценарий.
+
+## Минимальный чеклист восстановления схемы
+
+Чтобы повторить эту БД с нуля, нужно реализовать:
+
+1. `CREATE SCHEMA sgroups`.
+2. `CREATE EXTENSION pgcrypto`, `hstore`, `btree_gist`, `citext`.
+3. Все enum-типы: `policy_action`, `proto`, `traffic`, `ip_family`, `resource_type`.
+4. Домены и composite-типы: resource refs, selectors, transports, entries, sync rows.
+5. Таблицы служебного контура: version, outbox, sync status.
+6. Таблицы ресурсов: namespace, AG, network, host, service.
+7. Binding-таблицы.
+8. Rule registry.
+9. Все rule-таблицы.
+10. FK, unique, check и GIN/B-tree индексы.
+11. View `vu_*`.
+12. Функции `list_*`.
+13. Функции `sync_*`.
+14. Outbox functions + triggers + notify.
+15. Immutable-field triggers.
+16. `binding_rev` и `rule_rev` triggers.
+17. Проверки service transport overlap.
+
+После этого схема будет не просто набором таблиц, а полной серверной моделью
+SGroups с API-проекцией, инкрементальной синхронизацией и гарантиями целостности.

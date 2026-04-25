@@ -21,39 +21,139 @@ metrics:
 
 ## Метрики синхронизации
 
-| Метрика | Тип | Описание |
-|---|---|---|
-| `sg_agent_sync_total` | Counter | Общее количество циклов синхронизации |
-| `sg_agent_sync_success_total` | Counter | Успешные синхронизации |
-| `sg_agent_sync_errors_total` | Counter | Ошибки синхронизации |
-| `sg_agent_sync_duration_seconds` | Histogram | Длительность цикла синхронизации |
-| `sg_agent_sync_last_success_timestamp` | Gauge | Время последней успешной синхронизации (Unix timestamp) |
+<table>
+  <thead>
+    <tr>
+      <th>Метрика</th>
+      <th>Тип</th>
+      <th>Описание</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><code>sg_agent_sync_total</code></td>
+      <td>Counter</td>
+      <td>Общее количество циклов синхронизации</td>
+    </tr>
+    <tr>
+      <td><code>sg_agent_sync_success_total</code></td>
+      <td>Counter</td>
+      <td>Успешные синхронизации</td>
+    </tr>
+    <tr>
+      <td><code>sg_agent_sync_errors_total</code></td>
+      <td>Counter</td>
+      <td>Ошибки синхронизации</td>
+    </tr>
+    <tr>
+      <td><code>sg_agent_sync_duration_seconds</code></td>
+      <td>Histogram</td>
+      <td>Длительность цикла синхронизации</td>
+    </tr>
+    <tr>
+      <td><code>sg_agent_sync_last_success_timestamp</code></td>
+      <td>Gauge</td>
+      <td>Время последней успешной синхронизации (Unix timestamp)</td>
+    </tr>
+  </tbody>
+</table>
 
 ## Метрики nftables
 
-| Метрика | Тип | Описание |
-|---|---|---|
-| `sg_agent_nft_rules_total` | Gauge | Количество активных правил в nftables |
-| `sg_agent_nft_sets_total` | Gauge | Количество наборов (sets) |
-| `sg_agent_nft_chains_total` | Gauge | Количество цепочек |
-| `sg_agent_nft_apply_duration_seconds` | Histogram | Время применения правил |
-| `sg_agent_nft_apply_errors_total` | Counter | Ошибки применения правил |
+<table>
+  <thead>
+    <tr>
+      <th>Метрика</th>
+      <th>Тип</th>
+      <th>Описание</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><code>sg_agent_nft_rules_total</code></td>
+      <td>Gauge</td>
+      <td>Количество активных правил в nftables</td>
+    </tr>
+    <tr>
+      <td><code>sg_agent_nft_sets_total</code></td>
+      <td>Gauge</td>
+      <td>Количество наборов (sets)</td>
+    </tr>
+    <tr>
+      <td><code>sg_agent_nft_chains_total</code></td>
+      <td>Gauge</td>
+      <td>Количество цепочек</td>
+    </tr>
+    <tr>
+      <td><code>sg_agent_nft_apply_duration_seconds</code></td>
+      <td>Histogram</td>
+      <td>Время применения правил</td>
+    </tr>
+    <tr>
+      <td><code>sg_agent_nft_apply_errors_total</code></td>
+      <td>Counter</td>
+      <td>Ошибки применения правил</td>
+    </tr>
+  </tbody>
+</table>
 
 ## Метрики DNS
 
-| Метрика | Тип | Описание |
-|---|---|---|
-| `sg_agent_dns_queries_total` | Counter | Общее количество DNS-запросов |
-| `sg_agent_dns_errors_total` | Counter | Ошибки DNS-резолвинга |
-| `sg_agent_dns_cache_hits_total` | Counter | Попадания в DNS-кеш |
-| `sg_agent_dns_duration_seconds` | Histogram | Время DNS-запроса |
+<table>
+  <thead>
+    <tr>
+      <th>Метрика</th>
+      <th>Тип</th>
+      <th>Описание</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><code>sg_agent_dns_queries_total</code></td>
+      <td>Counter</td>
+      <td>Общее количество DNS-запросов</td>
+    </tr>
+    <tr>
+      <td><code>sg_agent_dns_errors_total</code></td>
+      <td>Counter</td>
+      <td>Ошибки DNS-резолвинга</td>
+    </tr>
+    <tr>
+      <td><code>sg_agent_dns_cache_hits_total</code></td>
+      <td>Counter</td>
+      <td>Попадания в DNS-кеш</td>
+    </tr>
+    <tr>
+      <td><code>sg_agent_dns_duration_seconds</code></td>
+      <td>Histogram</td>
+      <td>Время DNS-запроса</td>
+    </tr>
+  </tbody>
+</table>
 
 ## Метрики gRPC-соединения
 
-| Метрика | Тип | Описание |
-|---|---|---|
-| `sg_agent_grpc_connected` | Gauge | Статус подключения к sg-server (1/0) |
-| `sg_agent_grpc_reconnects_total` | Counter | Количество переподключений |
+<table>
+  <thead>
+    <tr>
+      <th>Метрика</th>
+      <th>Тип</th>
+      <th>Описание</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><code>sg_agent_grpc_connected</code></td>
+      <td>Gauge</td>
+      <td>Статус подключения к sg-server (1/0)</td>
+    </tr>
+    <tr>
+      <td><code>sg_agent_grpc_reconnects_total</code></td>
+      <td>Counter</td>
+      <td>Количество переподключений</td>
+    </tr>
+  </tbody>
+</table>
 
 ## Индикаторы здоровья
 
@@ -118,13 +218,42 @@ groups:
 
 Рекомендуемые панели для мониторинга sg-agent:
 
-| Панель | Запрос | Тип |
-|---|---|---|
-| Статус подключения | `sg_agent_grpc_connected` | Stat |
-| Ошибки синхронизации | `rate(sg_agent_sync_errors_total[5m])` | Time series |
-| Длительность синхронизации | `sg_agent_sync_duration_seconds` | Heatmap |
-| Количество nft-правил | `sg_agent_nft_rules_total` | Gauge |
-| DNS-ошибки | `rate(sg_agent_dns_errors_total[5m])` | Time series |
+<table>
+  <thead>
+    <tr>
+      <th>Панель</th>
+      <th>Запрос</th>
+      <th>Тип</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>Статус подключения</td>
+      <td><code>sg_agent_grpc_connected</code></td>
+      <td>Stat</td>
+    </tr>
+    <tr>
+      <td>Ошибки синхронизации</td>
+      <td><code>rate(sg_agent_sync_errors_total[5m])</code></td>
+      <td>Time series</td>
+    </tr>
+    <tr>
+      <td>Длительность синхронизации</td>
+      <td><code>sg_agent_sync_duration_seconds</code></td>
+      <td>Heatmap</td>
+    </tr>
+    <tr>
+      <td>Количество nft-правил</td>
+      <td><code>sg_agent_nft_rules_total</code></td>
+      <td>Gauge</td>
+    </tr>
+    <tr>
+      <td>DNS-ошибки</td>
+      <td><code>rate(sg_agent_dns_errors_total[5m])</code></td>
+      <td>Time series</td>
+    </tr>
+  </tbody>
+</table>
 
 ## Логирование
 
@@ -138,12 +267,37 @@ logging:
 
 Ключевые события, на которые стоит обратить внимание в логах:
 
-| Уровень | Сообщение | Значение |
-|---|---|---|
-| `info` | `sync completed` | Успешная синхронизация |
-| `warn` | `dns resolve failed` | Не удалось разрешить FQDN |
-| `error` | `nft apply failed` | Ошибка применения правил nftables |
-| `error` | `server connection lost` | Потеря связи с sg-server |
+<table>
+  <thead>
+    <tr>
+      <th>Уровень</th>
+      <th>Сообщение</th>
+      <th>Значение</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><code>info</code></td>
+      <td><code>sync completed</code></td>
+      <td>Успешная синхронизация</td>
+    </tr>
+    <tr>
+      <td><code>warn</code></td>
+      <td><code>dns resolve failed</code></td>
+      <td>Не удалось разрешить FQDN</td>
+    </tr>
+    <tr>
+      <td><code>error</code></td>
+      <td><code>nft apply failed</code></td>
+      <td>Ошибка применения правил nftables</td>
+    </tr>
+    <tr>
+      <td><code>error</code></td>
+      <td><code>server connection lost</code></td>
+      <td>Потеря связи с sg-server</td>
+    </tr>
+  </tbody>
+</table>
 
 :::tip
 Для production-среды рекомендуется использовать формат `json` — он удобен

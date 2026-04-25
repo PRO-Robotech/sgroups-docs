@@ -26,15 +26,52 @@ import dedent from 'ts-dedent'
 
 ### Ключевые метрики
 
-| Метрика | Тип | Описание |
-|---|---|---|
-| `grpc_server_handled_total` | Counter | Общее число обработанных gRPC-вызовов |
-| `grpc_server_handling_seconds` | Histogram | Время обработки gRPC-вызовов |
-| `grpc_server_msg_received_total` | Counter | Число полученных gRPC-сообщений |
-| `grpc_server_msg_sent_total` | Counter | Число отправленных gRPC-сообщений |
-| `db_pool_open_connections` | Gauge | Текущее число открытых соединений с БД |
-| `db_pool_idle_connections` | Gauge | Число простаивающих соединений с БД |
-| `db_query_duration_seconds` | Histogram | Время выполнения SQL-запросов |
+<table>
+  <thead>
+    <tr>
+      <th>Метрика</th>
+      <th>Тип</th>
+      <th>Описание</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><code>grpc_server_handled_total</code></td>
+      <td>Counter</td>
+      <td>Общее число обработанных gRPC-вызовов</td>
+    </tr>
+    <tr>
+      <td><code>grpc_server_handling_seconds</code></td>
+      <td>Histogram</td>
+      <td>Время обработки gRPC-вызовов</td>
+    </tr>
+    <tr>
+      <td><code>grpc_server_msg_received_total</code></td>
+      <td>Counter</td>
+      <td>Число полученных gRPC-сообщений</td>
+    </tr>
+    <tr>
+      <td><code>grpc_server_msg_sent_total</code></td>
+      <td>Counter</td>
+      <td>Число отправленных gRPC-сообщений</td>
+    </tr>
+    <tr>
+      <td><code>db_pool_open_connections</code></td>
+      <td>Gauge</td>
+      <td>Текущее число открытых соединений с БД</td>
+    </tr>
+    <tr>
+      <td><code>db_pool_idle_connections</code></td>
+      <td>Gauge</td>
+      <td>Число простаивающих соединений с БД</td>
+    </tr>
+    <tr>
+      <td><code>db_query_duration_seconds</code></td>
+      <td>Histogram</td>
+      <td>Время выполнения SQL-запросов</td>
+    </tr>
+  </tbody>
+</table>
 
 ## Метрики sg-agent
 
@@ -52,32 +89,115 @@ import dedent from 'ts-dedent'
 
 ### Метрики синхронизации
 
-| Метрика | Тип | Описание |
-|---|---|---|
-| `sg_agent_sync_total` | Counter | Общее количество циклов синхронизации |
-| `sg_agent_sync_success_total` | Counter | Успешные синхронизации |
-| `sg_agent_sync_errors_total` | Counter | Ошибки синхронизации |
-| `sg_agent_sync_duration_seconds` | Histogram | Длительность цикла синхронизации |
-| `sg_agent_sync_last_success_timestamp` | Gauge | Время последней успешной синхронизации |
+<table>
+  <thead>
+    <tr>
+      <th>Метрика</th>
+      <th>Тип</th>
+      <th>Описание</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><code>sg_agent_sync_total</code></td>
+      <td>Counter</td>
+      <td>Общее количество циклов синхронизации</td>
+    </tr>
+    <tr>
+      <td><code>sg_agent_sync_success_total</code></td>
+      <td>Counter</td>
+      <td>Успешные синхронизации</td>
+    </tr>
+    <tr>
+      <td><code>sg_agent_sync_errors_total</code></td>
+      <td>Counter</td>
+      <td>Ошибки синхронизации</td>
+    </tr>
+    <tr>
+      <td><code>sg_agent_sync_duration_seconds</code></td>
+      <td>Histogram</td>
+      <td>Длительность цикла синхронизации</td>
+    </tr>
+    <tr>
+      <td><code>sg_agent_sync_last_success_timestamp</code></td>
+      <td>Gauge</td>
+      <td>Время последней успешной синхронизации</td>
+    </tr>
+  </tbody>
+</table>
 
 ### Метрики nftables
 
-| Метрика | Тип | Описание |
-|---|---|---|
-| `sg_agent_nft_rules_total` | Gauge | Количество активных правил |
-| `sg_agent_nft_sets_total` | Gauge | Количество наборов (sets) |
-| `sg_agent_nft_chains_total` | Gauge | Количество цепочек |
-| `sg_agent_nft_apply_duration_seconds` | Histogram | Время применения правил |
-| `sg_agent_nft_apply_errors_total` | Counter | Ошибки применения правил |
+<table>
+  <thead>
+    <tr>
+      <th>Метрика</th>
+      <th>Тип</th>
+      <th>Описание</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><code>sg_agent_nft_rules_total</code></td>
+      <td>Gauge</td>
+      <td>Количество активных правил</td>
+    </tr>
+    <tr>
+      <td><code>sg_agent_nft_sets_total</code></td>
+      <td>Gauge</td>
+      <td>Количество наборов (sets)</td>
+    </tr>
+    <tr>
+      <td><code>sg_agent_nft_chains_total</code></td>
+      <td>Gauge</td>
+      <td>Количество цепочек</td>
+    </tr>
+    <tr>
+      <td><code>sg_agent_nft_apply_duration_seconds</code></td>
+      <td>Histogram</td>
+      <td>Время применения правил</td>
+    </tr>
+    <tr>
+      <td><code>sg_agent_nft_apply_errors_total</code></td>
+      <td>Counter</td>
+      <td>Ошибки применения правил</td>
+    </tr>
+  </tbody>
+</table>
 
 ### Метрики DNS и gRPC
 
-| Метрика | Тип | Описание |
-|---|---|---|
-| `sg_agent_dns_queries_total` | Counter | Общее количество DNS-запросов |
-| `sg_agent_dns_errors_total` | Counter | Ошибки DNS-резолвинга |
-| `sg_agent_grpc_connected` | Gauge | Статус подключения к sg-server (1/0) |
-| `sg_agent_grpc_reconnects_total` | Counter | Количество переподключений |
+<table>
+  <thead>
+    <tr>
+      <th>Метрика</th>
+      <th>Тип</th>
+      <th>Описание</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><code>sg_agent_dns_queries_total</code></td>
+      <td>Counter</td>
+      <td>Общее количество DNS-запросов</td>
+    </tr>
+    <tr>
+      <td><code>sg_agent_dns_errors_total</code></td>
+      <td>Counter</td>
+      <td>Ошибки DNS-резолвинга</td>
+    </tr>
+    <tr>
+      <td><code>sg_agent_grpc_connected</code></td>
+      <td>Gauge</td>
+      <td>Статус подключения к sg-server (1/0)</td>
+    </tr>
+    <tr>
+      <td><code>sg_agent_grpc_reconnects_total</code></td>
+      <td>Counter</td>
+      <td>Количество переподключений</td>
+    </tr>
+  </tbody>
+</table>
 
 ## Конфигурация Prometheus
 
@@ -109,10 +229,27 @@ sg-server поддерживает распределенный трейсинг
   `}
 </CodeBlock>
 
-| Экспортер | Значение | Протокол |
-|---|---|---|
-| Jaeger | `jaeger` | HTTP Thrift (`/api/traces`) |
-| OTLP | `otlp` | gRPC (4317) или HTTP (4318) |
+<table>
+  <thead>
+    <tr>
+      <th>Экспортер</th>
+      <th>Значение</th>
+      <th>Протокол</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>Jaeger</td>
+      <td><code>jaeger</code></td>
+      <td>HTTP Thrift (<code>/api/traces</code>)</td>
+    </tr>
+    <tr>
+      <td>OTLP</td>
+      <td><code>otlp</code></td>
+      <td>gRPC (4317) или HTTP (4318)</td>
+    </tr>
+  </tbody>
+</table>
 
 Трейсятся: все gRPC-вызовы, SQL-запросы, межсервисное взаимодействие.
 
@@ -155,13 +292,36 @@ sg-server поддерживает распределенный трейсинг
 
 ## Примеры PromQL-запросов
 
-| Цель | Запрос |
-|---|---|
-| RPS по методам | `rate(grpc_server_handled_total[5m])` |
-| Ошибки gRPC | `rate(grpc_server_handled_total{grpc_code!="OK"}[5m])` |
-| Латентность P99 | `histogram_quantile(0.99, rate(grpc_server_handling_seconds_bucket[5m]))` |
-| Агент: ошибки синхронизации | `rate(sg_agent_sync_errors_total[5m])` |
-| Агент: время синхронизации P95 | `histogram_quantile(0.95, rate(sg_agent_sync_duration_seconds_bucket[5m]))` |
+<table>
+  <thead>
+    <tr>
+      <th>Цель</th>
+      <th>Запрос</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>RPS по методам</td>
+      <td><code>rate(grpc_server_handled_total[5m])</code></td>
+    </tr>
+    <tr>
+      <td>Ошибки gRPC</td>
+      <td><code>rate(grpc_server_handled_total{`{`}grpc_code!="OK"{`}`}[5m])</code></td>
+    </tr>
+    <tr>
+      <td>Латентность P99</td>
+      <td><code>histogram_quantile(0.99, rate(grpc_server_handling_seconds_bucket[5m]))</code></td>
+    </tr>
+    <tr>
+      <td>Агент: ошибки синхронизации</td>
+      <td><code>rate(sg_agent_sync_errors_total[5m])</code></td>
+    </tr>
+    <tr>
+      <td>Агент: время синхронизации P95</td>
+      <td><code>histogram_quantile(0.95, rate(sg_agent_sync_duration_seconds_bucket[5m]))</code></td>
+    </tr>
+  </tbody>
+</table>
 
 ## Пример алертов
 
@@ -200,15 +360,52 @@ sg-server поддерживает распределенный трейсинг
 
 Рекомендуемые панели:
 
-| Панель | Запрос | Тип |
-|---|---|---|
-| Статус агентов | `sg_agent_grpc_connected` | Stat |
-| RPS сервера | `rate(grpc_server_handled_total[5m])` | Time series |
-| Ошибки синхронизации | `rate(sg_agent_sync_errors_total[5m])` | Time series |
-| Длительность синхронизации | `sg_agent_sync_duration_seconds` | Heatmap |
-| Количество nft-правил | `sg_agent_nft_rules_total` | Gauge |
-| Пул соединений БД | `db_pool_open_connections` | Time series |
-| Латентность P99 | `histogram_quantile(0.99, ...)` | Time series |
+<table>
+  <thead>
+    <tr>
+      <th>Панель</th>
+      <th>Запрос</th>
+      <th>Тип</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>Статус агентов</td>
+      <td><code>sg_agent_grpc_connected</code></td>
+      <td>Stat</td>
+    </tr>
+    <tr>
+      <td>RPS сервера</td>
+      <td><code>rate(grpc_server_handled_total[5m])</code></td>
+      <td>Time series</td>
+    </tr>
+    <tr>
+      <td>Ошибки синхронизации</td>
+      <td><code>rate(sg_agent_sync_errors_total[5m])</code></td>
+      <td>Time series</td>
+    </tr>
+    <tr>
+      <td>Длительность синхронизации</td>
+      <td><code>sg_agent_sync_duration_seconds</code></td>
+      <td>Heatmap</td>
+    </tr>
+    <tr>
+      <td>Количество nft-правил</td>
+      <td><code>sg_agent_nft_rules_total</code></td>
+      <td>Gauge</td>
+    </tr>
+    <tr>
+      <td>Пул соединений БД</td>
+      <td><code>db_pool_open_connections</code></td>
+      <td>Time series</td>
+    </tr>
+    <tr>
+      <td>Латентность P99</td>
+      <td><code>histogram_quantile(0.99, ...)</code></td>
+      <td>Time series</td>
+    </tr>
+  </tbody>
+</table>
 
 :::tip
 Для production рекомендуется формат логов `json` для удобства парсинга

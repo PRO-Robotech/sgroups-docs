@@ -95,6 +95,12 @@ API следует ресурсной модели, аналогичной Kuber
 
 Ниже описаны вложенные структуры, которые используются в нескольких ресурсах.
 
+:::info Источники ограничений
+- `[S]` — ограничения схемы: protobuf / OpenAPI / declarative validation
+- `[R]` — серверная валидация и прикладная логика
+- `[DB]` — ограничения уровня хранения / SQL / триггеров
+:::
+
 ### ResourceIdentifier
 
 Ссылка на связанный ресурс по имени и пространству имён. Используется в Binding-ресурсах для указания на AddressGroup, Host, Network или Service.
@@ -187,10 +193,27 @@ L4-параметры: протокол (TCP/UDP/ICMP), IP-семейство (`
 
 Запись внутри Transport. Набор актуальных полей определяется значением `protocol` родительского `Transport`:
 
-| `protocol` родителя | Актуальное поле | Недопустимо |
-| --- | --- | --- |
-| `TCP`, `UDP` | `ports` | `types` |
-| `ICMP` | `types` | `ports` |
+<table>
+  <thead>
+    <tr>
+      <th><code>protocol</code> родителя</th>
+      <th>Актуальное поле</th>
+      <th>Недопустимо</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><code>TCP</code>, <code>UDP</code></td>
+      <td><code>ports</code></td>
+      <td><code>types</code></td>
+    </tr>
+    <tr>
+      <td><code>ICMP</code></td>
+      <td><code>types</code></td>
+      <td><code>ports</code></td>
+    </tr>
+  </tbody>
+</table>
 
 Поля `description` и `comment` общие — применимы для любого протокола.
 
@@ -262,11 +285,32 @@ L4-параметры: протокол (TCP/UDP/ICMP), IP-семейство (`
 
 :::info Семантика значений `traffic`
 
-| Значение | Направление потока | Что открывает |
-| --- | --- | --- |
-| `INGRESS` | `remote → local` | Разрешает трафик, **входящий** к локальной стороне правила. |
-| `EGRESS` | `local → remote` | Разрешает трафик, **исходящий** от локальной стороны к удалённой. |
-| `BOTH` | `local ↔ remote`, инициатор — `local` | Как `EGRESS` (поток инициирует локальная сторона), но **дополнительно открывает встречный доступ** с удалённой стороны. Используется, когда взаимодействие требует ответного подключения в обратном направлении. |
+<table>
+  <thead>
+    <tr>
+      <th>Значение</th>
+      <th>Направление потока</th>
+      <th>Что открывает</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><code>INGRESS</code></td>
+      <td><code>remote → local</code></td>
+      <td>Разрешает трафик, <strong>входящий</strong> к локальной стороне правила.</td>
+    </tr>
+    <tr>
+      <td><code>EGRESS</code></td>
+      <td><code>local → remote</code></td>
+      <td>Разрешает трафик, <strong>исходящий</strong> от локальной стороны к удалённой.</td>
+    </tr>
+    <tr>
+      <td><code>BOTH</code></td>
+      <td><code>local ↔ remote</code>, инициатор — <code>local</code></td>
+      <td>Как <code>EGRESS</code> (поток инициирует локальная сторона), но <strong>дополнительно открывает встречный доступ</strong> с удалённой стороны. Используется, когда взаимодействие требует ответного подключения в обратном направлении.</td>
+    </tr>
+  </tbody>
+</table>
 
 `BOTH` — это **не** «одновременно INGRESS и EGRESS как две независимые политики», а именно расширение `EGRESS` встречным разрешением.
 :::
@@ -301,10 +345,27 @@ L4-параметры: протокол (TCP/UDP/ICMP), IP-семейство (`
 
 Описание одной стороны правила (`local` или `remote`). Набор актуальных полей определяется значением `type`:
 
-| `type` | Идентификация через | Не используется |
-| --- | --- | --- |
-| `ADDRESS_GROUP`, `SERVICE` | `name` + `namespace` (ссылка на существующий ресурс) | `value` |
-| `FQDN`, `CIDR` | `value` (литеральное значение — домен или подсеть) | `name`, `namespace` |
+<table>
+  <thead>
+    <tr>
+      <th><code>type</code></th>
+      <th>Идентификация через</th>
+      <th>Не используется</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><code>ADDRESS_GROUP</code>, <code>SERVICE</code></td>
+      <td><code>name</code> + <code>namespace</code> (ссылка на существующий ресурс)</td>
+      <td><code>value</code></td>
+    </tr>
+    <tr>
+      <td><code>FQDN</code>, <code>CIDR</code></td>
+      <td><code>value</code> (литеральное значение — домен или подсеть)</td>
+      <td><code>name</code>, <code>namespace</code></td>
+    </tr>
+  </tbody>
+</table>
 
 Для `local` допустимы только `ADDRESS_GROUP` и `SERVICE`; для `remote` — все четыре типа.
 

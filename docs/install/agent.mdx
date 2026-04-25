@@ -57,10 +57,27 @@ sg-agent поддерживает только **Linux** — nftables являе
 
 ## Capabilities
 
-| Capability | Назначение | Обязательна |
-|---|---|---|
-| `CAP_NET_ADMIN` | Управление nftables (создание таблиц, цепочек, правил) | Да |
-| `CAP_SYS_ADMIN` | Работа с network namespaces | Только при использовании netns |
+<table>
+  <thead>
+    <tr>
+      <th>Capability</th>
+      <th>Назначение</th>
+      <th>Обязательна</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><code>CAP_NET_ADMIN</code></td>
+      <td>Управление nftables (создание таблиц, цепочек, правил)</td>
+      <td>Да</td>
+    </tr>
+    <tr>
+      <td><code>CAP_SYS_ADMIN</code></td>
+      <td>Работа с network namespaces</td>
+      <td>Только при использовании netns</td>
+    </tr>
+  </tbody>
+</table>
 
 ## Установка как systemd-сервис
 
@@ -180,53 +197,213 @@ sg-agent использует **spf13/viper**. Приоритет источни
 
 ### Параметры: Подключение к серверу
 
-| Параметр | Тип | По умолчанию | Описание |
-|---|---|---|---|
-| `server.address` | string | `localhost:9100` | Адрес sg-server (host:port) |
-| `server.dial-timeout` | duration | `10s` | Таймаут подключения к серверу |
-| `server.tls.enabled` | bool | `false` | Включение mTLS |
-| `server.tls.cert` | string | — | Путь к клиентскому сертификату |
-| `server.tls.key` | string | — | Путь к клиентскому приватному ключу |
-| `server.tls.ca` | string | — | Путь к CA-сертификату |
+<table>
+  <thead>
+    <tr>
+      <th>Параметр</th>
+      <th>Тип</th>
+      <th>По умолчанию</th>
+      <th>Описание</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><code>server.address</code></td>
+      <td>string</td>
+      <td><code>localhost:9100</code></td>
+      <td>Адрес sg-server (host:port)</td>
+    </tr>
+    <tr>
+      <td><code>server.dial-timeout</code></td>
+      <td>duration</td>
+      <td><code>10s</code></td>
+      <td>Таймаут подключения к серверу</td>
+    </tr>
+    <tr>
+      <td><code>server.tls.enabled</code></td>
+      <td>bool</td>
+      <td><code>false</code></td>
+      <td>Включение mTLS</td>
+    </tr>
+    <tr>
+      <td><code>server.tls.cert</code></td>
+      <td>string</td>
+      <td>—</td>
+      <td>Путь к клиентскому сертификату</td>
+    </tr>
+    <tr>
+      <td><code>server.tls.key</code></td>
+      <td>string</td>
+      <td>—</td>
+      <td>Путь к клиентскому приватному ключу</td>
+    </tr>
+    <tr>
+      <td><code>server.tls.ca</code></td>
+      <td>string</td>
+      <td>—</td>
+      <td>Путь к CA-сертификату</td>
+    </tr>
+  </tbody>
+</table>
 
 ### Параметры: Синхронизация
 
-| Параметр | Тип | По умолчанию | Описание |
-|---|---|---|---|
-| `sync.interval` | duration | `30s` | Интервал между циклами синхронизации |
-| `sync.initial-backoff` | duration | `1s` | Начальный backoff при ошибках |
-| `sync.max-backoff` | duration | `5m` | Максимальный backoff |
-| `sync.max-retries` | int | `0` | Лимит повторных попыток (0 — без лимита) |
+<table>
+  <thead>
+    <tr>
+      <th>Параметр</th>
+      <th>Тип</th>
+      <th>По умолчанию</th>
+      <th>Описание</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><code>sync.interval</code></td>
+      <td>duration</td>
+      <td><code>30s</code></td>
+      <td>Интервал между циклами синхронизации</td>
+    </tr>
+    <tr>
+      <td><code>sync.initial-backoff</code></td>
+      <td>duration</td>
+      <td><code>1s</code></td>
+      <td>Начальный backoff при ошибках</td>
+    </tr>
+    <tr>
+      <td><code>sync.max-backoff</code></td>
+      <td>duration</td>
+      <td><code>5m</code></td>
+      <td>Максимальный backoff</td>
+    </tr>
+    <tr>
+      <td><code>sync.max-retries</code></td>
+      <td>int</td>
+      <td><code>0</code></td>
+      <td>Лимит повторных попыток (0 — без лимита)</td>
+    </tr>
+  </tbody>
+</table>
 
 ### Параметры: DNS
 
-| Параметр | Тип | По умолчанию | Описание |
-|---|---|---|---|
-| `dns.nameservers` | []string | системные | Список DNS-серверов для FQDN-правил |
-| `dns.timeout` | duration | `5s` | Таймаут DNS-запроса |
-| `dns.cache-ttl` | duration | `60s` | Время кеширования DNS-ответов |
+<table>
+  <thead>
+    <tr>
+      <th>Параметр</th>
+      <th>Тип</th>
+      <th>По умолчанию</th>
+      <th>Описание</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><code>dns.nameservers</code></td>
+      <td>[]string</td>
+      <td>системные</td>
+      <td>Список DNS-серверов для FQDN-правил</td>
+    </tr>
+    <tr>
+      <td><code>dns.timeout</code></td>
+      <td>duration</td>
+      <td><code>5s</code></td>
+      <td>Таймаут DNS-запроса</td>
+    </tr>
+    <tr>
+      <td><code>dns.cache-ttl</code></td>
+      <td>duration</td>
+      <td><code>60s</code></td>
+      <td>Время кеширования DNS-ответов</td>
+    </tr>
+  </tbody>
+</table>
 
 ### Параметры: Nftables
 
-| Параметр | Тип | По умолчанию | Описание |
-|---|---|---|---|
-| `nftables.table-name` | string | `sgroups` | Имя управляемой nftables-таблицы |
-| `nftables.base-chains.*` | object | — | Конфигурация базовых цепочек (policy, priority) |
+<table>
+  <thead>
+    <tr>
+      <th>Параметр</th>
+      <th>Тип</th>
+      <th>По умолчанию</th>
+      <th>Описание</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><code>nftables.table-name</code></td>
+      <td>string</td>
+      <td><code>sgroups</code></td>
+      <td>Имя управляемой nftables-таблицы</td>
+    </tr>
+    <tr>
+      <td><code>nftables.base-chains.*</code></td>
+      <td>object</td>
+      <td>—</td>
+      <td>Конфигурация базовых цепочек (policy, priority)</td>
+    </tr>
+  </tbody>
+</table>
 
 ### Параметры: Network namespaces
 
-| Параметр | Тип | По умолчанию | Описание |
-|---|---|---|---|
-| `netns.enabled` | bool | `false` | Включить поддержку network namespaces |
-| `netns.watch-interval` | duration | `15s` | Интервал сканирования namespaces |
+<table>
+  <thead>
+    <tr>
+      <th>Параметр</th>
+      <th>Тип</th>
+      <th>По умолчанию</th>
+      <th>Описание</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><code>netns.enabled</code></td>
+      <td>bool</td>
+      <td><code>false</code></td>
+      <td>Включить поддержку network namespaces</td>
+    </tr>
+    <tr>
+      <td><code>netns.watch-interval</code></td>
+      <td>duration</td>
+      <td><code>15s</code></td>
+      <td>Интервал сканирования namespaces</td>
+    </tr>
+  </tbody>
+</table>
 
 ### Параметры: Логирование
 
-| Параметр | Тип | По умолчанию | Описание |
-|---|---|---|---|
-| `logging.level` | string | `info` | Уровень: debug, info, warn, error |
-| `logging.format` | string | `json` | Формат: json, text |
-| `logging.output` | string | `stderr` | Назначение: stderr, stdout, file |
+<table>
+  <thead>
+    <tr>
+      <th>Параметр</th>
+      <th>Тип</th>
+      <th>По умолчанию</th>
+      <th>Описание</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><code>logging.level</code></td>
+      <td>string</td>
+      <td><code>info</code></td>
+      <td>Уровень: debug, info, warn, error</td>
+    </tr>
+    <tr>
+      <td><code>logging.format</code></td>
+      <td>string</td>
+      <td><code>json</code></td>
+      <td>Формат: json, text</td>
+    </tr>
+    <tr>
+      <td><code>logging.output</code></td>
+      <td>string</td>
+      <td><code>stderr</code></td>
+      <td>Назначение: stderr, stdout, file</td>
+    </tr>
+  </tbody>
+</table>
 
 ## Переменные окружения
 
