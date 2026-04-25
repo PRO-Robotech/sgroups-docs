@@ -3,146 +3,153 @@ import type { TRestrictions } from '@site/src/customTypes/restrictions'
 
 export const RESTRICTIONS: TRestrictions = {
   name: [
-    'Длина: от 1 до 63 символов.',
-    'Допустимы только строчные латинские буквы (a–z), цифры (0–9) и дефис (-).',
-    'Не может начинаться или заканчиваться дефисом.',
-    <>Регулярное выражение: <code>{'^[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?$'}</code>.</>,
-    <>Валидация пропускается, если значение пустое: <code>IGNORE_IF_ZERO_VALUE</code>.</>,
+    '[S] Длина: от 1 до 63 символов.',
+    '[S] Допустимы только строчные латинские буквы (a-z), цифры (0-9) и дефис (-).',
+    '[S] Не может начинаться или заканчиваться дефисом.',
+    <>[S] Регулярное выражение: <code>{'^[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?$'}</code>.</>,
+    <>[S] Валидация пропускается, если значение пустое: <code>IGNORE_IF_ZERO_VALUE</code>.</>,
   ],
 
   namespace: [
-    <>Те же ограничения, что и для <code>name</code>: длина 1–63 символа, lowercase, regex.</>,
-    <>Поле опционально: <code>field_behavior = OPTIONAL</code>.</>,
-    <>Обязательно для всех ресурсов, кроме <code>Namespace</code>.</>,
+    <>[S] Те же ограничения, что и для <code>name</code>: длина 1-63 символа, lowercase, regex.</>,
+    <>[S] Поле опционально: <code>field_behavior = OPTIONAL</code>.</>,
+    <>[R] Для большинства namespaced-ресурсов namespace должен быть задан как часть корректной бизнес-модели.</>,
   ],
 
   uid: [
-    'Формат UUID v4.',
-    <>Канонический паттерн: <code>{'^[0-9A-F]{8}-[0-9A-F]{4}-4[0-9A-F]{3}-[89AB][0-9A-F]{3}-[0-9A-F]{12}$'}</code>.</>,
-    'Парсер API принимает hex-символы в любом регистре, но в ответах обычно используется канонический формат.',
-    'При создании не указывается — генерируется сервером.',
-    'При обновлении обязателен для идентификации ресурса.',
+    '[S] Поле описано как UUID в OpenAPI/REST-контракте.',
+    <>[S] Канонический паттерн: <code>{'^[0-9A-F]{8}-[0-9A-F]{4}-4[0-9A-F]{3}-[89AB][0-9A-F]{3}-[0-9A-F]{12}$'}</code>.</>,
+    '[R] Парсер API принимает hex-символы в любом регистре, но в ответах обычно используется канонический формат.',
+    '[R] При создании обычно не указывается и генерируется сервером.',
+    '[R] При update/delete используется для идентификации ресурса.',
   ],
 
   displayName: [
-    <>Максимальная длина: 63 символа (<code>string.max_len: 63</code>).</>,
-    'Необязательное поле.',
+    <>[S] Максимальная длина: 63 символа (<code>string.max_len: 63</code>).</>,
+    '[S] Необязательное поле.',
   ],
 
   comment: [
-    'Необязательное поле.',
-    'Произвольная строка, явных ограничений длины на уровне API нет.',
-    <>Хранится в БД как PostgreSQL <code>TEXT</code>.</>,
+    '[S] Необязательное поле.',
+    '[R] Произвольная строка, явных прикладных ограничений длины нет.',
+    <>[DB] Хранится в БД как PostgreSQL <code>TEXT</code>.</>,
   ],
 
   description: [
-    'Необязательное поле.',
-    'Произвольная строка, явных ограничений длины на уровне API нет.',
-    <>Хранится в БД как PostgreSQL <code>TEXT</code>.</>,
+    '[S] Необязательное поле.',
+    '[R] Произвольная строка, явных прикладных ограничений длины нет.',
+    <>[DB] Хранится в БД как PostgreSQL <code>TEXT</code>.</>,
   ],
 
   action: [
-    'Обязательное поле.',
-    <>Допустимые значения: <code>ALLOW</code> (1), <code>DENY</code> (2).</>,
-    <>Значение <code>UNKNOWN</code> (0) запрещено: <code>enum.not_in: [0]</code>.</>,
+    '[S] Обязательное поле.',
+    <>[S] Допустимые значения: <code>ALLOW</code>, <code>DENY</code>.</>,
+    <>[S] На уровне API/контракта значение <code>UNKNOWN</code> считается недопустимым.</>,
   ],
 
   traffic: [
-    <>Допустимые значения: <code>BOTH</code>, <code>INGRESS</code>, <code>EGRESS</code>.</>,
-    'Необязательное поле.',
+    <>[S] Допустимые значения: <code>BOTH</code>, <code>INGRESS</code>, <code>EGRESS</code>.</>,
+    '[S] Необязательное поле.',
+    <>[R] Семантика: <code>INGRESS</code> - вход к local, <code>EGRESS</code> - выход от local, <code>BOTH</code> - <code>EGRESS</code> со встречным доступом.</>,
   ],
 
   protocol: [
-    <>Допустимые значения: <code>TCP</code> (1), <code>UDP</code> (2), <code>ICMP</code> (3).</>,
+    <>[S] Допустимые значения: <code>TCP</code>, <code>UDP</code>, <code>ICMP</code>.</>,
+    <>[R] Выбранный протокол определяет допустимые поля в <code>Transport.Entry</code>.</>,
   ],
 
   ipv: [
-    <>Допустимые значения: <code>IPV4</code> и <code>IPV6</code>.</>,
+    <>[S] Допустимые значения: <code>IPV4</code> и <code>IPV6</code>.</>,
+    <>[R] Определяет семейство IP-адресов для transport-конфигурации.</>,
   ],
 
   endpointType: [
-    <>Допустимые значения: <code>ADDRESS_GROUP</code> (1), <code>SERVICE</code> (2), <code>FQDN</code> (3), <code>CIDR</code> (4).</>,
-    <>Для <code>local</code> допустимы только <code>ADDRESS_GROUP</code> и <code>SERVICE</code>.</>,
-    <>Для <code>remote</code> допустимы все четыре типа.</>,
-    <>Для типов <code>ADDRESS_GROUP</code> и <code>SERVICE</code> ресурс с указанными <code>name</code> и <code>namespace</code> должен существовать.</>,
-    <>Для типов <code>FQDN</code> и <code>CIDR</code> проверка существования ресурса не выполняется, но обязательно поле <code>value</code>.</>,
+    <>[S] Допустимые значения: <code>ADDRESS_GROUP</code>, <code>SERVICE</code>, <code>FQDN</code>, <code>CIDR</code>.</>,
+    <>[R] Для <code>local</code> допустимы только <code>ADDRESS_GROUP</code> и <code>SERVICE</code>.</>,
+    <>[R] Для <code>remote</code> допустимы все четыре типа.</>,
+    <>[R] Для <code>ADDRESS_GROUP</code> и <code>SERVICE</code> используются <code>name</code> + <code>namespace</code>.</>,
+    <>[R] Для <code>FQDN</code> и <code>CIDR</code> обязательно поле <code>value</code>.</>,
+    <>[R] Для <code>FQDN</code> и <code>CIDR</code> проверка существования ресурса не выполняется.</>,
   ],
 
   cidr: [
-    <>Обязательное поле: <code>string.min_len: 1</code>.</>,
-    <>Не должно содержать пробелов в начале или конце: <code>this == this.trim()</code>.</>,
-    <>Должно содержать символ <code>/</code>: <code>{"this.contains('/')"}</code>.</>,
-    <>Формат: <code>IP/маска</code>, например <code>10.0.0.0/16</code> или <code>::1/128</code>.</>,
+    <>[S] Обязательное поле: <code>string.min_len: 1</code>.</>,
+    <>[S] Не должно содержать пробелов в начале или конце: <code>this == this.trim()</code>.</>,
+    <>[S] Должно содержать символ <code>/</code>: <code>{"this.contains('/')"}</code>.</>,
+    <>[R] Значение должно быть каноничным CIDR-представлением сети, например <code>10.0.0.0/16</code> или <code>::1/128</code>.</>,
   ],
 
   fqdn: [
-    <>Полное доменное имя, например <code>example.com</code>.</>,
-    'Резолвится агентом в IP-адреса при применении правил.',
+    <>[S] Используется как строковое значение endpoint при <code>type = FQDN</code>.</>,
+    <>[R] Должно содержать полное доменное имя, например <code>example.com</code>.</>,
+    '[R] Резолвится агентом в IP-адреса при применении правил.',
   ],
 
   ports: [
-    <>Одиночный порт: <code>80</code>.</>,
-    <>Диапазон портов: <code>8080-8090</code>.</>,
-    <>Список через запятую: <code>80,443,8080</code>.</>,
-    <>Применимо только для протоколов <code>TCP</code> и <code>UDP</code>.</>,
+    <>[S] Поле имеет тип <code>string</code>.</>,
+    <>[R] Применимо только для протоколов <code>TCP</code> и <code>UDP</code>.</>,
+    <>[R] Поддерживаются одиночные порты, диапазоны портов и списки через запятую.</>,
+    <>[R] Для <code>ICMP</code> использование <code>ports</code> недопустимо.</>,
   ],
 
   icmpType: [
-    <>Целое число <code>uint32</code> — код типа ICMP-сообщения.</>,
-    <>Фактически допустимый диапазон значений: <code>0..255</code>.</>,
-    <>Примеры: <code>0</code> — echo-reply, <code>8</code> — echo-request, <code>3</code> — destination-unreachable.</>,
-    <>Применимо только для протокола <code>ICMP</code>.</>,
+    <>[S] На уровне wire-format поле передается как <code>uint32</code>.</>,
+    <>[R] Фактически допустимый диапазон значений: <code>0..255</code>.</>,
+    <>[R] Примеры: <code>0</code> - echo-reply, <code>8</code> - echo-request, <code>3</code> - destination-unreachable.</>,
+    <>[R] Применимо только для протокола <code>ICMP</code>.</>,
+    <>[R] Для <code>TCP</code> и <code>UDP</code> использование ICMP types недопустимо.</>,
   ],
 
   selectors: [
-    <>Массив обязателен: <code>required: true</code>.</>,
-    <>Каждый селектор может содержать <code>fieldSelector</code>, <code>labelSelector</code> или оба поля сразу.</>,
-    <>Внутри одного селектора <code>fieldSelector</code> + <code>labelSelector</code> объединяются через логическое <code>AND</code>.</>,
-    <>Между селекторами в массиве применяется логическое <code>OR</code>.</>,
+    <>[S] Массив обязателен: <code>required: true</code>.</>,
+    <>[S] Каждый селектор может содержать <code>fieldSelector</code>, <code>labelSelector</code> или оба поля сразу.</>,
+    <>[R] Внутри одного селектора <code>fieldSelector</code> + <code>labelSelector</code> объединяются через логическое <code>AND</code>.</>,
+    <>[R] Между селекторами в массиве применяется логическое <code>OR</code>.</>,
+    <>[R] Если в <code>fieldSelector.refs[]</code> указано несколько элементов, ресурс должен соответствовать всем из них.</>,
   ],
 
   metadataRequired: [
-    <>Поле <code>metadata</code> обязательно: <code>required: true</code>.</>,
-    <>Поле <code>spec</code> обязательно: <code>required: true</code>.</>,
+    <>[S] Поле <code>metadata</code> обязательно: <code>required: true</code>.</>,
+    <>[S] Поле <code>spec</code> обязательно: <code>required: true</code>.</>,
   ],
 
   upsertBatch: [
-    <>Массив ресурсов обязателен: <code>REQUIRED</code>.</>,
-    <>Минимум один элемент: <code>repeated.min_items: 1</code>.</>,
+    <>[S] Массив ресурсов обязателен: <code>REQUIRED</code>.</>,
+    <>[S] Минимум один элемент: <code>repeated.min_items: 1</code>.</>,
   ],
 
   deleteNamespace: [
-    <>CEL-условие: <code>{"this.uid != '' || this.name != ''"}</code>.</>,
-    <>Необходимо указать <code>uid</code> или <code>name</code>.</>,
+    <>[S] CEL-условие: <code>{"this.uid != '' || this.name != ''"}</code>.</>,
+    <>[S] Необходимо указать <code>uid</code> или <code>name</code>.</>,
   ],
 
   deleteWithNamespace: [
-    <>CEL-условие: <code>{"this.uid != '' || (this.name != '' && this.namespace != '')"}</code>.</>,
-    <>Необходимо указать <code>uid</code> или комбинацию <code>name</code> + <code>namespace</code>.</>,
+    <>[S] CEL-условие: <code>{"this.uid != '' || (this.name != '' && this.namespace != '')"}</code>.</>,
+    <>[S] Необходимо указать <code>uid</code> или комбинацию <code>name</code> + <code>namespace</code>.</>,
   ],
 
   addressGroupRef: [
-    <>Поле <code>addressGroup</code> обязательно: <code>required: true</code>.</>,
-    <>Должны быть указаны <code>name</code> и <code>namespace</code>.</>,
-    <>Ресурс <code>AddressGroup</code> с указанными <code>name</code> и <code>namespace</code> должен существовать на момент создания связи.</>,
+    <>[S] Поле <code>addressGroup</code> обязательно: <code>required: true</code>.</>,
+    <>[R] Для корректной ссылки должны быть указаны <code>name</code> и <code>namespace</code>.</>,
+    <>[R] Ресурс <code>AddressGroup</code> с указанными <code>name</code> и <code>namespace</code> должен существовать на момент создания связи.</>,
   ],
 
   hostRef: [
-    <>Поле <code>host</code> обязательно: <code>required: true</code>.</>,
-    <>Должны быть указаны <code>name</code> и <code>namespace</code>.</>,
-    <>Ресурс <code>Host</code> с указанными <code>name</code> и <code>namespace</code> должен существовать на момент создания связи.</>,
+    <>[S] Поле <code>host</code> обязательно: <code>required: true</code>.</>,
+    <>[R] Для корректной ссылки должны быть указаны <code>name</code> и <code>namespace</code>.</>,
+    <>[R] Ресурс <code>Host</code> с указанными <code>name</code> и <code>namespace</code> должен существовать на момент создания связи.</>,
   ],
 
   networkRef: [
-    <>Поле <code>network</code> обязательно: <code>required: true</code>.</>,
-    <>Должны быть указаны <code>name</code> и <code>namespace</code>.</>,
-    <>Ресурс <code>Network</code> с указанными <code>name</code> и <code>namespace</code> должен существовать на момент создания связи.</>,
+    <>[S] Поле <code>network</code> обязательно: <code>required: true</code>.</>,
+    <>[R] Для корректной ссылки должны быть указаны <code>name</code> и <code>namespace</code>.</>,
+    <>[R] Ресурс <code>Network</code> с указанными <code>name</code> и <code>namespace</code> должен существовать на момент создания связи.</>,
   ],
 
   serviceRef: [
-    <>Поле <code>service</code> обязательно: <code>required: true</code>.</>,
-    <>Должны быть указаны <code>name</code> и <code>namespace</code>.</>,
-    <>Ресурс <code>Service</code> с указанными <code>name</code> и <code>namespace</code> должен существовать на момент создания связи.</>,
-    <>Порты и протоколы <code>Service</code> не должны пересекаться с портами и протоколами других <code>Service</code>, уже привязанных к этой <code>AddressGroup</code>.</>,
+    <>[S] Поле <code>service</code> обязательно: <code>required: true</code>.</>,
+    <>[R] Для корректной ссылки должны быть указаны <code>name</code> и <code>namespace</code>.</>,
+    <>[R] Ресурс <code>Service</code> с указанными <code>name</code> и <code>namespace</code> должен существовать на момент создания связи.</>,
+    <>[DB] Не допускается пересечение transport-настроек с уже привязанными сервисами той же <code>AddressGroup</code>.</>,
   ],
 }
