@@ -1549,7 +1549,7 @@ export const DbSchemaDiagram: FC<TDbSchemaDiagram> = ({
 
           <div className={styles.graphZoomBar}>
             <button type="button" className={styles.iconButton} onClick={handleZoomOut} aria-label="Уменьшить">−</button>
-            <button type="button" className={styles.iconButton} onClick={handleZoomReset} aria-label="100%" title="100%">
+            <button type="button" className={styles.zoomValueButton} onClick={handleZoomReset} aria-label="100%" title="100%">
               {Math.round(zoom * 100)}%
             </button>
             <button type="button" className={styles.iconButton} onClick={handleZoomIn} aria-label="Увеличить">+</button>
