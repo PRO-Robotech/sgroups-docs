@@ -25,6 +25,18 @@ import dedent from 'ts-dedent'
   </thead>
   <tbody>
     <tr>
+      <td><code>metadata.annotations</code></td>
+      <td>нет</td>
+      <td><code>{TYPES.mapStringString}</code></td>
+      <td>{DICTIONARY.annotations.short}</td>
+    </tr>
+    <tr>
+      <td><code>metadata.labels</code></td>
+      <td>нет</td>
+      <td><code>{TYPES.mapStringString}</code></td>
+      <td>{DICTIONARY.labels.short}</td>
+    </tr>
+    <tr>
       <td><code>metadata.name</code></td>
       <td>да</td>
       <td><code>{TYPES.string}</code></td>
@@ -43,10 +55,28 @@ import dedent from 'ts-dedent'
       <td>{DICTIONARY.action.short}</td>
     </tr>
     <tr>
-      <td><code>spec.session.traffic</code></td>
-      <td><strong>да</strong></td>
-      <td><code>{TYPES.enumTrafficIngressEgress}</code></td>
-      <td>{DICTIONARY.traffic.short}</td>
+      <td><code>spec.comment</code></td>
+      <td>нет</td>
+      <td><code>{TYPES.string}</code></td>
+      <td>{DICTIONARY.comment.short}</td>
+    </tr>
+    <tr>
+      <td><code>spec.description</code></td>
+      <td>нет</td>
+      <td><code>{TYPES.string}</code></td>
+      <td>{DICTIONARY.description.short}</td>
+    </tr>
+    <tr>
+      <td><code>spec.displayName</code></td>
+      <td>нет</td>
+      <td><code>{TYPES.string}</code></td>
+      <td>{DICTIONARY.displayName.short}</td>
+    </tr>
+    <tr>
+      <td><code>spec.endpoints.local.labels</code></td>
+      <td>нет</td>
+      <td><code>{TYPES.mapStringString}</code></td>
+      <td>{DICTIONARY.labels.short}</td>
     </tr>
     <tr>
       <td><code>spec.endpoints.local.name</code></td>
@@ -67,9 +97,27 @@ import dedent from 'ts-dedent'
       <td>{DICTIONARY.endpointType.short}</td>
     </tr>
     <tr>
+      <td><code>spec.endpoints.remote.labels</code></td>
+      <td>нет</td>
+      <td><code>{TYPES.mapStringString}</code></td>
+      <td>{DICTIONARY.labels.short}</td>
+    </tr>
+    <tr>
+      <td><code>spec.endpoints.remote.name</code></td>
+      <td>да</td>
+      <td><code>{TYPES.string}</code></td>
+      <td>{DICTIONARY.endpointName.short}</td>
+    </tr>
+    <tr>
+      <td><code>spec.endpoints.remote.namespace</code></td>
+      <td>да</td>
+      <td><code>{TYPES.string}</code></td>
+      <td>{DICTIONARY.endpointNamespace.short}</td>
+    </tr>
+    <tr>
       <td><code>spec.endpoints.remote.type</code></td>
       <td>да</td>
-      <td><code>{TYPES.enumEndpointCIDR}</code></td>
+      <td><code>{TYPES.enumEndpointAG}</code></td>
       <td>{DICTIONARY.endpointType.short}</td>
     </tr>
     <tr>
@@ -79,10 +127,10 @@ import dedent from 'ts-dedent'
       <td>{DICTIONARY.remoteValue.short}</td>
     </tr>
     <tr>
-      <td><code>spec.transport.protocol</code></td>
-      <td>да</td>
-      <td><code>{TYPES.enumProtocol}</code></td>
-      <td>{DICTIONARY.protocol.short}</td>
+      <td><code>spec.session.traffic</code></td>
+      <td>нет</td>
+      <td><code>{TYPES.enumTraffic}</code></td>
+      <td>{DICTIONARY.traffic.short}</td>
     </tr>
     <tr>
       <td><code>spec.transport.ipv</code></td>
@@ -95,6 +143,12 @@ import dedent from 'ts-dedent'
       <td>нет</td>
       <td><code>{TYPES.entry}</code></td>
       <td>{DICTIONARY.entries.short}</td>
+    </tr>
+    <tr>
+      <td><code>spec.transport.protocol</code></td>
+      <td>да</td>
+      <td><code>{TYPES.enumProtocol}</code></td>
+      <td>{DICTIONARY.protocol.short}</td>
     </tr>
   </tbody>
 </table>
@@ -125,11 +179,6 @@ import dedent from 'ts-dedent'
       <td><code>{TYPES.string}</code></td>
       <td>{DICTIONARY.ports.short}</td>
     </tr>
-    <tr>
-      <td><code>types</code></td>
-      <td><code>{TYPES.uint32}</code></td>
-      <td>{DICTIONARY.icmpTypes.short}</td>
-    </tr>
   </tbody>
 </table>
 
@@ -143,28 +192,48 @@ import dedent from 'ts-dedent'
             "metadata": {
               "name": "allow-web-to-internal-net",
               "namespace": "production"
+              "labels": {
+                "policy": "web-access"
+              }
+              "annotations": {
+                "linux-agent.sgroups.io/logs": "true",
+                "linux-agent.sgroups.io/trace": "false",
+                "linux-agent.sgroups.io/priority": "200"
+              }
             },
             "spec": {
+              "comment": "Разрешить трафик от веб-серверов к внутренней сети продуктивного окружения",
               "action": "ALLOW",
-              "session": {
-                "traffic": "EGRESS"
-              },
+              "description": "Группа безопасности для веб-серверов",
+              "displayName": "Allow Web to CIDR",
               "endpoints": {
                 "local": {
+                  "labels": {
+                    "policy": "web-access"
+                  },
                   "name": "web-servers",
                   "namespace": "production",
                   "type": "ADDRESS_GROUP"
                 },
                 "remote": {
+                  "labels": {
+                    "policy": "web-access"
+                  },
+                  "name": "CIDR name",
+                  "namespace": "production",
                   "type": "CIDR",
                   "value": "10.0.0.0/8"
                 }
+              },
+              "session": {
+                "traffic": "EGRESS"
               },
               "transport": {
                 "protocol": "TCP",
                 "IPv": "IPV4",
                 "entries": [
                   {
+                    "comment": "Transport comment",
                     "description": "HTTP",
                     "ports": "80,443"
                   }

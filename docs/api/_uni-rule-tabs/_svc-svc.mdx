@@ -24,6 +24,18 @@ import dedent from 'ts-dedent'
   </thead>
   <tbody>
     <tr>
+      <td><code>metadata.annotations</code></td>
+      <td>нет</td>
+      <td><code>{TYPES.mapStringString}</code></td>
+      <td>{DICTIONARY.annotations.short}</td>
+    </tr>
+    <tr>
+      <td><code>metadata.labels</code></td>
+      <td>нет</td>
+      <td><code>{TYPES.mapStringString}</code></td>
+      <td>{DICTIONARY.labels.short}</td>
+    </tr>
+    <tr>
       <td><code>metadata.name</code></td>
       <td>да</td>
       <td><code>{TYPES.string}</code></td>
@@ -42,10 +54,28 @@ import dedent from 'ts-dedent'
       <td>{DICTIONARY.action.short}</td>
     </tr>
     <tr>
-      <td><code>spec.session.traffic</code></td>
+      <td><code>spec.comment</code></td>
       <td>нет</td>
-      <td><code>{TYPES.enumTraffic}</code></td>
-      <td>{DICTIONARY.traffic.short}</td>
+      <td><code>{TYPES.string}</code></td>
+      <td>{DICTIONARY.comment.short}</td>
+    </tr>
+    <tr>
+      <td><code>spec.description</code></td>
+      <td>нет</td>
+      <td><code>{TYPES.string}</code></td>
+      <td>{DICTIONARY.description.short}</td>
+    </tr>
+    <tr>
+      <td><code>spec.displayName</code></td>
+      <td>нет</td>
+      <td><code>{TYPES.string}</code></td>
+      <td>{DICTIONARY.displayName.short}</td>
+    </tr>
+    <tr>
+      <td><code>spec.endpoints.local.labels</code></td>
+      <td>нет</td>
+      <td><code>{TYPES.mapStringString}</code></td>
+      <td>{DICTIONARY.labels.short}</td>
     </tr>
     <tr>
       <td><code>spec.endpoints.local.name</code></td>
@@ -62,8 +92,14 @@ import dedent from 'ts-dedent'
     <tr>
       <td><code>spec.endpoints.local.type</code></td>
       <td>да</td>
-      <td><code>{TYPES.enumEndpointSVC}</code></td>
+      <td><code>{TYPES.enumEndpointAG}</code></td>
       <td>{DICTIONARY.endpointType.short}</td>
+    </tr>
+    <tr>
+      <td><code>spec.endpoints.remote.labels</code></td>
+      <td>нет</td>
+      <td><code>{TYPES.mapStringString}</code></td>
+      <td>{DICTIONARY.labels.short}</td>
     </tr>
     <tr>
       <td><code>spec.endpoints.remote.name</code></td>
@@ -80,8 +116,14 @@ import dedent from 'ts-dedent'
     <tr>
       <td><code>spec.endpoints.remote.type</code></td>
       <td>да</td>
-      <td><code>{TYPES.enumEndpointSVC}</code></td>
+      <td><code>{TYPES.enumEndpointAG}</code></td>
       <td>{DICTIONARY.endpointType.short}</td>
+    </tr>
+    <tr>
+      <td><code>spec.session.traffic</code></td>
+      <td>нет</td>
+      <td><code>{TYPES.enumTraffic}</code></td>
+      <td>{DICTIONARY.traffic.short}</td>
     </tr>
   </tbody>
 </table>
@@ -96,23 +138,40 @@ import dedent from 'ts-dedent'
             "metadata": {
               "name": "allow-api-to-cache",
               "namespace": "production"
+              "labels": {
+                "policy": "web-access"
+              }
+              "annotations": {
+                "linux-agent.sgroups.io/logs": "true",
+                "linux-agent.sgroups.io/trace": "false",
+                "linux-agent.sgroups.io/priority": "200"
+              }
             },
             "spec": {
+              "comment": "Разрешить трафик от сервисов к сервисам",
               "action": "ALLOW",
-              "session": {
-                "traffic": "BOTH"
-              },
+              "description": "Группа безопасности для серверов",
+              "displayName": "Allow SVC to SVC",
               "endpoints": {
                 "local": {
+                  "labels": {
+                    "policy": "web-access"
+                  },
                   "name": "api-service",
                   "namespace": "production",
                   "type": "SERVICE"
                 },
                 "remote": {
+                  "labels": {
+                    "policy": "web-access"
+                  },
                   "name": "cache-service",
                   "namespace": "production",
                   "type": "SERVICE"
                 }
+              "session": {
+                "traffic": "EGRESS"
+              },
               }
             }
           }

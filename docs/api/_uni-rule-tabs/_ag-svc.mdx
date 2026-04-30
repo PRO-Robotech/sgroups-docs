@@ -32,6 +32,18 @@ AG отправляет трафик к Service. Порты и протокол 
   </thead>
   <tbody>
     <tr>
+      <td><code>metadata.annotations</code></td>
+      <td>нет</td>
+      <td><code>{TYPES.mapStringString}</code></td>
+      <td>{DICTIONARY.annotations.short}</td>
+    </tr>
+    <tr>
+      <td><code>metadata.labels</code></td>
+      <td>нет</td>
+      <td><code>{TYPES.mapStringString}</code></td>
+      <td>{DICTIONARY.labels.short}</td>
+    </tr>
+    <tr>
       <td><code>metadata.name</code></td>
       <td>да</td>
       <td><code>{TYPES.string}</code></td>
@@ -50,10 +62,28 @@ AG отправляет трафик к Service. Порты и протокол 
       <td>{DICTIONARY.action.short}</td>
     </tr>
     <tr>
-      <td><code>spec.session.traffic</code></td>
-      <td>да</td>
-      <td><code>{TYPES.enumTrafficEgressBoth}</code></td>
-      <td>{DICTIONARY.traffic.short}</td>
+      <td><code>spec.comment</code></td>
+      <td>нет</td>
+      <td><code>{TYPES.string}</code></td>
+      <td>{DICTIONARY.comment.short}</td>
+    </tr>
+    <tr>
+      <td><code>spec.description</code></td>
+      <td>нет</td>
+      <td><code>{TYPES.string}</code></td>
+      <td>{DICTIONARY.description.short}</td>
+    </tr>
+    <tr>
+      <td><code>spec.displayName</code></td>
+      <td>нет</td>
+      <td><code>{TYPES.string}</code></td>
+      <td>{DICTIONARY.displayName.short}</td>
+    </tr>
+    <tr>
+      <td><code>spec.endpoints.local.labels</code></td>
+      <td>нет</td>
+      <td><code>{TYPES.mapStringString}</code></td>
+      <td>{DICTIONARY.labels.short}</td>
     </tr>
     <tr>
       <td><code>spec.endpoints.local.name</code></td>
@@ -74,6 +104,12 @@ AG отправляет трафик к Service. Порты и протокол 
       <td>{DICTIONARY.endpointType.short}</td>
     </tr>
     <tr>
+      <td><code>spec.endpoints.remote.labels</code></td>
+      <td>нет</td>
+      <td><code>{TYPES.mapStringString}</code></td>
+      <td>{DICTIONARY.labels.short}</td>
+    </tr>
+    <tr>
       <td><code>spec.endpoints.remote.name</code></td>
       <td>да</td>
       <td><code>{TYPES.string}</code></td>
@@ -88,8 +124,14 @@ AG отправляет трафик к Service. Порты и протокол 
     <tr>
       <td><code>spec.endpoints.remote.type</code></td>
       <td>да</td>
-      <td><code>{TYPES.enumEndpointSVC}</code></td>
+      <td><code>{TYPES.enumEndpointAG}</code></td>
       <td>{DICTIONARY.endpointType.short}</td>
+    </tr>
+    <tr>
+      <td><code>spec.session.traffic</code></td>
+      <td>нет</td>
+      <td><code>{TYPES.enumTraffic}</code></td>
+      <td>{DICTIONARY.traffic.short}</td>
     </tr>
   </tbody>
 </table>
@@ -104,23 +146,40 @@ AG отправляет трафик к Service. Порты и протокол 
             "metadata": {
               "name": "allow-web-to-api-svc-egress",
               "namespace": "production"
+              "labels": {
+                "policy": "web-access"
+              }
+              "annotations": {
+                "linux-agent.sgroups.io/logs": "true",
+                "linux-agent.sgroups.io/trace": "false",
+                "linux-agent.sgroups.io/priority": "200"
+              }
             },
             "spec": {
+              "comment": "Разрешить трафик от веб-серверов к сервису",
               "action": "ALLOW",
-              "session": {
-                "traffic": "EGRESS"
-              },
+              "description": "Группа безопасности для веб-серверов",
+              "displayName": "Allow Web to Service",
               "endpoints": {
                 "local": {
+                  "labels": {
+                    "policy": "web-access"
+                  },
                   "name": "web-servers",
                   "namespace": "production",
                   "type": "ADDRESS_GROUP"
                 },
                 "remote": {
-                  "name": "api-service",
+                  "labels": {
+                    "policy": "web-access"
+                  },
+                  "name": "cache-service",
                   "namespace": "production",
                   "type": "SERVICE"
                 }
+              }
+              "session": {
+                "traffic": "INGRESS"
               }
             }
           }
@@ -146,6 +205,18 @@ Service отправляет трафик к AG. Транспорт задает
   </thead>
   <tbody>
     <tr>
+      <td><code>metadata.annotations</code></td>
+      <td>нет</td>
+      <td><code>{TYPES.mapStringString}</code></td>
+      <td>{DICTIONARY.annotations.short}</td>
+    </tr>
+    <tr>
+      <td><code>metadata.labels</code></td>
+      <td>нет</td>
+      <td><code>{TYPES.mapStringString}</code></td>
+      <td>{DICTIONARY.labels.short}</td>
+    </tr>
+    <tr>
       <td><code>metadata.name</code></td>
       <td>да</td>
       <td><code>{TYPES.string}</code></td>
@@ -164,10 +235,28 @@ Service отправляет трафик к AG. Транспорт задает
       <td>{DICTIONARY.action.short}</td>
     </tr>
     <tr>
-      <td><code>spec.session.traffic</code></td>
-      <td>да</td>
-      <td><code>{TYPES.enumTrafficIngress}</code></td>
-      <td>{DICTIONARY.traffic.short}</td>
+      <td><code>spec.comment</code></td>
+      <td>нет</td>
+      <td><code>{TYPES.string}</code></td>
+      <td>{DICTIONARY.comment.short}</td>
+    </tr>
+    <tr>
+      <td><code>spec.description</code></td>
+      <td>нет</td>
+      <td><code>{TYPES.string}</code></td>
+      <td>{DICTIONARY.description.short}</td>
+    </tr>
+    <tr>
+      <td><code>spec.displayName</code></td>
+      <td>нет</td>
+      <td><code>{TYPES.string}</code></td>
+      <td>{DICTIONARY.displayName.short}</td>
+    </tr>
+    <tr>
+      <td><code>spec.endpoints.local.labels</code></td>
+      <td>нет</td>
+      <td><code>{TYPES.mapStringString}</code></td>
+      <td>{DICTIONARY.labels.short}</td>
     </tr>
     <tr>
       <td><code>spec.endpoints.local.name</code></td>
@@ -188,6 +277,12 @@ Service отправляет трафик к AG. Транспорт задает
       <td>{DICTIONARY.endpointType.short}</td>
     </tr>
     <tr>
+      <td><code>spec.endpoints.remote.labels</code></td>
+      <td>нет</td>
+      <td><code>{TYPES.mapStringString}</code></td>
+      <td>{DICTIONARY.labels.short}</td>
+    </tr>
+    <tr>
       <td><code>spec.endpoints.remote.name</code></td>
       <td>да</td>
       <td><code>{TYPES.string}</code></td>
@@ -202,14 +297,14 @@ Service отправляет трафик к AG. Транспорт задает
     <tr>
       <td><code>spec.endpoints.remote.type</code></td>
       <td>да</td>
-      <td><code>{TYPES.enumEndpointSVC}</code></td>
+      <td><code>{TYPES.enumEndpointAG}</code></td>
       <td>{DICTIONARY.endpointType.short}</td>
     </tr>
     <tr>
-      <td><code>spec.transport.protocol</code></td>
-      <td>да</td>
-      <td><code>{TYPES.enumProtocol}</code></td>
-      <td>{DICTIONARY.protocol.short}</td>
+      <td><code>spec.session.traffic</code></td>
+      <td>нет</td>
+      <td><code>{TYPES.enumTraffic}</code></td>
+      <td>{DICTIONARY.traffic.short}</td>
     </tr>
     <tr>
       <td><code>spec.transport.ipv</code></td>
@@ -222,6 +317,12 @@ Service отправляет трафик к AG. Транспорт задает
       <td>нет</td>
       <td><code>{TYPES.entry}</code></td>
       <td>{DICTIONARY.entries.short}</td>
+    </tr>
+    <tr>
+      <td><code>spec.transport.protocol</code></td>
+      <td>да</td>
+      <td><code>{TYPES.enumProtocol}</code></td>
+      <td>{DICTIONARY.protocol.short}</td>
     </tr>
   </tbody>
 </table>
@@ -268,33 +369,51 @@ Service отправляет трафик к AG. Транспорт задает
         "rules": [
           {
             "metadata": {
-              "name": "allow-web-from-api-svc-ingress",
+              "name": "allow-web-to-api-svc-egress",
               "namespace": "production"
+              "labels": {
+                "policy": "web-access"
+              }
+              "annotations": {
+                "linux-agent.sgroups.io/logs": "true",
+                "linux-agent.sgroups.io/trace": "false",
+                "linux-agent.sgroups.io/priority": "200"
+              }
             },
             "spec": {
+              "comment": "Разрешить трафик от веб-серверов к сервису",
               "action": "ALLOW",
-              "session": {
-                "traffic": "INGRESS"
-              },
+              "description": "Группа безопасности для веб-серверов",
+              "displayName": "Allow Web to Service",
               "endpoints": {
                 "local": {
+                  "labels": {
+                    "policy": "web-access"
+                  },
                   "name": "web-servers",
                   "namespace": "production",
                   "type": "ADDRESS_GROUP"
                 },
                 "remote": {
-                  "name": "api-service",
+                  "labels": {
+                    "policy": "web-access"
+                  },
+                  "name": "cache-service",
                   "namespace": "production",
                   "type": "SERVICE"
                 }
+              }
+              "session": {
+                "traffic": "INGRESS"
               },
               "transport": {
                 "protocol": "TCP",
                 "IPv": "IPV4",
                 "entries": [
                   {
+                    "comment": "Transport comment",
                     "description": "HTTPS",
-                    "ports": "443"
+                    "ports": "5432"
                   }
                 ]
               }

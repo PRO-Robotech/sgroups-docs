@@ -32,6 +32,18 @@ Service отправляет трафик к CIDR. Транспорт задаё
   </thead>
   <tbody>
     <tr>
+      <td><code>metadata.annotations</code></td>
+      <td>нет</td>
+      <td><code>{TYPES.mapStringString}</code></td>
+      <td>{DICTIONARY.annotations.short}</td>
+    </tr>
+    <tr>
+      <td><code>metadata.labels</code></td>
+      <td>нет</td>
+      <td><code>{TYPES.mapStringString}</code></td>
+      <td>{DICTIONARY.labels.short}</td>
+    </tr>
+    <tr>
       <td><code>metadata.name</code></td>
       <td>да</td>
       <td><code>{TYPES.string}</code></td>
@@ -50,10 +62,28 @@ Service отправляет трафик к CIDR. Транспорт задаё
       <td>{DICTIONARY.action.short}</td>
     </tr>
     <tr>
-      <td><code>spec.session.traffic</code></td>
-      <td><strong>да</strong></td>
-      <td><code>{TYPES.enumTrafficEgress}</code></td>
-      <td>{DICTIONARY.traffic.short}</td>
+      <td><code>spec.comment</code></td>
+      <td>нет</td>
+      <td><code>{TYPES.string}</code></td>
+      <td>{DICTIONARY.comment.short}</td>
+    </tr>
+    <tr>
+      <td><code>spec.description</code></td>
+      <td>нет</td>
+      <td><code>{TYPES.string}</code></td>
+      <td>{DICTIONARY.description.short}</td>
+    </tr>
+    <tr>
+      <td><code>spec.displayName</code></td>
+      <td>нет</td>
+      <td><code>{TYPES.string}</code></td>
+      <td>{DICTIONARY.displayName.short}</td>
+    </tr>
+    <tr>
+      <td><code>spec.endpoints.local.labels</code></td>
+      <td>нет</td>
+      <td><code>{TYPES.mapStringString}</code></td>
+      <td>{DICTIONARY.labels.short}</td>
     </tr>
     <tr>
       <td><code>spec.endpoints.local.name</code></td>
@@ -70,13 +100,31 @@ Service отправляет трафик к CIDR. Транспорт задаё
     <tr>
       <td><code>spec.endpoints.local.type</code></td>
       <td>да</td>
-      <td><code>{TYPES.enumEndpointSVC}</code></td>
+      <td><code>{TYPES.enumEndpointAG}</code></td>
       <td>{DICTIONARY.endpointType.short}</td>
+    </tr>
+    <tr>
+      <td><code>spec.endpoints.remote.labels</code></td>
+      <td>нет</td>
+      <td><code>{TYPES.mapStringString}</code></td>
+      <td>{DICTIONARY.labels.short}</td>
+    </tr>
+    <tr>
+      <td><code>spec.endpoints.remote.name</code></td>
+      <td>да</td>
+      <td><code>{TYPES.string}</code></td>
+      <td>{DICTIONARY.endpointName.short}</td>
+    </tr>
+    <tr>
+      <td><code>spec.endpoints.remote.namespace</code></td>
+      <td>да</td>
+      <td><code>{TYPES.string}</code></td>
+      <td>{DICTIONARY.endpointNamespace.short}</td>
     </tr>
     <tr>
       <td><code>spec.endpoints.remote.type</code></td>
       <td>да</td>
-      <td><code>{TYPES.enumEndpointCIDR}</code></td>
+      <td><code>{TYPES.enumEndpointAG}</code></td>
       <td>{DICTIONARY.endpointType.short}</td>
     </tr>
     <tr>
@@ -86,10 +134,10 @@ Service отправляет трафик к CIDR. Транспорт задаё
       <td>{DICTIONARY.remoteValue.short}</td>
     </tr>
     <tr>
-      <td><code>spec.transport.protocol</code></td>
-      <td>да</td>
-      <td><code>{TYPES.enumProtocol}</code></td>
-      <td>{DICTIONARY.protocol.short}</td>
+      <td><code>spec.session.traffic</code></td>
+      <td>нет</td>
+      <td><code>{TYPES.enumTraffic}</code></td>
+      <td>{DICTIONARY.traffic.short}</td>
     </tr>
     <tr>
       <td><code>spec.transport.ipv</code></td>
@@ -102,6 +150,12 @@ Service отправляет трафик к CIDR. Транспорт задаё
       <td>нет</td>
       <td><code>{TYPES.entry}</code></td>
       <td>{DICTIONARY.entries.short}</td>
+    </tr>
+    <tr>
+      <td><code>spec.transport.protocol</code></td>
+      <td>да</td>
+      <td><code>{TYPES.enumProtocol}</code></td>
+      <td>{DICTIONARY.protocol.short}</td>
     </tr>
   </tbody>
 </table>
@@ -150,28 +204,48 @@ Service отправляет трафик к CIDR. Транспорт задаё
             "metadata": {
               "name": "deny-monitoring-to-external",
               "namespace": "production"
+              "labels": {
+                "policy": "web-access"
+              }
+              "annotations": {
+                "linux-agent.sgroups.io/logs": "true",
+                "linux-agent.sgroups.io/trace": "false",
+                "linux-agent.sgroups.io/priority": "200"
+              }
             },
             "spec": {
-              "action": "DENY",
-              "session": {
-                "traffic": "EGRESS"
-              },
+              "comment": "Разрешить трафик от сервисов к внутренней сети продуктивного окружения",
+              "action": "ALLOW",
+              "description": "Группа безопасности для серверов",
+              "displayName": "Allow SVC to CIDR",
               "endpoints": {
                 "local": {
+                  "labels": {
+                    "policy": "web-access"
+                  },
                   "name": "monitoring-service",
                   "namespace": "production",
                   "type": "SERVICE"
                 },
                 "remote": {
+                  "labels": {
+                    "policy": "web-access"
+                  },
+                  "name": "CIDR name",
+                  "namespace": "production",
                   "type": "CIDR",
                   "value": "0.0.0.0/0"
                 }
+              },
+              "session": {
+                "traffic": "EGRESS"
               },
               "transport": {
                 "protocol": "TCP",
                 "IPv": "IPV4",
                 "entries": [
                   {
+                    "comment": "Transport comment",
                     "description": "All ports",
                     "ports": "1-65535"
                   }
@@ -201,6 +275,18 @@ CIDR отправляет трафик к Service. Порты и протоко�
   </thead>
   <tbody>
     <tr>
+      <td><code>metadata.annotations</code></td>
+      <td>нет</td>
+      <td><code>{TYPES.mapStringString}</code></td>
+      <td>{DICTIONARY.annotations.short}</td>
+    </tr>
+    <tr>
+      <td><code>metadata.labels</code></td>
+      <td>нет</td>
+      <td><code>{TYPES.mapStringString}</code></td>
+      <td>{DICTIONARY.labels.short}</td>
+    </tr>
+    <tr>
       <td><code>metadata.name</code></td>
       <td>да</td>
       <td><code>{TYPES.string}</code></td>
@@ -219,10 +305,28 @@ CIDR отправляет трафик к Service. Порты и протоко�
       <td>{DICTIONARY.action.short}</td>
     </tr>
     <tr>
-      <td><code>spec.session.traffic</code></td>
-      <td><strong>да</strong></td>
-      <td><code>{TYPES.enumTrafficIngress}</code></td>
-      <td>{DICTIONARY.traffic.short}</td>
+      <td><code>spec.comment</code></td>
+      <td>нет</td>
+      <td><code>{TYPES.string}</code></td>
+      <td>{DICTIONARY.comment.short}</td>
+    </tr>
+    <tr>
+      <td><code>spec.description</code></td>
+      <td>нет</td>
+      <td><code>{TYPES.string}</code></td>
+      <td>{DICTIONARY.description.short}</td>
+    </tr>
+    <tr>
+      <td><code>spec.displayName</code></td>
+      <td>нет</td>
+      <td><code>{TYPES.string}</code></td>
+      <td>{DICTIONARY.displayName.short}</td>
+    </tr>
+    <tr>
+      <td><code>spec.endpoints.local.labels</code></td>
+      <td>нет</td>
+      <td><code>{TYPES.mapStringString}</code></td>
+      <td>{DICTIONARY.labels.short}</td>
     </tr>
     <tr>
       <td><code>spec.endpoints.local.name</code></td>
@@ -239,13 +343,31 @@ CIDR отправляет трафик к Service. Порты и протоко�
     <tr>
       <td><code>spec.endpoints.local.type</code></td>
       <td>да</td>
-      <td><code>{TYPES.enumEndpointSVC}</code></td>
+      <td><code>{TYPES.enumEndpointAG}</code></td>
       <td>{DICTIONARY.endpointType.short}</td>
+    </tr>
+    <tr>
+      <td><code>spec.endpoints.remote.labels</code></td>
+      <td>нет</td>
+      <td><code>{TYPES.mapStringString}</code></td>
+      <td>{DICTIONARY.labels.short}</td>
+    </tr>
+    <tr>
+      <td><code>spec.endpoints.remote.name</code></td>
+      <td>да</td>
+      <td><code>{TYPES.string}</code></td>
+      <td>{DICTIONARY.endpointName.short}</td>
+    </tr>
+    <tr>
+      <td><code>spec.endpoints.remote.namespace</code></td>
+      <td>да</td>
+      <td><code>{TYPES.string}</code></td>
+      <td>{DICTIONARY.endpointNamespace.short}</td>
     </tr>
     <tr>
       <td><code>spec.endpoints.remote.type</code></td>
       <td>да</td>
-      <td><code>{TYPES.enumEndpointCIDR}</code></td>
+      <td><code>{TYPES.enumEndpointAG}</code></td>
       <td>{DICTIONARY.endpointType.short}</td>
     </tr>
     <tr>
@@ -253,6 +375,12 @@ CIDR отправляет трафик к Service. Порты и протоко�
       <td><strong>да</strong></td>
       <td><code>{TYPES.string}</code></td>
       <td>{DICTIONARY.remoteValue.short}</td>
+    </tr>
+    <tr>
+      <td><code>spec.session.traffic</code></td>
+      <td>нет</td>
+      <td><code>{TYPES.enumTraffic}</code></td>
+      <td>{DICTIONARY.traffic.short}</td>
     </tr>
   </tbody>
 </table>
@@ -269,24 +397,43 @@ CIDR отправляет трафик к Service. Порты и протоко�
         "rules": [
           {
             "metadata": {
-              "name": "allow-external-to-api-svc",
+              "name": "deny-monitoring-to-external",
               "namespace": "production"
+              "labels": {
+                "policy": "web-access"
+              }
+              "annotations": {
+                "linux-agent.sgroups.io/logs": "true",
+                "linux-agent.sgroups.io/trace": "false",
+                "linux-agent.sgroups.io/priority": "200"
+              }
             },
             "spec": {
+              "comment": "Разрешить трафик от сервисов к внутренней сети продуктивного окружения",
               "action": "ALLOW",
-              "session": {
-                "traffic": "INGRESS"
-              },
+              "description": "Группа безопасности для серверов",
+              "displayName": "Allow SVC to CIDR",
               "endpoints": {
                 "local": {
-                  "name": "api-service",
+                  "labels": {
+                    "policy": "web-access"
+                  },
+                  "name": "monitoring-service",
                   "namespace": "production",
                   "type": "SERVICE"
                 },
                 "remote": {
+                  "labels": {
+                    "policy": "web-access"
+                  },
+                  "name": "CIDR name",
+                  "namespace": "production",
                   "type": "CIDR",
-                  "value": "10.0.0.0/8"
+                  "value": "0.0.0.0/0"
                 }
+              },
+              "session": {
+                "traffic": "EGRESS"
               }
             }
           }
