@@ -25,6 +25,18 @@ import dedent from 'ts-dedent'
   </thead>
   <tbody>
     <tr>
+      <td><code>metadata.annotations</code></td>
+      <td>нет</td>
+      <td><code>{TYPES.mapStringString}</code></td>
+      <td>{DICTIONARY.annotations.short}</td>
+    </tr>
+    <tr>
+      <td><code>metadata.labels</code></td>
+      <td>нет</td>
+      <td><code>{TYPES.mapStringString}</code></td>
+      <td>{DICTIONARY.labels.short}</td>
+    </tr>
+    <tr>
       <td><code>metadata.name</code></td>
       <td>да</td>
       <td><code>{TYPES.string}</code></td>
@@ -37,22 +49,10 @@ import dedent from 'ts-dedent'
       <td>{DICTIONARY.namespace.short}</td>
     </tr>
     <tr>
-      <td><code>metadata.labels</code></td>
-      <td>нет</td>
-      <td><code>{TYPES.mapStringString}</code></td>
-      <td>{DICTIONARY.labels.short}</td>
-    </tr>
-    <tr>
-      <td><code>metadata.annotations</code></td>
-      <td>нет</td>
-      <td><code>{TYPES.mapStringString}</code></td>
-      <td>{DICTIONARY.annotations.short}</td>
-    </tr>
-    <tr>
-      <td><code>spec.displayName</code></td>
-      <td>нет</td>
-      <td><code>{TYPES.string}</code></td>
-      <td>{DICTIONARY.displayName.short}</td>
+      <td><code>spec.action</code></td>
+      <td><strong>да</strong></td>
+      <td><code>{TYPES.enumAction}</code></td>
+      <td>{DICTIONARY.action.short}</td>
     </tr>
     <tr>
       <td><code>spec.comment</code></td>
@@ -67,16 +67,16 @@ import dedent from 'ts-dedent'
       <td>{DICTIONARY.description.short}</td>
     </tr>
     <tr>
-      <td><code>spec.action</code></td>
-      <td><strong>да</strong></td>
-      <td><code>{TYPES.enumAction}</code></td>
-      <td>{DICTIONARY.action.short}</td>
+      <td><code>spec.displayName</code></td>
+      <td>нет</td>
+      <td><code>{TYPES.string}</code></td>
+      <td>{DICTIONARY.displayName.short}</td>
     </tr>
     <tr>
-      <td><code>spec.session.traffic</code></td>
+      <td><code>spec.endpoints.local.labels</code></td>
       <td>нет</td>
-      <td><code>{TYPES.enumTraffic}</code></td>
-      <td>{DICTIONARY.traffic.short}</td>
+      <td><code>{TYPES.mapStringString}</code></td>
+      <td>{DICTIONARY.labels.short}</td>
     </tr>
     <tr>
       <td><code>spec.endpoints.local.name</code></td>
@@ -97,6 +97,12 @@ import dedent from 'ts-dedent'
       <td>{DICTIONARY.endpointType.short}</td>
     </tr>
     <tr>
+      <td><code>spec.endpoints.remote.labels</code></td>
+      <td>нет</td>
+      <td><code>{TYPES.mapStringString}</code></td>
+      <td>{DICTIONARY.labels.short}</td>
+    </tr>
+    <tr>
       <td><code>spec.endpoints.remote.name</code></td>
       <td>да</td>
       <td><code>{TYPES.string}</code></td>
@@ -115,10 +121,10 @@ import dedent from 'ts-dedent'
       <td>{DICTIONARY.endpointType.short}</td>
     </tr>
     <tr>
-      <td><code>spec.transport.protocol</code></td>
-      <td>да</td>
-      <td><code>{TYPES.enumProtocol}</code></td>
-      <td>{DICTIONARY.protocol.short}</td>
+      <td><code>spec.session.traffic</code></td>
+      <td>нет</td>
+      <td><code>{TYPES.enumTraffic}</code></td>
+      <td>{DICTIONARY.traffic.short}</td>
     </tr>
     <tr>
       <td><code>spec.transport.ipv</code></td>
@@ -131,6 +137,12 @@ import dedent from 'ts-dedent'
       <td>нет</td>
       <td><code>{TYPES.entry}</code></td>
       <td>{DICTIONARY.entries.short}</td>
+    </tr>
+    <tr>
+      <td><code>spec.transport.protocol</code></td>
+      <td>да</td>
+      <td><code>{TYPES.enumProtocol}</code></td>
+      <td>{DICTIONARY.protocol.short}</td>
     </tr>
   </tbody>
 </table>
@@ -147,24 +159,19 @@ import dedent from 'ts-dedent'
   </thead>
   <tbody>
     <tr>
-      <td><code>description</code></td>
-      <td><code>{TYPES.string}</code></td>
-      <td>{DICTIONARY.description.short}</td>
-    </tr>
-    <tr>
       <td><code>comment</code></td>
       <td><code>{TYPES.string}</code></td>
       <td>{DICTIONARY.comment.short}</td>
     </tr>
     <tr>
+      <td><code>description</code></td>
+      <td><code>{TYPES.string}</code></td>
+      <td>{DICTIONARY.description.short}</td>
+    </tr>
+    <tr>
       <td><code>ports</code></td>
       <td><code>{TYPES.string}</code></td>
       <td>{DICTIONARY.ports.short}</td>
-    </tr>
-    <tr>
-      <td><code>types</code></td>
-      <td><code>{TYPES.uint32}</code></td>
-      <td>{DICTIONARY.icmpTypes.short}</td>
     </tr>
   </tbody>
 </table>
@@ -182,14 +189,16 @@ import dedent from 'ts-dedent'
               "labels": {
                 "policy": "web-access"
               }
+              "annotations": {
+                "linux-agent.sgroups.io/logs": "true",
+                "linux-agent.sgroups.io/trace": "false",
+                "linux-agent.sgroups.io/priority": "200"
+              }
             },
             "spec": {
               "displayName": "Allow Web to DB",
               "comment": "Разрешить трафик от веб-серверов к БД",
               "action": "ALLOW",
-              "session": {
-                "traffic": "EGRESS"
-              },
               "endpoints": {
                 "local": {
                   "name": "web-servers",
@@ -202,11 +211,15 @@ import dedent from 'ts-dedent'
                   "type": "ADDRESS_GROUP"
                 }
               },
+              "session": {
+                "traffic": "EGRESS"
+              },
               "transport": {
                 "protocol": "TCP",
                 "IPv": "IPV4",
                 "entries": [
                   {
+                    "comment": "Transport comment",
                     "description": "PostgreSQL",
                     "ports": "5432"
                   }
@@ -237,23 +250,33 @@ import dedent from 'ts-dedent'
             "resourceVersion": "1"
           },
           "spec": {
-            "displayName": "Allow Web to DB",
-            "comment": "Разрешить трафик от веб-серверов к БД",
+            "comment": "Разрешить трафик от веб-серверов",
             "action": "ALLOW",
+            "description": "Группа безопасности для веб-серверов фронтенда",
+            "displayName": "Allow Web to FE",
             "session": {
               "traffic": "EGRESS"
             },
             "endpoints": {
               "local": {
+                "labels": {
+                  "policy": "web-access"
+                },
                 "name": "web-servers",
                 "namespace": "production",
                 "type": "ADDRESS_GROUP"
               },
               "remote": {
+                "labels": {
+                  "policy": "web-access"
+                },
                 "name": "db-servers",
                 "namespace": "production",
                 "type": "ADDRESS_GROUP"
               }
+            },
+            "session": {
+                "traffic": "EGRESS"
             },
             "transport": {
               "protocol": "TCP",

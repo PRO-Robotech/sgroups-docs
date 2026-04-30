@@ -64,13 +64,25 @@ import { ApiOperation } from '@site/src/components/commonBlocks/ApiOperation'
       <td>{DICTIONARY.annotations.short}</td>
     </tr>
     <tr>
-      <td><code>spec.addressGroup</code></td>
+      <td><code>spec.addressGroup.name</code></td>
       <td><strong>да</strong></td>
       <td><code>{TYPES.string}</code></td>
       <td>{DICTIONARY.addressGroup.short}</td>
     </tr>
     <tr>
-      <td><code>spec.network</code></td>
+      <td><code>spec.addressGroup.namespace</code></td>
+      <td><strong>да</strong></td>
+      <td><code>{TYPES.string}</code></td>
+      <td>{DICTIONARY.namespace.short}</td>
+    </tr>
+    <tr>
+      <td><code>spec.network.name</code></td>
+      <td><strong>да</strong></td>
+      <td><code>{TYPES.string}</code></td>
+      <td>{DICTIONARY.network.short}</td>
+    </tr>
+    <tr>
+      <td><code>spec.network.namespace</code></td>
       <td><strong>да</strong></td>
       <td><code>{TYPES.string}</code></td>
       <td>{DICTIONARY.network.short}</td>
@@ -95,8 +107,16 @@ import { ApiOperation } from '@site/src/components/commonBlocks/ApiOperation'
               }
             },
             "spec": {
-              "addressGroup": "web-servers",
-              "network": "internal-net"
+              "displayName": "Web Service",
+              "comment": "HTTP и HTTPS сервис",
+              "description": "Веб-сервис для фронтенд-приложений",
+              "addressGroup": {
+                "name": "web-servers",
+                "namespace": "production"
+              },
+              "network": {
+                "name": "internal-net",
+                "namespace": "production"
             }
           }
         ]
@@ -122,8 +142,17 @@ import { ApiOperation } from '@site/src/components/commonBlocks/ApiOperation'
             "resourceVersion": "1"
           },
           "spec": {
-            "addressGroup": "web-servers",
-            "network": "internal-net"
+            "displayName": "Web Service",
+            "comment": "HTTP и HTTPS сервис",
+            "description": "Веб-сервис для фронтенд-приложений",
+            "addressGroup": {
+              "name": "web-servers",
+              "namespace": "production"
+            },
+            "network": {
+              "name": "internal-net",
+              "namespace": "production"
+            }
           }
         }
       ]
@@ -461,8 +490,17 @@ import { ApiOperation } from '@site/src/components/commonBlocks/ApiOperation'
             "resourceVersion": "1"
           },
           "spec": {
-            "addressGroup": "web-servers",
-            "network": "internal-net"
+            "displayName": "Web Service",
+            "comment": "HTTP и HTTPS сервис",
+            "description": "Веб-сервис для фронтенд-приложений",
+            "addressGroup": {
+              "name": "web-servers",
+              "namespace": "production"
+            },
+            "network": {
+              "name": "internal-net",
+              "namespace": "production"
+            }
           }
         }
       ]
