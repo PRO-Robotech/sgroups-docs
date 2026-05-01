@@ -85,7 +85,7 @@ import dedent from 'ts-dedent'
       <td>{DICTIONARY.protocol.short}</td>
     </tr>
     <tr>
-      <td><code>spec.transport.ipv</code></td>
+      <td><code>spec.transport.IPv</code></td>
       <td>да</td>
       <td><code>{TYPES.enumIpv}</code></td>
       <td>{DICTIONARY.ipv.short}</td>
@@ -185,13 +185,18 @@ import dedent from 'ts-dedent'
       "rules": [
         {
           "metadata": {
-            "uid": "f6a7b8c9-d0e1-2345-f012-3456789abcde",
+            "uid": "bcddfd42-0215-46ff-8a06-4221b32192fa",
             "name": "allow-web-to-external-api",
             "namespace": "production",
-            "creationTimestamp": "2025-01-15T11:30:00Z",
-            "resourceVersion": "1"
+            "labels": {},
+            "annotations": {},
+            "creationTimestamp": "2026-04-25T21:13:10.613496Z",
+            "resourceVersion": "190"
           },
           "spec": {
+            "displayName": "",
+            "comment": "",
+            "description": "",
             "action": "ALLOW",
             "session": {
               "traffic": "EGRESS"
@@ -200,11 +205,17 @@ import dedent from 'ts-dedent'
               "local": {
                 "name": "web-servers",
                 "namespace": "production",
-                "type": "ADDRESS_GROUP"
+                "type": "ADDRESS_GROUP",
+                "labels": {
+                  "tier": "frontend"
+                }
               },
               "remote": {
+                "name": "",
+                "namespace": "",
                 "type": "FQDN",
-                "value": "api.example.com"
+                "value": "api.example.com",
+                "labels": {}
               }
             },
             "transport": {
@@ -213,7 +224,9 @@ import dedent from 'ts-dedent'
               "entries": [
                 {
                   "description": "HTTPS",
-                  "ports": "443"
+                  "comment": "",
+                  "ports": "443",
+                  "types": []
                 }
               ]
             }

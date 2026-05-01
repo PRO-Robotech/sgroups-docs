@@ -1,0 +1,132 @@
+---
+id: server-build
+sidebar_position: 1
+title: Сборка
+---
+
+import CodeBlock from '@theme/CodeBlock'
+import dedent from 'ts-dedent'
+
+# Сборка sg-server
+
+Центральный компонент системы — `sg-server`. Хранит конфигурацию сетевых политик
+в PostgreSQL и предоставляет gRPC + REST API. Поставляется двумя бинарями:
+
+- **`sg-server`** — сам сервер, собирается из `cmd/sg-server` через `make`.
+- **`goose`** — миграционная утилита (форк
+  [Morwran/goose](https://github.com/Morwran/goose)), скачивается готовая
+  через `make .install-goose`.
+
+## Требования
+
+- Go ≥ 1.25 (для сборки `sg-server`)
+- Make, Bash, `wget` (для сборки и скачивания goose)
+- Docker 24+ (для контейнерной сборки)
+- PostgreSQL ≥ 14
+
+## Бинарник `sg-server`
+
+Цель Makefile: `sg-server [os=<linux|darwin>] [arch=<amd64|arm64>]`. По умолчанию
+берутся `os` и `arch` текущей машины (`go env GOOS GOARCH`).
+
+<CodeBlock language="bash">
+  {dedent`
+    git clone https://github.com/PRO-Robotech/sgroups.git
+    cd sgroups
+    git checkout release/0.1.0-rc.1
+
+    # сборка под текущую ОС и архитектуру
+    make sg-server
+
+    # либо явно — например, кросс-сборка под Linux/arm64
+    make sg-server os=linux arch=arm64
+  `}
+</CodeBlock>
+
+Готовый файл — `bin/sg-server`. Проверка справки:
+
+<CodeBlock language="bash">
+  {dedent`
+    ./bin/sg-server --help
+  `}
+</CodeBlock>
+
+## Утилита `goose` (миграции БД)
+
+`Makefile` не компилирует goose сам — он скачивает готовый бинарник из
+GitHub-релиза форка `Morwran/goose` (версия зашита в Makefile, на момент
+release/0.1.0-rc.1 — `v3.24.3-fork.1`).
+
+<CodeBlock language="bash">
+  {dedent`
+    # под текущую ОС/архитектуру
+    make .install-goose
+
+    # либо явно
+    make .install-goose os=linux arch=amd64
+  `}
+</CodeBlock>
+
+Файл появится в `bin/goose`.
+
+## Docker-образ `sg-server`
+
+`Dockerfile.server` — multi-stage сборка на `golang:1.25-alpine3.22` (builder)
+и `alpine:3.22` (runtime). Контекст сборки — корень репозитория, никаких
+внешних build-context'ов не требуется.
+
+<CodeBlock language="bash">
+  {dedent`
+    git clone https://github.com/PRO-Robotech/sgroups.git
+    cd sgroups
+    git checkout release/0.1.0-rc.1
+
+    docker build \\
+      -f Dockerfile.server \\
+      -t sgroups/sg-server:0.1.0-rc.1 \\
+      .
+  `}
+</CodeBlock>
+
+Build-аргументы (по умолчанию подставляются автоматически из платформы):
+
+<table>
+  <thead>
+    <tr><th>Аргумент</th><th>Значение по умолчанию</th></tr>
+  </thead>
+  <tbody>
+    <tr><td><code>GO_VER</code></td><td><code>1.25</code></td></tr>
+    <tr><td><code>ALPINE_VER</code></td><td><code>3.22</code></td></tr>
+    <tr><td><code>TARGETOS</code> / <code>TARGETARCH</code></td><td>текущая платформа Docker buildx</td></tr>
+  </tbody>
+</table>
+
+:::info
+Финальный этап на `alpine:3.22`, в образ устанавливается `ca-certificates`,
+сервер запускается от непривилегированного пользователя `app` (UID 101).
+`CMD` = `/app/bin/sg-server`.
+:::
+
+## Docker-образ `goose`
+
+`Dockerfile.goose` собирает образ с `goose` + директорией миграций. Он
+скачивает готовый бинарник через `make .install-goose`, поэтому полное
+дерево исходников не нужно — только `Makefile`, `Dockerfile.goose` и
+`internal/sg-server/repository/pg/migrations`.
+
+<CodeBlock language="bash">
+  {dedent`
+    docker build \\
+      -f Dockerfile.goose \\
+      -t sgroups/goose:0.1.0-rc.1 \\
+      .
+  `}
+</CodeBlock>
+
+В образе:
+
+- `/app/bin/goose` — бинарник
+- `/app/0001000_init.sql`, `/app/0002000_rules.sql`, `/app/0003000_optimisation.sql`,
+  `gen-migration.sh` и подкаталоги с дельтами
+
+`CMD` = `/app/bin/goose` — все аргументы передаются через `docker run`.

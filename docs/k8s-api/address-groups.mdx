@@ -1,0 +1,408 @@
+---
+id: address-groups
+sidebar_position: 3
+title: AddressGroups
+---
+
+import { TYPES } from '@site/src/constants/types'
+import { ApiOperation } from '@site/src/components/commonBlocks/ApiOperation'
+import { K8sCodes } from '@site/src/components/commonBlocks/K8sCodes'
+import { K8sValidation } from '@site/src/components/commonBlocks/K8sValidation'
+import { RESTRICTIONS } from '@site/src/constants/restrictions'
+import Tabs from '@theme/Tabs'
+import TabItem from '@theme/TabItem'
+import CodeBlock from '@theme/CodeBlock'
+import dedent from 'ts-dedent'
+
+# AddressGroups
+
+`AddressGroup` — логическая группа адресов, к которой применяются `Rule`. IP появляются в группе через `HostBinding` и `NetworkBinding`.
+
+---
+
+:::info Валидация и ошибки
+Все валидации `spec` производятся на уровне `sg-server` (gRPC-бэкенд) — k8s-сервер
+лишь проксирует запрос. Формат ошибочных ответов и таблица кодов — в
+[Обзоре API → Коды ошибок](/k8s-api/overview#коды-ошибок).
+:::
+
+
+## List
+
+<ApiOperation method="GET" endpoint="/apis/sgroups.io/v1alpha1/namespaces/{namespace}/addressgroups">
+
+Получить список ресурсов. Доступны два scope: по namespace и по всему кластеру.
+
+<Tabs groupId="scope">
+  <TabItem value="namespace" label="В namespace" default>
+
+<CodeBlock language="bash">
+  {dedent`
+    kubectl get addressgroups -n production
+  `}
+</CodeBlock>
+
+  </TabItem>
+  <TabItem value="cluster" label="По всему кластеру">
+
+<CodeBlock language="bash">
+  {dedent`
+    kubectl get addressgroups -A
+  `}
+</CodeBlock>
+
+  </TabItem>
+</Tabs>
+
+#### Пример ответа
+
+<CodeBlock language="json">
+  {dedent`
+    {
+      "kind": "AddressGroupList",
+      "apiVersion": "sgroups.io/v1alpha1",
+      "metadata": {
+        "resourceVersion": "1234"
+      },
+      "items": [
+        {
+          "kind": "AddressGroup",
+          "metadata": {
+            "name": "web",
+            "namespace": "production",
+            "uid": "...",
+            "resourceVersion": "1100",
+            "labels": {
+              "tier": "frontend"
+            }
+          },
+          "spec": {
+            "displayName": "Web servers",
+            "defaultAction": "Deny",
+            "logs": true,
+            "trace": false
+          },
+          "refs": [
+            {
+              "kind": "Host",
+              "namespace": "production",
+              "name": "host-1"
+            }
+          ]
+        }
+      ]
+    }
+    `}
+</CodeBlock>
+
+
+<K8sValidation op="list" />
+
+<K8sCodes codes={['unauthorized', 'forbidden', 'internal', 'serviceUnavailable']} />
+
+</ApiOperation>
+
+---
+
+## Create
+
+<ApiOperation method="POST" endpoint="/apis/sgroups.io/v1alpha1/namespaces/{namespace}/addressgroups">
+
+Создать новый объект. Имя должно быть уникальным в namespace.
+
+#### Тело запроса
+
+<table>
+  <thead>
+    <tr>
+      <th>Параметр</th>
+      <th>Обязательность</th>
+      <th>Тип</th>
+      <th>Описание</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><code>metadata.name</code></td>
+      <td>да</td>
+      <td><code>{TYPES.string}</code></td>
+      <td>Имя ресурса</td>
+    </tr>
+    <tr>
+      <td><code>metadata.namespace</code></td>
+      <td>да</td>
+      <td><code>{TYPES.string}</code></td>
+      <td>Namespace (имя `Tenant`)</td>
+    </tr>
+    <tr>
+      <td><code>metadata.labels</code></td>
+      <td>нет</td>
+      <td><code>{TYPES.mapStringString}</code></td>
+      <td>Лейблы</td>
+    </tr>
+    <tr>
+      <td><code>metadata.annotations</code></td>
+      <td>нет</td>
+      <td><code>{TYPES.mapStringString}</code></td>
+      <td>Аннотации</td>
+    </tr>
+    <tr>
+      <td><code>spec.displayName</code></td>
+      <td>нет</td>
+      <td><code>{TYPES.string}</code></td>
+      <td>Отображаемое имя</td>
+    </tr>
+    <tr>
+      <td><code>spec.comment</code></td>
+      <td>нет</td>
+      <td><code>{TYPES.string}</code></td>
+      <td>Комментарий</td>
+    </tr>
+    <tr>
+      <td><code>spec.description</code></td>
+      <td>нет</td>
+      <td><code>{TYPES.string}</code></td>
+      <td>Описание</td>
+    </tr>
+    <tr>
+      <td><code>spec.defaultAction</code></td>
+      <td>нет</td>
+      <td><code>{TYPES.enumActionK8s}</code></td>
+      <td>Действие по умолчанию для трафика, не подпадающего под `Rule`</td>
+    </tr>
+    <tr>
+      <td><code>spec.logs</code></td>
+      <td>нет</td>
+      <td><code>{TYPES.bool}</code></td>
+      <td>Логировать совпадения по умолчанию</td>
+    </tr>
+    <tr>
+      <td><code>spec.trace</code></td>
+      <td>нет</td>
+      <td><code>{TYPES.bool}</code></td>
+      <td>Трассировать совпадения по умолчанию</td>
+    </tr>
+    <tr>
+      <td><code>refs[]</code></td>
+      <td>read-only</td>
+      <td><code>{TYPES.resourceRef}</code></td>
+      <td>Обратные ссылки на привязанные `Host`/`Network`/`Service`/`Rule` (заполняется сервером)</td>
+    </tr>
+  </tbody>
+</table>
+
+#### Пример запроса
+
+<CodeBlock language="bash">
+  {dedent`
+    kubectl apply -f - <<EOF
+    apiVersion: sgroups.io/v1alpha1
+    kind: AddressGroup
+    metadata:
+      name: web
+      namespace: production
+      labels:
+        tier: frontend
+    spec:
+      displayName: Web servers
+      defaultAction: Deny
+      logs: true
+      trace: false
+    EOF
+  `}
+</CodeBlock>
+
+#### Пример ответа
+
+<CodeBlock language="json">
+  {dedent`
+    {
+      "kind": "AddressGroup",
+      "apiVersion": "sgroups.io/v1alpha1",
+      "metadata": {
+        "name": "web",
+        "namespace": "production",
+        "uid": "...",
+        "resourceVersion": "1101"
+      },
+      "spec": {
+        "displayName": "Web servers",
+        "defaultAction": "Deny",
+        "logs": true,
+        "trace": false
+      },
+      "refs": []
+    }
+    `}
+</CodeBlock>
+
+
+<K8sValidation op="create" serverItems={[
+  { label: 'metadata / spec', rules: RESTRICTIONS.metadataRequired },
+  { label: 'metadata.name', rules: RESTRICTIONS.name },
+  { label: 'metadata.namespace', rules: RESTRICTIONS.namespace },
+  { label: 'spec.displayName', rules: RESTRICTIONS.displayName },
+  { label: 'spec.comment', rules: RESTRICTIONS.comment },
+  { label: 'spec.description', rules: RESTRICTIONS.description },
+  { label: 'spec.defaultAction', rules: RESTRICTIONS.action },
+]} />
+
+<K8sCodes codes={['badRequest', 'unauthorized', 'forbidden', 'alreadyExists', 'invalid', 'internal']} />
+
+</ApiOperation>
+
+---
+
+## Get
+
+<ApiOperation method="GET" endpoint="/apis/sgroups.io/v1alpha1/namespaces/{namespace}/addressgroups/{name}">
+
+Получить один объект по имени.
+
+#### Пример запроса
+
+<CodeBlock language="bash">
+  {dedent`
+    kubectl get addressgroup web -n production -o yaml
+  `}
+</CodeBlock>
+
+#### Пример ответа
+
+<CodeBlock language="json">
+  {dedent`
+    {
+      "kind": "AddressGroup",
+      "apiVersion": "sgroups.io/v1alpha1",
+      "metadata": {
+        "name": "web",
+        "namespace": "production",
+        "uid": "...",
+        "resourceVersion": "1101"
+      },
+      "spec": {
+        "displayName": "Web servers",
+        "defaultAction": "Deny",
+        "logs": true,
+        "trace": false
+      },
+      "refs": []
+    }
+    `}
+</CodeBlock>
+
+
+<K8sValidation op="get" />
+
+<K8sCodes codes={['unauthorized', 'forbidden', 'notFound', 'internal']} />
+
+</ApiOperation>
+
+---
+
+## Update (PUT)
+
+<ApiOperation method="PUT" endpoint="/apis/sgroups.io/v1alpha1/namespaces/{namespace}/addressgroups/{name}">
+
+Полная замена объекта. Поле `metadata.resourceVersion` обязательно — оно защищает от race-condition (optimistic concurrency).
+
+#### Пример запроса
+
+<CodeBlock language="bash">
+  {dedent`
+    # kubectl edit делает GET → правки → PUT под капотом
+    kubectl edit addressgroup web -n production
+  `}
+</CodeBlock>
+
+
+<K8sValidation op="put" serverItems={[
+  { label: 'metadata / spec', rules: RESTRICTIONS.metadataRequired },
+  { label: 'metadata.name', rules: RESTRICTIONS.name },
+  { label: 'metadata.namespace', rules: RESTRICTIONS.namespace },
+  { label: 'spec.displayName', rules: RESTRICTIONS.displayName },
+  { label: 'spec.comment', rules: RESTRICTIONS.comment },
+  { label: 'spec.description', rules: RESTRICTIONS.description },
+  { label: 'spec.defaultAction', rules: RESTRICTIONS.action },
+]} />
+
+<K8sCodes codes={['badRequest', 'unauthorized', 'forbidden', 'notFound', 'conflict', 'invalid', 'internal']} />
+
+</ApiOperation>
+
+---
+
+## Patch
+
+<ApiOperation method="PATCH" endpoint="/apis/sgroups.io/v1alpha1/namespaces/{namespace}/addressgroups/{name}">
+
+Частичное обновление. Поддерживаемые `Content-Type`:
+
+- `application/strategic-merge-patch+json` — стандартный k8s-патч
+- `application/merge-patch+json` — RFC 7396
+- `application/json-patch+json` — RFC 6902
+
+#### Пример запроса
+
+<CodeBlock language="bash">
+  {dedent`
+    kubectl patch addressgroup web -n production --type=merge \\
+      -p '{"spec":{"defaultAction":"Allow"}}'
+  `}
+</CodeBlock>
+
+
+<K8sValidation op="patch" serverItems={[
+  { label: 'metadata / spec', rules: RESTRICTIONS.metadataRequired },
+  { label: 'metadata.name', rules: RESTRICTIONS.name },
+  { label: 'metadata.namespace', rules: RESTRICTIONS.namespace },
+  { label: 'spec.displayName', rules: RESTRICTIONS.displayName },
+  { label: 'spec.comment', rules: RESTRICTIONS.comment },
+  { label: 'spec.description', rules: RESTRICTIONS.description },
+  { label: 'spec.defaultAction', rules: RESTRICTIONS.action },
+]} />
+
+<K8sCodes codes={['badRequest', 'unauthorized', 'forbidden', 'notFound', 'invalid', 'internal']} />
+
+</ApiOperation>
+
+---
+
+## Delete
+
+<ApiOperation method="DELETE" endpoint="/apis/sgroups.io/v1alpha1/namespaces/{namespace}/addressgroups/{name}">
+
+Удалить объект по имени. Стандартные опции `--cascade`, `--grace-period`, `--timeout` поддерживаются как query-параметры.
+
+#### Пример запроса
+
+<CodeBlock language="bash">
+  {dedent`
+    kubectl delete addressgroup web -n production
+  `}
+</CodeBlock>
+
+#### Пример ответа
+
+<CodeBlock language="json">
+  {dedent`
+    {
+      "kind": "Status",
+      "apiVersion": "v1",
+      "status": "Success"
+    }
+    `}
+</CodeBlock>
+
+:::tip
+Поле `refs[]` обновляется сервером автоматически. Изменять его в запросах `Create`/`Update` бессмысленно — оно будет перезаписано.
+:::
+
+
+<K8sValidation op="delete" />
+
+<K8sCodes codes={['unauthorized', 'forbidden', 'notFound', 'conflict', 'internal']} />
+
+</ApiOperation>
+
+---

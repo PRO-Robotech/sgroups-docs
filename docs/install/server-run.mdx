@@ -1,0 +1,152 @@
+---
+id: server-run
+sidebar_position: 3
+title: Запуск
+---
+
+import CodeBlock from '@theme/CodeBlock'
+import dedent from 'ts-dedent'
+
+# Запуск sg-server
+
+## Шаг 1. Миграции БД
+
+Перед первым запуском обязательно прогнать миграции на пустой PostgreSQL.
+Есть два способа.
+
+### Через `make`
+
+Цель Makefile сама скачает goose (если его ещё нет) и применит миграции:
+
+<CodeBlock language="bash">
+  {dedent`
+    make pg-migrations \\
+      PG_URI="postgres://sgroups:secret@localhost:5432/sgroups?sslmode=disable"
+  `}
+</CodeBlock>
+
+Внутри:
+
+1. `make .install-goose` — скачивает бинарь, если нужно
+2. `gen-migration.sh` — собирает init-миграцию из подкаталогов
+3. `goose -table=sg_db_ver -dir=<migrations> -v postgres "<PG_URI>" up`
+
+### Через Docker-образ `goose`
+
+<CodeBlock language="bash">
+  {dedent`
+    docker run --rm \\
+      sgroups/goose:0.1.0-rc.1 \\
+      -table=sg_db_ver \\
+      -dir=/app \\
+      postgres "postgres://sgroups:secret@db:5432/sgroups?sslmode=disable" \\
+      up
+  `}
+</CodeBlock>
+
+Все миграции лежат в `/app` внутри образа, аргументы передаются как есть.
+
+## Шаг 2. Запуск бинарника
+
+<CodeBlock language="bash">
+  {dedent`
+    ./bin/sg-server \\
+      --config /etc/sg-server/config.yaml
+  `}
+</CodeBlock>
+
+Бинарник принимает только `--config <path>`; остальные параметры — из YAML
+или env.
+
+## Шаг 3. Запуск через Docker
+
+<CodeBlock language="bash">
+  {dedent`
+    docker run -d \\
+      --name sg-server \\
+      -p 9006:9006 \\
+      -e SG_SERVER_ENDPOINT="tcp://0.0.0.0:9006" \\
+      -e SG_STORAGE_POSTGRES_URL="postgres://sgroups:secret@db:5432/sgroups?sslmode=disable" \\
+      -e SG_LOGGER_LEVEL="INFO" \\
+      sgroups/sg-server:0.1.0-rc.1
+  `}
+</CodeBlock>
+
+:::caution
+В образе по умолчанию `server/endpoint = 127.0.0.1:9000` — это значит, что
+без переопределения сервер слушает только `localhost` контейнера и недоступен
+снаружи. Перекройте через `SG_SERVER_ENDPOINT="tcp://0.0.0.0:<port>"` либо
+смонтируйте свой YAML.
+:::
+
+## Запуск через Docker Compose
+
+<CodeBlock language="yaml">
+  {dedent`
+    services:
+      db:
+        image: postgres:16-alpine
+        environment:
+          POSTGRES_DB: sgroups
+          POSTGRES_USER: sgroups
+          POSTGRES_PASSWORD: secret
+        volumes:
+          - pgdata:/var/lib/postgresql/data
+        healthcheck:
+          test: ["CMD-SHELL", "pg_isready -U sgroups"]
+          interval: 5s
+          retries: 10
+
+      goose:
+        image: sgroups/goose:0.1.0-rc.1
+        depends_on:
+          db:
+            condition: service_healthy
+        command:
+          - "-table=sg_db_ver"
+          - "-dir=/app"
+          - "postgres"
+          - "postgres://sgroups:secret@db:5432/sgroups?sslmode=disable"
+          - "up"
+        restart: "no"
+
+      sg-server:
+        image: sgroups/sg-server:0.1.0-rc.1
+        depends_on:
+          goose:
+            condition: service_completed_successfully
+        ports:
+          - "9006:9006"
+        environment:
+          SG_SERVER_ENDPOINT: "tcp://0.0.0.0:9006"
+          SG_STORAGE_POSTGRES_URL: "postgres://sgroups:secret@db:5432/sgroups?sslmode=disable"
+          SG_LOGGER_LEVEL: "INFO"
+
+    volumes:
+      pgdata:
+  `}
+</CodeBlock>
+
+<CodeBlock language="bash">
+  {dedent`
+    docker compose up -d
+  `}
+</CodeBlock>
+
+Compose поднимет PostgreSQL, дождётся его готовности, прогонит миграции
+(`goose ... up`), затем запустит сервер.
+
+## Проверка работоспособности
+
+<CodeBlock language="bash">
+  {dedent`
+    # gRPC (через grpcurl)
+    grpcurl -plaintext localhost:9006 list
+
+    # REST (gRPC-Gateway)
+    curl http://localhost:9006/v1/sync-statuses/list
+
+    # метрики Prometheus (если включены — по умолчанию да)
+    curl http://localhost:9006/metrics
+  `}
+</CodeBlock>

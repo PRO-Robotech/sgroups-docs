@@ -1,0 +1,198 @@
+---
+id: server-config
+sidebar_position: 2
+title: Конфигурация
+---
+
+import CodeBlock from '@theme/CodeBlock'
+import dedent from 'ts-dedent'
+
+# Конфигурация sg-server
+
+`sg-server` использует `corlib/plain-config`. Источники с приоритетом:
+
+1. **Аргументы командной строки** — `--config <path>` указывает YAML-файл
+2. **Переменные окружения** с префиксом `SG_` (см. ниже)
+3. **YAML-файл**
+
+Дефис `-` и слеш `/` в ключах превращаются в `_` для env-переменных:
+ключ `server/graceful-shutdown` → `SG_SERVER_GRACEFUL_SHUTDOWN`.
+
+## Полный пример YAML
+
+<CodeBlock language="yaml">
+  {dedent`
+    logger:
+      level: INFO
+
+    metrics:
+      enable: true
+
+    healthcheck:
+      enable: true
+
+    server:
+      endpoint: tcp://0.0.0.0:9006
+      graceful-shutdown: 30s
+      api-path-prefix: ""
+      additional-api-paths: []
+      use-proto-validator: true
+
+    storage:
+      type: postgres
+      postgres:
+        url: postgres://sgroups:secret@db:5432/sgroups?sslmode=disable
+
+    authn:
+      type: none
+  `}
+</CodeBlock>
+
+## Параметры: server
+
+<table>
+  <thead>
+    <tr>
+      <th>Ключ YAML</th>
+      <th>Env</th>
+      <th>Default</th>
+      <th>Описание</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><code>server/endpoint</code></td>
+      <td><code>SG_SERVER_ENDPOINT</code></td>
+      <td><code>tcp://127.0.0.1:9000</code></td>
+      <td>Слушаемый адрес. Один эндпоинт обслуживает gRPC + REST + метрики + healthcheck</td>
+    </tr>
+    <tr>
+      <td><code>server/graceful-shutdown</code></td>
+      <td><code>SG_SERVER_GRACEFUL_SHUTDOWN</code></td>
+      <td><code>10s</code></td>
+      <td>Период graceful-завершения</td>
+    </tr>
+    <tr>
+      <td><code>server/api-path-prefix</code></td>
+      <td><code>SG_SERVER_API_PATH_PREFIX</code></td>
+      <td>—</td>
+      <td>Префикс для REST-роутов (опц.)</td>
+    </tr>
+    <tr>
+      <td><code>server/additional-api-paths</code></td>
+      <td><code>SG_SERVER_ADDITIONAL_API_PATHS</code></td>
+      <td>—</td>
+      <td>Список дополнительных префиксов</td>
+    </tr>
+    <tr>
+      <td><code>server/use-proto-validator</code></td>
+      <td><code>SG_SERVER_USE_PROTO_VALIDATOR</code></td>
+      <td><code>false</code></td>
+      <td>Включить protovalidate-интерсептор для gRPC</td>
+    </tr>
+  </tbody>
+</table>
+
+## Параметры: logger / metrics / healthcheck
+
+<table>
+  <thead>
+    <tr>
+      <th>Ключ YAML</th>
+      <th>Env</th>
+      <th>Default</th>
+      <th>Описание</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><code>logger/level</code></td>
+      <td><code>SG_LOGGER_LEVEL</code></td>
+      <td><code>DEBUG</code></td>
+      <td>DEBUG / INFO / WARN / ERROR</td>
+    </tr>
+    <tr>
+      <td><code>metrics/enable</code></td>
+      <td><code>SG_METRICS_ENABLE</code></td>
+      <td><code>true</code></td>
+      <td>Эндпоинт Prometheus</td>
+    </tr>
+    <tr>
+      <td><code>healthcheck/enable</code></td>
+      <td><code>SG_HEALTHCHECK_ENABLE</code></td>
+      <td><code>true</code></td>
+      <td>HTTP-healthcheck</td>
+    </tr>
+  </tbody>
+</table>
+
+## Параметры: storage
+
+<table>
+  <thead>
+    <tr>
+      <th>Ключ YAML</th>
+      <th>Env</th>
+      <th>Default</th>
+      <th>Описание</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><code>storage/type</code></td>
+      <td><code>SG_STORAGE_TYPE</code></td>
+      <td><code>POSTGRES</code></td>
+      <td>Только <code>POSTGRES</code> в текущей версии</td>
+    </tr>
+    <tr>
+      <td><code>storage/postgres/url</code></td>
+      <td><code>SG_STORAGE_POSTGRES_URL</code></td>
+      <td>—</td>
+      <td>Строка подключения <code>postgres://user:pass@host:port/db?sslmode=...</code></td>
+    </tr>
+  </tbody>
+</table>
+
+## Параметры: authn
+
+<table>
+  <thead>
+    <tr>
+      <th>Ключ YAML</th>
+      <th>Env</th>
+      <th>Default</th>
+      <th>Описание</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><code>authn/type</code></td>
+      <td><code>SG_AUTHN_TYPE</code></td>
+      <td><code>none</code></td>
+      <td><code>none</code> или <code>tls</code></td>
+    </tr>
+  </tbody>
+</table>
+
+При `authn/type = tls` сервер ожидает дополнительные параметры
+(`authn/tls/cert-file`, `authn/tls/key-file`, `authn/tls/client/verify`,
+`authn/tls/client/ca-files`). Подробности — в разделе
+[Установка → Настройка TLS](/install/server-tls).
+
+## Переменные окружения
+
+Все ключи доступны через env с префиксом `SG_`:
+
+<CodeBlock language="bash">
+  {dedent`
+    export SG_SERVER_ENDPOINT="tcp://0.0.0.0:9006"
+    export SG_LOGGER_LEVEL="INFO"
+    export SG_STORAGE_POSTGRES_URL="postgres://sgroups:secret@localhost:5432/sgroups?sslmode=disable"
+    export SG_METRICS_ENABLE="true"
+  `}
+</CodeBlock>
+
+:::tip
+В production рекомендуется хранить YAML в репозитории и переопределять
+чувствительные параметры (`SG_STORAGE_POSTGRES_URL`, ключи authn) через env.
+:::

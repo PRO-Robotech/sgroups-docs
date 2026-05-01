@@ -1,0 +1,2161 @@
+---
+id: rule-mapping
+sidebar_position: 3
+title: Соответствие правил nft
+---
+
+import Tabs from '@theme/Tabs'
+import TabItem from '@theme/TabItem'
+import CodeBlock from '@theme/CodeBlock'
+import dedent from 'ts-dedent'
+
+# UniRule → строка nftables
+
+На странице описано, **в какую цепочку и в каком виде** агент превращает каждый
+поддерживаемый тип `UniRule`. Для каждого типа дан **реальный пример curl-запроса**
+к API и nft-строка, которую агент материализует в результате.
+
+## Поддерживаемые типы UniRule
+
+Агент материализует только семь комбинаций — те, что имеют физическую rule-таблицу в БД:
+
+| local.type | remote.type | traffic | Где появится правило |
+|---|---|---|---|
+| `ADDRESS_GROUP` | `ADDRESS_GROUP` | INGRESS / EGRESS / BOTH | per-AG цепочка локального AG |
+| `ADDRESS_GROUP` | `FQDN` | EGRESS | `EGRESS-ag-prod/web` с set'ом `NetIPv4-fqdn-example.com` |
+| `ADDRESS_GROUP` | `CIDR` | INGRESS / EGRESS | per-AG цепочка с inline-CIDR в saddr/daddr |
+| `ADDRESS_GROUP` | — | INGRESS / EGRESS | ICMP-only правило (BOTH запрещено) |
+| `SERVICE` | `SERVICE` | INGRESS / EGRESS / BOTH | per-AG цепочка AG, к которому привязан local-сервис |
+| `SERVICE` | `FQDN` | EGRESS | per-AG цепочка AG local-сервиса |
+| `SERVICE` | `CIDR` | INGRESS / EGRESS | per-AG цепочка AG local-сервиса |
+
+## Плейсхолдеры в шаблонах
+
+Все примеры на странице — **шаблоны**. Формат — `${имя:образец}`: имя плейсхолдера
+плюс пример значения после `:`. Префиксы `l-` / `r-` означают **local** / **remote**
+(стороны правила).
+
+| Плейсхолдер | Что обозначает |
+|---|---|
+| `${l-ns:prod}` | namespace локальной AG |
+| `${l-ag:web}` | имя локальной AG |
+| `${r-ns:prod}` | namespace удалённой AG (same-NS) |
+| `${r-ag:db}` | имя удалённой AG (same-NS) |
+| `${r-ns:partner}` | namespace удалённой AG (cross-NS) |
+| `${r-ag:billing}` | имя удалённой AG (cross-NS) |
+| `${l-svc:api}` | имя local-сервиса |
+| `${r-svc:cache}` | имя remote-сервиса |
+| `${fqdn:example.com}` | FQDN |
+| `${cidr:10.0.0.0/24}` | CIDR |
+| `${port:8080}` | порт |
+| `${type:8}` | ICMP-тип |
+
+## Общая форма строки
+
+Строка попадает либо в INGRESS-цепочку (тогда матч идёт по `saddr`), либо в
+EGRESS (по `daddr`):
+
+```nft
+chain INGRESS-ag-prod/web {
+    ip [saddr <left>] <protocol> <port-or-type> [meta nftrace set 1] [log level debug] <accept|drop>
+}
+
+chain EGRESS-ag-prod/web {
+    ip [daddr <right>] <protocol> <port-or-type> [meta nftrace set 1] [log level debug] <accept|drop>
+}
+```
+
+| Секция | Источник в `UniRule` | Что подставляется |
+|---|---|---|
+| `saddr` (INGRESS) | `endpoints.remote` | set удалённой AG/SVC/FQDN либо inline-CIDR |
+| `daddr` (EGRESS) | `endpoints.remote` | то же самое |
+| `protocol` | `transport.protocol` (или унаследованный) | `tcp` / `udp` / `icmp` |
+| `port` / `type` | `transport.entries[].ports` либо `.types` | одна строка на каждый порт/диапазон/тип |
+| `meta nftrace set 1` | `metadata.annotations["linux-agent.sgroups.io/trace"] = "true"` | nft-модификатор трассировки |
+| `log level debug` | `metadata.annotations["linux-agent.sgroups.io/logs"] = "true"` | nft-логирование |
+| `accept` / `drop` | `spec.action` | `ALLOW → accept`, `DENY → drop` |
+
+:::warning Одно entry → одна nft-строка
+Агент эмитит **отдельную nft-строку на каждый элемент** `transport.entries[]` —
+правило универсальное для всех протоколов. Несколько значений внутри одного entry
+(порты через запятую `"80,443,8000-8100"` для TCP/UDP либо массив `types: [0, 8, 11]`
+для ICMP) собираются в **один** анонимный set `{ ... }` в одной строке. Несколько
+entries → несколько строк.
+:::
+
+## Куда попадает правило: правило выбора цепочки
+
+Цепочка определяется однозначно по `endpoints.local.type` и направлению трафика:
+
+| local.type | traffic | Целевая цепочка |
+|---|---|---|
+| `ADDRESS_GROUP` | `INGRESS` | `INGRESS-ag-prod/web` |
+| `ADDRESS_GROUP` | `EGRESS` | `EGRESS-ag-prod/web` |
+| `ADDRESS_GROUP` | `BOTH` | **обе** цепочки одновременно (ag-ag) |
+| `SERVICE` | любой | per-AG цепочка той AG, к которой local-сервис привязан через `ServiceBinding` |
+
+Для `SERVICE → SERVICE × BOTH` действует исключение: правило с traffic=BOTH порождает
+EGRESS-строку в цепочке локального AG **и** INGRESS-строку в цепочке удалённого AG.
+
+---
+
+## Варианты транспорта
+
+`spec.transport` определяет **протокол** и **формат портов/типов**, которые агент
+рендерит в nft. Ниже — практические комбинации. В каждой вкладке: фрагмент JSON
+`spec.transport` и соответствующая nft-строка (только часть с протоколом и
+портами/типами; полная цепочка зависит от типа правила).
+
+<Tabs groupId="transport-variant">
+  <TabItem value="tcp-one" label="TCP / one" default>
+
+Один порт. `accports = 1` → одиночное условие `dport`.
+
+```json
+"transport": {
+  "protocol": "TCP",
+  "IPv": "IPV4",
+  "entries": [
+    {
+      "description": "HTTPS",
+      "ports": "443"
+    }
+  ]
+}
+```
+
+```nft
+... tcp dport 443 ...
+```
+
+  </TabItem>
+  <TabItem value="tcp-range" label="TCP / range">
+
+Один диапазон → `dport <from>-<to>`.
+
+```json
+"transport": {
+  "protocol": "TCP",
+  "IPv": "IPV4",
+  "entries": [
+    {
+      "description": "Ephemeral HTTPS",
+      "ports": "8000-8100"
+    }
+  ]
+}
+```
+
+```nft
+... tcp dport 8000-8100 ...
+```
+
+  </TabItem>
+  <TabItem value="tcp-mixed" label="TCP / one+range">
+
+Одно entry со смешанным списком портов и диапазонов через запятую.
+`accports > 1` → **анонимный set** `dport { ... }` в одной nft-строке.
+
+```json
+"transport": {
+  "protocol": "TCP",
+  "IPv": "IPV4",
+  "entries": [
+    {
+      "description": "HTTPS + ephemeral",
+      "ports": "443,8000-8100"
+    }
+  ]
+}
+```
+
+```nft
+... tcp dport { 443, 8000-8100 } ...
+```
+
+  </TabItem>
+  <TabItem value="udp-one" label="UDP / one">
+
+Поведение симметрично TCP — меняется только протокол.
+
+```json
+"transport": {
+  "protocol": "UDP",
+  "IPv": "IPV4",
+  "entries": [
+    {
+      "description": "DNS",
+      "ports": "53"
+    }
+  ]
+}
+```
+
+```nft
+... udp dport 53 ...
+```
+
+  </TabItem>
+  <TabItem value="udp-range" label="UDP / range">
+
+```json
+"transport": {
+  "protocol": "UDP",
+  "IPv": "IPV4",
+  "entries": [
+    {
+      "description": "RTP/SRTP",
+      "ports": "5000-5010"
+    }
+  ]
+}
+```
+
+```nft
+... udp dport 5000-5010 ...
+```
+
+  </TabItem>
+  <TabItem value="udp-mixed" label="UDP / one+range">
+
+```json
+"transport": {
+  "protocol": "UDP",
+  "IPv": "IPV4",
+  "entries": [
+    {
+      "description": "DNS + RTP",
+      "ports": "53,5000-5010"
+    }
+  ]
+}
+```
+
+```nft
+... udp dport { 53, 5000-5010 } ...
+```
+
+  </TabItem>
+  <TabItem value="icmp-one" label="ICMP / single type">
+
+Транспорт ICMP использует `types[]` вместо `ports`.
+
+```json
+"transport": {
+  "protocol": "ICMP",
+  "IPv": "IPV4",
+  "entries": [
+    {
+      "description": "echo-request",
+      "types": [
+        8
+      ]
+    }
+  ]
+}
+```
+
+```nft
+... icmp type { 8 } ...
+```
+
+  </TabItem>
+  <TabItem value="icmp-multi" label="ICMP / multiple types">
+
+Несколько типов в одном entry собираются в **один** анонимный set в одной
+nft-строке (тот же механизм, что для TCP/UDP с comma-list).
+
+```json
+"transport": {
+  "protocol": "ICMP",
+  "IPv": "IPV4",
+  "entries": [
+    {
+      "description": "ping diagnostics",
+      "types": [
+        0,
+        8,
+        11
+      ]
+    }
+  ]
+}
+```
+
+```nft
+... icmp type { 0, 8, 11 } ...
+```
+
+  </TabItem>
+</Tabs>
+
+### Несколько entries
+
+Если в `transport.entries[]` указать несколько объектов, каждый из них становится
+**отдельной** nft-строкой, даже если в каждом entry задан только один порт. Это
+работает одинаково для TCP, UDP и ICMP. Для TCP и UDP это альтернатива анонимному
+set'у `{ ... }` из варианта `one+range` выше.
+
+Внутри одного `spec.transport` все entries обязаны иметь одинаковый
+**`protocol`** и **`IPv`** — на верхнем уровне эти поля единые. Чтобы намешать TCP и
+UDP в одном правиле, нужно отдельное правило (или см. дальнейшие типы).
+
+<Tabs groupId="transport-multi-entries">
+  <TabItem value="multi-tcp" label="TCP × N" default>
+
+Три TCP-entry: два одиночных порта + один диапазон.
+
+```json
+"transport": {
+  "protocol": "TCP",
+  "IPv": "IPV4",
+  "entries": [
+    {
+      "description": "HTTP",
+      "ports": "80"
+    },
+    {
+      "description": "HTTPS",
+      "ports": "443"
+    },
+    {
+      "description": "Ephemeral",
+      "ports": "8000-8100"
+    }
+  ]
+}
+```
+
+```nft
+... tcp dport 80 ...
+... tcp dport 443 ...
+... tcp dport 8000-8100 ...
+```
+
+Три entries → три nft-строки. Сравните с `TCP / one+range` в табах выше: тот же
+набор портов в одном entry даёт **одну** строку с анонимным set'ом
+`{ 80, 443, 8000-8100 }`.
+
+  </TabItem>
+  <TabItem value="multi-udp" label="UDP × N">
+
+Два UDP-entry: одиночный порт DNS и диапазон RTP.
+
+```json
+"transport": {
+  "protocol": "UDP",
+  "IPv": "IPV4",
+  "entries": [
+    {
+      "description": "DNS",
+      "ports": "53"
+    },
+    {
+      "description": "RTP/SRTP",
+      "ports": "5000-5010"
+    }
+  ]
+}
+```
+
+```nft
+... udp dport 53 ...
+... udp dport 5000-5010 ...
+```
+
+  </TabItem>
+  <TabItem value="multi-icmp" label="ICMP × N">
+
+Несколько ICMP-entry. Каждый тип из каждого entry даёт отдельную nft-строку — так
+что и **массив `types[]` внутри одного entry**, и **несколько entries** в сумме
+дают одинаковый эффект.
+
+```json
+"transport": {
+  "protocol": "ICMP",
+  "IPv": "IPV4",
+  "entries": [
+    {
+      "description": "echo-reply",
+      "types": [
+        0
+      ]
+    },
+    {
+      "description": "echo-request",
+      "types": [
+        8
+      ]
+    },
+    {
+      "description": "time-exceeded",
+      "types": [
+        11
+      ]
+    }
+  ]
+}
+```
+
+```nft
+... icmp type { 0 } ...
+... icmp type { 8 } ...
+... icmp type { 11 } ...
+```
+
+То же самое можно записать одним entry с массивом — см. таб `ICMP / multiple types`
+выше.
+
+  </TabItem>
+  <TabItem value="multi-mixed" label="Mixed list+range × N">
+
+Можно сочетать оба механизма: несколько entries, у каждого свой comma-list.
+Каждое entry даёт **одну** строку с анонимным set'ом (если в нём comma-list) или
+одиночное условие (если один порт/диапазон).
+
+```json
+"transport": {
+  "protocol": "TCP",
+  "IPv": "IPV4",
+  "entries": [
+    {
+      "description": "Web",
+      "ports": "80,443"
+    },
+    {
+      "description": "Ephemeral",
+      "ports": "8000-8100,9000-9010"
+    }
+  ]
+}
+```
+
+```nft
+... tcp dport { 80, 443 } ...
+... tcp dport { 8000-8100, 9000-9010 } ...
+```
+
+Два entries → две nft-строки, в каждой по анонимному set'у.
+
+  </TabItem>
+</Tabs>
+
+---
+
+## Тип 1. `ADDRESS_GROUP → ADDRESS_GROUP`
+
+`transport` обязателен.
+
+<Tabs groupId="agag-traffic">
+  <TabItem value="ingress" label="INGRESS" default>
+
+В примере ниже:
+
+- local: `prod/db`
+- remote: `prod/web`
+- транспорт: TCP/5432 (PostgreSQL)
+
+```bash
+curl -X POST http://localhost:9006/v1/rules/upsert \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "rules": [
+      {
+        "metadata": {
+          "name": "allow-db-from-web",
+          "namespace": "prod"
+        },
+        "spec": {
+          "action": "ALLOW",
+          "session": {
+            "traffic": "INGRESS"
+          },
+          "endpoints": {
+            "local": {
+              "name": "db",
+              "namespace": "prod",
+              "type": "ADDRESS_GROUP"
+            },
+            "remote": {
+              "name": "web",
+              "namespace": "prod",
+              "type": "ADDRESS_GROUP"
+            }
+          },
+          "transport": {
+            "protocol": "TCP",
+            "IPv": "IPV4",
+            "entries": [
+              {
+                "description": "PostgreSQL",
+                "ports": "5432"
+              }
+            ]
+          }
+        }
+      }
+    ]
+  }'
+```
+
+```nft
+chain INGRESS-ag-prod/db {
+    ip saddr @NetIPv4-addressGroup-prod/web tcp dport 5432 counter accept
+}
+```
+
+`saddr` указывает на set удалённой AG. `daddr` не нужен — проверка локального
+адреса делается на jump'е в `INGRESS-MAIN`.
+
+  </TabItem>
+  <TabItem value="egress" label="EGRESS">
+
+В примере ниже:
+
+- local: `prod/web`
+- remote: `prod/db`
+- транспорт: TCP/5432 (PostgreSQL)
+
+```bash
+curl -X POST http://localhost:9006/v1/rules/upsert \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "rules": [
+      {
+        "metadata": {
+          "name": "allow-web-to-db",
+          "namespace": "prod"
+        },
+        "spec": {
+          "action": "ALLOW",
+          "session": {
+            "traffic": "EGRESS"
+          },
+          "endpoints": {
+            "local": {
+              "name": "web",
+              "namespace": "prod",
+              "type": "ADDRESS_GROUP"
+            },
+            "remote": {
+              "name": "db",
+              "namespace": "prod",
+              "type": "ADDRESS_GROUP"
+            }
+          },
+          "transport": {
+            "protocol": "TCP",
+            "IPv": "IPV4",
+            "entries": [
+              {
+                "description": "PostgreSQL",
+                "ports": "5432"
+              }
+            ]
+          }
+        }
+      }
+    ]
+  }'
+```
+
+```nft
+chain EGRESS-ag-prod/web {
+    ip daddr @NetIPv4-addressGroup-prod/db tcp dport 5432 counter accept
+}
+```
+
+`daddr` смотрит в set удалённой AG.
+
+  </TabItem>
+  <TabItem value="both" label="BOTH">
+
+В примере ниже:
+
+- local: `prod/web`
+- remote: `prod/db`
+- транспорт: TCP/5432 (PostgreSQL)
+
+```bash
+curl -X POST http://localhost:9006/v1/rules/upsert \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "rules": [
+      {
+        "metadata": {
+          "name": "web-db-bidirectional",
+          "namespace": "prod"
+        },
+        "spec": {
+          "action": "ALLOW",
+          "session": {
+            "traffic": "BOTH"
+          },
+          "endpoints": {
+            "local": {
+              "name": "web",
+              "namespace": "prod",
+              "type": "ADDRESS_GROUP"
+            },
+            "remote": {
+              "name": "db",
+              "namespace": "prod",
+              "type": "ADDRESS_GROUP"
+            }
+          },
+          "transport": {
+            "protocol": "TCP",
+            "IPv": "IPV4",
+            "entries": [
+              {
+                "description": "PostgreSQL",
+                "ports": "5432"
+              }
+            ]
+          }
+        }
+      }
+    ]
+  }'
+```
+
+```nft
+chain INGRESS-ag-prod/db {
+    ip saddr @NetIPv4-addressGroup-prod/web tcp dport 5432 counter accept
+}
+chain EGRESS-ag-prod/web {
+    ip daddr @NetIPv4-addressGroup-prod/db tcp dport 5432 counter accept
+}
+```
+
+`BOTH` = одновременно `EGRESS` в цепочке local'а и `INGRESS` в цепочке remote'а.
+
+  </TabItem>
+  <TabItem value="cross-ns" label="Cross-NS">
+
+Local и remote в **разных** namespace'ах:
+
+- local: `prod/web`
+- remote: `partner/billing`
+- транспорт: TCP/443 (HTTPS)
+
+```bash
+curl -X POST http://localhost:9006/v1/rules/upsert \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "rules": [
+      {
+        "metadata": {
+          "name": "web-to-billing",
+          "namespace": "prod"
+        },
+        "spec": {
+          "action": "ALLOW",
+          "session": {
+            "traffic": "EGRESS"
+          },
+          "endpoints": {
+            "local": {
+              "name": "web",
+              "namespace": "prod",
+              "type": "ADDRESS_GROUP"
+            },
+            "remote": {
+              "name": "billing",
+              "namespace": "partner",
+              "type": "ADDRESS_GROUP"
+            }
+          },
+          "transport": {
+            "protocol": "TCP",
+            "IPv": "IPV4",
+            "entries": [
+              {
+                "description": "HTTPS",
+                "ports": "443"
+              }
+            ]
+          }
+        }
+      }
+    ]
+  }'
+```
+
+```nft
+chain EGRESS-ag-prod/web {
+    ip daddr @NetIPv4-addressGroup-partner/billing tcp dport 443 counter accept
+}
+```
+
+:::caution Set должен быть наполнен
+Если в namespace `partner` **не привязан ни один `Host`** к `billing` через
+`HostBinding` — set остаётся пустым, правило технически есть, но трафик не матчится.
+Решение — добавить хотя бы один `Host` + `HostBinding` в этом namespace.
+:::
+
+  </TabItem>
+</Tabs>
+
+---
+
+## Тип 2. `ADDRESS_GROUP → FQDN`
+
+Только `traffic = EGRESS` — обратное направление не имеет смысла (FQDN — это адрес
+назначения).
+
+В примере ниже:
+
+- local: `prod/web`
+- remote: `example.com` (FQDN)
+- транспорт: TCP/443 (HTTPS)
+
+```bash
+curl -X POST http://localhost:9006/v1/rules/upsert \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "rules": [
+      {
+        "metadata": {
+          "name": "web-to-fqdn",
+          "namespace": "prod"
+        },
+        "spec": {
+          "action": "ALLOW",
+          "session": {
+            "traffic": "EGRESS"
+          },
+          "endpoints": {
+            "local": {
+              "name": "web",
+              "namespace": "prod",
+              "type": "ADDRESS_GROUP"
+            },
+            "remote": {
+              "type": "FQDN",
+              "value": "example.com"
+            }
+          },
+          "transport": {
+            "protocol": "TCP",
+            "IPv": "IPV4",
+            "entries": [
+              {
+                "description": "HTTPS",
+                "ports": "443"
+              }
+            ]
+          }
+        }
+      }
+    ]
+  }'
+```
+
+```nft
+chain EGRESS-ag-prod/web {
+    ip daddr @NetIPv4-fqdn-example.com tcp dport 443 counter accept
+}
+```
+
+`daddr` ссылается на set `NetIPv4-fqdn-example.com` — агент сам резолвит DNS и
+наполняет его. Если резолв упал или просрочен — set может быть пустым; следующий цикл
+синхронизации обновит его.
+
+---
+
+## Тип 3. `ADDRESS_GROUP → CIDR`
+
+CIDR подставляется **inline** (как анонимный set `{ ... }`), без отдельного именованного set'а.
+
+<Tabs groupId="agcidr-traffic">
+  <TabItem value="ingress" label="INGRESS" default>
+
+В примере ниже:
+
+- local: `prod/web`
+- remote: `10.0.0.0/24` (CIDR)
+- транспорт: TCP/443 (HTTPS)
+
+```bash
+curl -X POST http://localhost:9006/v1/rules/upsert \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "rules": [
+      {
+        "metadata": {
+          "name": "ingress-from-internal-net",
+          "namespace": "prod"
+        },
+        "spec": {
+          "action": "ALLOW",
+          "session": {
+            "traffic": "INGRESS"
+          },
+          "endpoints": {
+            "local": {
+              "name": "web",
+              "namespace": "prod",
+              "type": "ADDRESS_GROUP"
+            },
+            "remote": {
+              "type": "CIDR",
+              "value": "10.0.0.0/24"
+            }
+          },
+          "transport": {
+            "protocol": "TCP",
+            "IPv": "IPV4",
+            "entries": [
+              {
+                "description": "HTTPS",
+                "ports": "443"
+              }
+            ]
+          }
+        }
+      }
+    ]
+  }'
+```
+
+```nft
+chain INGRESS-ag-prod/web {
+    ip saddr { 10.0.0.0/24 } tcp dport 443 counter accept
+}
+```
+
+  </TabItem>
+  <TabItem value="egress" label="EGRESS">
+
+В примере ниже:
+
+- local: `prod/web`
+- remote: `10.0.0.0/24` (CIDR)
+- транспорт: TCP/443 (HTTPS)
+
+```bash
+curl -X POST http://localhost:9006/v1/rules/upsert \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "rules": [
+      {
+        "metadata": {
+          "name": "egress-to-internal-net",
+          "namespace": "prod"
+        },
+        "spec": {
+          "action": "ALLOW",
+          "session": {
+            "traffic": "EGRESS"
+          },
+          "endpoints": {
+            "local": {
+              "name": "web",
+              "namespace": "prod",
+              "type": "ADDRESS_GROUP"
+            },
+            "remote": {
+              "type": "CIDR",
+              "value": "10.0.0.0/24"
+            }
+          },
+          "transport": {
+            "protocol": "TCP",
+            "IPv": "IPV4",
+            "entries": [
+              {
+                "description": "HTTPS",
+                "ports": "443"
+              }
+            ]
+          }
+        }
+      }
+    ]
+  }'
+```
+
+```nft
+chain EGRESS-ag-prod/web {
+    ip daddr { 10.0.0.0/24 } tcp dport 443 counter accept
+}
+```
+
+  </TabItem>
+</Tabs>
+
+---
+
+## Тип 4. `ADDRESS_GROUP → ICMP` (без remote)
+
+Особый случай — только локальная сторона. `transport.protocol = ICMP`,
+`transport.entries[].types` обязательны. Поле `remote` отсутствует.
+
+<Tabs groupId="agicmp-traffic">
+  <TabItem value="ingress" label="INGRESS" default>
+
+В примере ниже:
+
+- local: `prod/web`
+- транспорт: ICMP, тип `8` (echo-request)
+
+```bash
+curl -X POST http://localhost:9006/v1/rules/upsert \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "rules": [
+      {
+        "metadata": {
+          "name": "monitoring-icmp-in",
+          "namespace": "prod"
+        },
+        "spec": {
+          "action": "ALLOW",
+          "session": {
+            "traffic": "INGRESS"
+          },
+          "endpoints": {
+            "local": {
+              "name": "web",
+              "namespace": "prod",
+              "type": "ADDRESS_GROUP"
+            }
+          },
+          "transport": {
+            "protocol": "ICMP",
+            "IPv": "IPV4",
+            "entries": [
+              {
+                "description": "echo-request",
+                "types": [
+                  8
+                ]
+              }
+            ]
+          }
+        }
+      }
+    ]
+  }'
+```
+
+```nft
+chain INGRESS-ag-prod/web {
+    icmp type { 8 } counter accept
+}
+```
+
+  </TabItem>
+  <TabItem value="egress" label="EGRESS">
+
+В примере ниже:
+
+- local: `prod/web`
+- транспорт: ICMP, тип `8` (echo-request)
+
+```bash
+curl -X POST http://localhost:9006/v1/rules/upsert \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "rules": [
+      {
+        "metadata": {
+          "name": "monitoring-icmp-out",
+          "namespace": "prod"
+        },
+        "spec": {
+          "action": "ALLOW",
+          "session": {
+            "traffic": "EGRESS"
+          },
+          "endpoints": {
+            "local": {
+              "name": "web",
+              "namespace": "prod",
+              "type": "ADDRESS_GROUP"
+            }
+          },
+          "transport": {
+            "protocol": "ICMP",
+            "IPv": "IPV4",
+            "entries": [
+              {
+                "description": "echo-request",
+                "types": [
+                  8
+                ]
+              }
+            ]
+          }
+        }
+      }
+    ]
+  }'
+```
+
+```nft
+chain EGRESS-ag-prod/web {
+    icmp type { 8 } counter accept
+}
+```
+
+  </TabItem>
+  <TabItem value="multi" label="Несколько типов">
+
+В примере ниже:
+
+- local: `prod/web`
+- транспорт: ICMP, типы `[0, 8, 11]` — echo-reply / echo-request / time-exceeded
+
+`transport.entries[].types` с массивом — все типы собираются в один анонимный set
+в одной nft-строке:
+
+```bash
+curl -X POST http://localhost:9006/v1/rules/upsert \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "rules": [
+      {
+        "metadata": {
+          "name": "monitoring-icmp-mix",
+          "namespace": "prod"
+        },
+        "spec": {
+          "action": "ALLOW",
+          "session": {
+            "traffic": "INGRESS"
+          },
+          "endpoints": {
+            "local": {
+              "name": "web",
+              "namespace": "prod",
+              "type": "ADDRESS_GROUP"
+            }
+          },
+          "transport": {
+            "protocol": "ICMP",
+            "IPv": "IPV4",
+            "entries": [
+              {
+                "description": "Ping and diagnostics",
+                "types": [
+                  0,
+                  8,
+                  11
+                ]
+              }
+            ]
+          }
+        }
+      }
+    ]
+  }'
+```
+
+```nft
+chain INGRESS-ag-prod/web {
+    icmp type { 0, 8, 11 } counter accept
+}
+```
+
+  </TabItem>
+</Tabs>
+
+:::warning BOTH запрещён
+Для `AG → ICMP` валидны только `INGRESS` и `EGRESS`. Комбинация `transport.protocol = ICMP`
++ `traffic = BOTH` отвергается агентом — в nft такая запись не материализуется.
+:::
+
+---
+
+## Тип 5. `SERVICE → SERVICE`
+
+Транспорт **унаследован** от local-сервиса (`spec.transport` правила игнорируется).
+Local-сервис привязан через `ServiceBinding` к одному AG; правило живёт в per-AG
+цепочках этого AG.
+
+:::note Перед созданием правила
+Для всех `SERVICE → *` типов оба ресурса должны существовать на сервере:
+
+- `Service` (`/v1/services/upsert`) — описывает сам сервис с портами/типами
+- `ServiceBinding` (`/v1/service-bindings/upsert`) — связывает сервис с AG, к
+  которой он "приклеен" (его IP попадает в set этой AG)
+
+Только после этого `UniRule` можно ссылаться на сервис через `endpoints.local.type
+= SERVICE`.
+:::
+
+<Tabs groupId="svcsvc-traffic">
+  <TabItem value="ingress" label="INGRESS" default>
+
+В примере ниже:
+
+- local: `prod/api` (привязан к AG `prod/web`, TCP-порт **8080**)
+- remote: `partner/cache` (TCP-порт **6379**)
+
+`saddr` смотрит на set удалённого сервиса; `dport` — порт **local**-сервиса.
+
+**Установка ресурсов** — оба сервиса (local `api` принимает трафик в INGRESS-строке,
+remote `cache` нужен для наполнения set'а) и обе привязки:
+
+<Tabs groupId="svc-setup">
+  <TabItem value="service" label="Service" default>
+
+```bash
+curl -X POST http://localhost:9006/v1/services/upsert \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "services": [
+      {
+        "metadata": {
+          "name": "api",
+          "namespace": "prod"
+        },
+        "spec": {
+          "transports": [
+            {
+              "protocol": "TCP",
+              "IPv": "IPV4",
+              "entries": [
+                {
+                  "description": "API",
+                  "ports": "8080"
+                }
+              ]
+            }
+          ]
+        }
+      },
+      {
+        "metadata": {
+          "name": "cache",
+          "namespace": "partner"
+        },
+        "spec": {
+          "transports": [
+            {
+              "protocol": "TCP",
+              "IPv": "IPV4",
+              "entries": [
+                {
+                  "description": "Redis",
+                  "ports": "6379"
+                }
+              ]
+            }
+          ]
+        }
+      }
+    ]
+  }'
+```
+
+  </TabItem>
+  <TabItem value="binding" label="ServiceBinding">
+
+```bash
+curl -X POST http://localhost:9006/v1/service-bindings/upsert \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "serviceBindings": [
+      {
+        "metadata": {
+          "name": "api-on-web",
+          "namespace": "prod"
+        },
+        "spec": {
+          "addressGroup": {
+            "name": "web",
+            "namespace": "prod"
+          },
+          "service": {
+            "name": "api",
+            "namespace": "prod"
+          }
+        }
+      },
+      {
+        "metadata": {
+          "name": "cache-on-cache-bound",
+          "namespace": "partner"
+        },
+        "spec": {
+          "addressGroup": {
+            "name": "cache-bound",
+            "namespace": "partner"
+          },
+          "service": {
+            "name": "cache",
+            "namespace": "partner"
+          }
+        }
+      }
+    ]
+  }'
+```
+
+  </TabItem>
+</Tabs>
+
+**Само правило**:
+
+```bash
+curl -X POST http://localhost:9006/v1/rules/upsert \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "rules": [
+      {
+        "metadata": {
+          "name": "cache-to-api",
+          "namespace": "prod"
+        },
+        "spec": {
+          "action": "ALLOW",
+          "session": {
+            "traffic": "INGRESS"
+          },
+          "endpoints": {
+            "local": {
+              "name": "api",
+              "namespace": "prod",
+              "type": "SERVICE"
+            },
+            "remote": {
+              "name": "cache",
+              "namespace": "partner",
+              "type": "SERVICE"
+            }
+          }
+        }
+      }
+    ]
+  }'
+```
+
+```nft
+chain INGRESS-ag-prod/web {
+    ip saddr @NetIPv4-svc-partner/cache tcp dport 8080 counter accept
+}
+```
+
+  </TabItem>
+  <TabItem value="egress" label="EGRESS">
+
+В примере ниже:
+
+- local: `prod/api` (привязан к AG `prod/web`, TCP-порт **8080**)
+- remote: `partner/cache` (TCP-порт **6379**)
+
+`daddr` смотрит на set удалённого сервиса; `dport` — порт **remote**-сервиса.
+
+**Установка ресурсов** — оба сервиса (remote `cache` принимает трафик в EGRESS-строке,
+local `api` нужен для определения per-AG цепочки) и обе привязки:
+
+<Tabs groupId="svc-setup">
+  <TabItem value="service" label="Service" default>
+
+```bash
+curl -X POST http://localhost:9006/v1/services/upsert \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "services": [
+      {
+        "metadata": {
+          "name": "api",
+          "namespace": "prod"
+        },
+        "spec": {
+          "transports": [
+            {
+              "protocol": "TCP",
+              "IPv": "IPV4",
+              "entries": [
+                {
+                  "description": "API",
+                  "ports": "8080"
+                }
+              ]
+            }
+          ]
+        }
+      },
+      {
+        "metadata": {
+          "name": "cache",
+          "namespace": "partner"
+        },
+        "spec": {
+          "transports": [
+            {
+              "protocol": "TCP",
+              "IPv": "IPV4",
+              "entries": [
+                {
+                  "description": "Redis",
+                  "ports": "6379"
+                }
+              ]
+            }
+          ]
+        }
+      }
+    ]
+  }'
+```
+
+  </TabItem>
+  <TabItem value="binding" label="ServiceBinding">
+
+```bash
+curl -X POST http://localhost:9006/v1/service-bindings/upsert \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "serviceBindings": [
+      {
+        "metadata": {
+          "name": "api-on-web",
+          "namespace": "prod"
+        },
+        "spec": {
+          "addressGroup": {
+            "name": "web",
+            "namespace": "prod"
+          },
+          "service": {
+            "name": "api",
+            "namespace": "prod"
+          }
+        }
+      },
+      {
+        "metadata": {
+          "name": "cache-on-cache-bound",
+          "namespace": "partner"
+        },
+        "spec": {
+          "addressGroup": {
+            "name": "cache-bound",
+            "namespace": "partner"
+          },
+          "service": {
+            "name": "cache",
+            "namespace": "partner"
+          }
+        }
+      }
+    ]
+  }'
+```
+
+  </TabItem>
+</Tabs>
+
+**Само правило**:
+
+```bash
+curl -X POST http://localhost:9006/v1/rules/upsert \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "rules": [
+      {
+        "metadata": {
+          "name": "api-to-cache",
+          "namespace": "prod"
+        },
+        "spec": {
+          "action": "ALLOW",
+          "session": {
+            "traffic": "EGRESS"
+          },
+          "endpoints": {
+            "local": {
+              "name": "api",
+              "namespace": "prod",
+              "type": "SERVICE"
+            },
+            "remote": {
+              "name": "cache",
+              "namespace": "partner",
+              "type": "SERVICE"
+            }
+          }
+        }
+      }
+    ]
+  }'
+```
+
+```nft
+chain EGRESS-ag-prod/web {
+    ip daddr @NetIPv4-svc-partner/cache tcp dport 6379 counter accept
+}
+```
+
+  </TabItem>
+  <TabItem value="both" label="BOTH">
+
+В примере ниже:
+
+- local: `prod/api` (привязан к AG `prod/web`, TCP-порт **8080**)
+- remote: `partner/cache` (TCP-порт **6379**)
+- bound-AG remote-сервиса: `partner/cache-bound`
+
+`BOTH` раскладывается на две строки: EGRESS в цепочке local-AG **+** INGRESS в
+bound-AG remote-сервиса. Если remote-AG в другом namespace, его строка появится
+**на агенте удалённого host'а**, а не в локальном `nft list ruleset`.
+
+**Установка ресурсов** — оба сервиса (каждый принимает трафик на своей стороне:
+local — в INGRESS-строке, remote — в EGRESS-строке) и привязки обоих к их AG:
+
+<Tabs groupId="svc-setup">
+  <TabItem value="service" label="Service" default>
+
+```bash
+curl -X POST http://localhost:9006/v1/services/upsert \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "services": [
+      {
+        "metadata": {
+          "name": "api",
+          "namespace": "prod"
+        },
+        "spec": {
+          "transports": [
+            {
+              "protocol": "TCP",
+              "IPv": "IPV4",
+              "entries": [
+                {
+                  "description": "API",
+                  "ports": "8080"
+                }
+              ]
+            }
+          ]
+        }
+      },
+      {
+        "metadata": {
+          "name": "cache",
+          "namespace": "partner"
+        },
+        "spec": {
+          "transports": [
+            {
+              "protocol": "TCP",
+              "IPv": "IPV4",
+              "entries": [
+                {
+                  "description": "Redis",
+                  "ports": "6379"
+                }
+              ]
+            }
+          ]
+        }
+      }
+    ]
+  }'
+```
+
+  </TabItem>
+  <TabItem value="binding" label="ServiceBinding">
+
+```bash
+curl -X POST http://localhost:9006/v1/service-bindings/upsert \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "serviceBindings": [
+      {
+        "metadata": {
+          "name": "api-on-web",
+          "namespace": "prod"
+        },
+        "spec": {
+          "addressGroup": {
+            "name": "web",
+            "namespace": "prod"
+          },
+          "service": {
+            "name": "api",
+            "namespace": "prod"
+          }
+        }
+      },
+      {
+        "metadata": {
+          "name": "cache-on-cache-bound",
+          "namespace": "partner"
+        },
+        "spec": {
+          "addressGroup": {
+            "name": "cache-bound",
+            "namespace": "partner"
+          },
+          "service": {
+            "name": "cache",
+            "namespace": "partner"
+          }
+        }
+      }
+    ]
+  }'
+```
+
+  </TabItem>
+</Tabs>
+
+**Само правило**:
+
+```bash
+curl -X POST http://localhost:9006/v1/rules/upsert \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "rules": [
+      {
+        "metadata": {
+          "name": "api-cache-bidirectional",
+          "namespace": "prod"
+        },
+        "spec": {
+          "action": "ALLOW",
+          "session": {
+            "traffic": "BOTH"
+          },
+          "endpoints": {
+            "local": {
+              "name": "api",
+              "namespace": "prod",
+              "type": "SERVICE"
+            },
+            "remote": {
+              "name": "cache",
+              "namespace": "partner",
+              "type": "SERVICE"
+            }
+          }
+        }
+      }
+    ]
+  }'
+```
+
+```nft
+# на агенте, к которому привязан api
+chain EGRESS-ag-prod/web {
+    ip daddr @NetIPv4-svc-partner/cache tcp dport 8080 counter accept
+}
+
+# на агенте, к которому привязан cache (bound-AG — partner/cache-bound)
+chain INGRESS-ag-partner/cache-bound {
+    ip saddr @NetIPv4-svc-prod/api tcp dport 6379 counter accept
+}
+```
+
+  </TabItem>
+  <TabItem value="mixed" label="Mixed-транспорт">
+
+В примере ниже:
+
+- local: `prod/api` (привязан к AG `prod/web`)
+- remote: `partner/cache` с транспортами TCP/6379, UDP/5000-5010, ICMP/0,8
+
+Если у сервиса в `Service.spec.transports` несколько транспортов (TCP+UDP+ICMP),
+агент эмитит по строке на каждое entry. Несколько значений внутри одного entry
+(comma-list для TCP/UDP, массив `types[]` для ICMP) сворачиваются в анонимный set.
+
+**Установка ресурсов** — оба сервиса (remote `cache` с TCP+UDP+ICMP принимает трафик
+в EGRESS-строке, local `api` определяет per-AG цепочку) и обе привязки:
+
+<Tabs groupId="svc-setup">
+  <TabItem value="service" label="Service" default>
+
+```bash
+curl -X POST http://localhost:9006/v1/services/upsert \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "services": [
+      {
+        "metadata": {
+          "name": "api",
+          "namespace": "prod"
+        },
+        "spec": {
+          "transports": [
+            {
+              "protocol": "TCP",
+              "IPv": "IPV4",
+              "entries": [
+                {
+                  "description": "API",
+                  "ports": "8080"
+                }
+              ]
+            }
+          ]
+        }
+      },
+      {
+        "metadata": {
+          "name": "cache",
+          "namespace": "partner"
+        },
+        "spec": {
+          "transports": [
+            {
+              "protocol": "TCP",
+              "IPv": "IPV4",
+              "entries": [
+                {
+                  "description": "Redis",
+                  "ports": "6379"
+                }
+              ]
+            },
+            {
+              "protocol": "UDP",
+              "IPv": "IPV4",
+              "entries": [
+                {
+                  "description": "Cluster gossip",
+                  "ports": "5000-5010"
+                }
+              ]
+            },
+            {
+              "protocol": "ICMP",
+              "IPv": "IPV4",
+              "entries": [
+                {
+                  "description": "Ping diagnostics",
+                  "types": [
+                    0,
+                    8
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      }
+    ]
+  }'
+```
+
+  </TabItem>
+  <TabItem value="binding" label="ServiceBinding">
+
+```bash
+curl -X POST http://localhost:9006/v1/service-bindings/upsert \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "serviceBindings": [
+      {
+        "metadata": {
+          "name": "api-on-web",
+          "namespace": "prod"
+        },
+        "spec": {
+          "addressGroup": {
+            "name": "web",
+            "namespace": "prod"
+          },
+          "service": {
+            "name": "api",
+            "namespace": "prod"
+          }
+        }
+      },
+      {
+        "metadata": {
+          "name": "cache-on-cache-bound",
+          "namespace": "partner"
+        },
+        "spec": {
+          "addressGroup": {
+            "name": "cache-bound",
+            "namespace": "partner"
+          },
+          "service": {
+            "name": "cache",
+            "namespace": "partner"
+          }
+        }
+      }
+    ]
+  }'
+```
+
+  </TabItem>
+</Tabs>
+
+**Само правило** — `spec.transport` не указывается. Порт берётся на стороне агента
+с того сервиса, который **принимает трафик**: для EGRESS это remote-сервис `cache`,
+для INGRESS — local-сервис.
+
+```bash
+curl -X POST http://localhost:9006/v1/rules/upsert \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "rules": [
+      {
+        "metadata": {
+          "name": "api-to-cache-mixed",
+          "namespace": "prod"
+        },
+        "spec": {
+          "action": "ALLOW",
+          "session": {
+            "traffic": "EGRESS"
+          },
+          "endpoints": {
+            "local": {
+              "name": "api",
+              "namespace": "prod",
+              "type": "SERVICE"
+            },
+            "remote": {
+              "name": "cache",
+              "namespace": "partner",
+              "type": "SERVICE"
+            }
+          }
+        }
+      }
+    ]
+  }'
+```
+
+```nft
+chain EGRESS-ag-prod/web {
+    ip daddr @NetIPv4-svc-partner/cache tcp dport 6379 counter accept
+    ip daddr @NetIPv4-svc-partner/cache udp dport 5000-5010 counter accept
+    ip daddr @NetIPv4-svc-partner/cache icmp type { 0, 8 } counter accept
+}
+```
+
+  </TabItem>
+</Tabs>
+
+:::note `SERVICE → SERVICE` и namespace
+API принимает правило для любых комбинаций `local.namespace` / `remote.namespace`,
+включая same-NS и cross-NS.
+
+Если remote-service в другом namespace, парная INGRESS-строка для `traffic = BOTH`
+живёт на агенте удалённого host'а и в локальном `nft list ruleset` не видна — видна
+только сторона, привязанная к текущему host'у.
+:::
+
+---
+
+## Тип 6. `SERVICE → FQDN`
+
+Только `traffic = EGRESS`. Транспорт **из rule** (а не из сервиса) — задаётся в
+`spec.transport`. Цепочка — per-AG того AG, к которому привязан local-сервис.
+
+В примере ниже:
+
+- local: `prod/proxy` (привязан к AG `prod/web`)
+- remote: `example.com` (FQDN)
+- транспорт: TCP/443 (HTTPS)
+
+**Установка ресурсов** — local-сервис и его привязка к AG. Транспорты сервиса
+в этом типе на nft-строку **не влияют** (берётся `spec.transport` из правила),
+но привязка через `ServiceBinding` определяет, в **какую** per-AG цепочку
+попадёт строка:
+
+<Tabs groupId="svc-setup">
+  <TabItem value="service" label="Service" default>
+
+```bash
+curl -X POST http://localhost:9006/v1/services/upsert \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "services": [
+      {
+        "metadata": {
+          "name": "proxy",
+          "namespace": "prod"
+        },
+        "spec": {
+          "transports": [
+            {
+              "protocol": "TCP",
+              "IPv": "IPV4",
+              "entries": [
+                {
+                  "description": "Outbound HTTPS",
+                  "ports": "443"
+                }
+              ]
+            }
+          ]
+        }
+      }
+    ]
+  }'
+```
+
+  </TabItem>
+  <TabItem value="binding" label="ServiceBinding">
+
+```bash
+curl -X POST http://localhost:9006/v1/service-bindings/upsert \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "serviceBindings": [
+      {
+        "metadata": {
+          "name": "proxy-on-web",
+          "namespace": "prod"
+        },
+        "spec": {
+          "addressGroup": {
+            "name": "web",
+            "namespace": "prod"
+          },
+          "service": {
+            "name": "proxy",
+            "namespace": "prod"
+          }
+        }
+      }
+    ]
+  }'
+```
+
+  </TabItem>
+</Tabs>
+
+**Само правило**:
+
+```bash
+curl -X POST http://localhost:9006/v1/rules/upsert \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "rules": [
+      {
+        "metadata": {
+          "name": "proxy-to-cdn",
+          "namespace": "prod"
+        },
+        "spec": {
+          "action": "ALLOW",
+          "session": {
+            "traffic": "EGRESS"
+          },
+          "endpoints": {
+            "local": {
+              "name": "proxy",
+              "namespace": "prod",
+              "type": "SERVICE"
+            },
+            "remote": {
+              "type": "FQDN",
+              "value": "example.com"
+            }
+          },
+          "transport": {
+            "protocol": "TCP",
+            "IPv": "IPV4",
+            "entries": [
+              {
+                "description": "HTTPS",
+                "ports": "443"
+              }
+            ]
+          }
+        }
+      }
+    ]
+  }'
+```
+
+```nft
+chain EGRESS-ag-prod/web {
+    ip daddr @NetIPv4-fqdn-example.com tcp dport 443 counter accept
+}
+```
+
+---
+
+## Тип 7. `SERVICE → CIDR`
+
+<Tabs groupId="svccidr-traffic">
+  <TabItem value="egress" label="EGRESS" default>
+
+В примере ниже:
+
+- local: `prod/api` (привязан к AG `prod/web`,
+  транспорты сервиса — TCP/8080 + UDP/9090)
+- remote: `10.0.0.0/24`
+- транспорт: **из правила** (`spec.transport`) — TCP/443 (HTTPS)
+
+**Установка ресурсов** — local-сервис и его привязка. В EGRESS транспорты сервиса
+на nft-строку **не влияют** (порт берётся из `spec.transport` правила), но привязка
+через `ServiceBinding` определяет per-AG цепочку:
+
+<Tabs groupId="svc-setup">
+  <TabItem value="service" label="Service" default>
+
+```bash
+curl -X POST http://localhost:9006/v1/services/upsert \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "services": [
+      {
+        "metadata": {
+          "name": "api",
+          "namespace": "prod"
+        },
+        "spec": {
+          "transports": [
+            {
+              "protocol": "TCP",
+              "IPv": "IPV4",
+              "entries": [
+                {
+                  "description": "API",
+                  "ports": "8080"
+                }
+              ]
+            },
+            {
+              "protocol": "UDP",
+              "IPv": "IPV4",
+              "entries": [
+                {
+                  "description": "API discovery",
+                  "ports": "9090"
+                }
+              ]
+            }
+          ]
+        }
+      }
+    ]
+  }'
+```
+
+  </TabItem>
+  <TabItem value="binding" label="ServiceBinding">
+
+```bash
+curl -X POST http://localhost:9006/v1/service-bindings/upsert \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "serviceBindings": [
+      {
+        "metadata": {
+          "name": "api-on-web",
+          "namespace": "prod"
+        },
+        "spec": {
+          "addressGroup": {
+            "name": "web",
+            "namespace": "prod"
+          },
+          "service": {
+            "name": "api",
+            "namespace": "prod"
+          }
+        }
+      }
+    ]
+  }'
+```
+
+  </TabItem>
+</Tabs>
+
+**Само правило**:
+
+```bash
+curl -X POST http://localhost:9006/v1/rules/upsert \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "rules": [
+      {
+        "metadata": {
+          "name": "api-to-internal-net",
+          "namespace": "prod"
+        },
+        "spec": {
+          "action": "ALLOW",
+          "session": {
+            "traffic": "EGRESS"
+          },
+          "endpoints": {
+            "local": {
+              "name": "api",
+              "namespace": "prod",
+              "type": "SERVICE"
+            },
+            "remote": {
+              "type": "CIDR",
+              "value": "10.0.0.0/24"
+            }
+          },
+          "transport": {
+            "protocol": "TCP",
+            "IPv": "IPV4",
+            "entries": [
+              {
+                "description": "HTTPS",
+                "ports": "443"
+              }
+            ]
+          }
+        }
+      }
+    ]
+  }'
+```
+
+```nft
+chain EGRESS-ag-prod/web {
+    ip daddr { 10.0.0.0/24 } tcp dport 443 counter accept
+}
+```
+
+  </TabItem>
+  <TabItem value="ingress" label="INGRESS (особый случай)">
+
+В примере ниже:
+
+- local: `prod/api` (привязан к AG `prod/web`,
+  транспорты сервиса — TCP/8080 + UDP/9090)
+- remote: `10.0.0.0/24`
+- транспорт в правиле передаётся, но **игнорируется**
+
+INGRESS использует **унаследованный** транспорт от local-сервиса: реализация
+игнорирует `spec.transport` правила и берёт порты из `Service.spec.transports`
+local-сервиса. Если у сервиса несколько транспортов — на каждый эмитится отдельная
+nft-строка.
+
+**Установка ресурсов** — local-сервис (он принимает трафик в INGRESS) и его
+привязка к AG. В этом типе **именно** транспорты сервиса определяют, что попадёт
+в nft-строки:
+
+<Tabs groupId="svc-setup">
+  <TabItem value="service" label="Service" default>
+
+```bash
+curl -X POST http://localhost:9006/v1/services/upsert \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "services": [
+      {
+        "metadata": {
+          "name": "api",
+          "namespace": "prod"
+        },
+        "spec": {
+          "transports": [
+            {
+              "protocol": "TCP",
+              "IPv": "IPV4",
+              "entries": [
+                {
+                  "description": "API",
+                  "ports": "8080"
+                }
+              ]
+            },
+            {
+              "protocol": "UDP",
+              "IPv": "IPV4",
+              "entries": [
+                {
+                  "description": "API discovery",
+                  "ports": "9090"
+                }
+              ]
+            }
+          ]
+        }
+      }
+    ]
+  }'
+```
+
+  </TabItem>
+  <TabItem value="binding" label="ServiceBinding">
+
+```bash
+curl -X POST http://localhost:9006/v1/service-bindings/upsert \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "serviceBindings": [
+      {
+        "metadata": {
+          "name": "api-on-web",
+          "namespace": "prod"
+        },
+        "spec": {
+          "addressGroup": {
+            "name": "web",
+            "namespace": "prod"
+          },
+          "service": {
+            "name": "api",
+            "namespace": "prod"
+          }
+        }
+      }
+    ]
+  }'
+```
+
+  </TabItem>
+</Tabs>
+
+**Само правило** — `spec.transport` **не передаётся**: API его в этом режиме не
+принимает, а агент всё равно берёт порты из транспортов local-сервиса.
+
+```bash
+curl -X POST http://localhost:9006/v1/rules/upsert \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "rules": [
+      {
+        "metadata": {
+          "name": "api-from-internal-net",
+          "namespace": "prod"
+        },
+        "spec": {
+          "action": "ALLOW",
+          "session": {
+            "traffic": "INGRESS"
+          },
+          "endpoints": {
+            "local": {
+              "name": "api",
+              "namespace": "prod",
+              "type": "SERVICE"
+            },
+            "remote": {
+              "type": "CIDR",
+              "value": "10.0.0.0/24"
+            }
+          }
+        }
+      }
+    ]
+  }'
+```
+
+Порты в nft берутся из транспортов сервиса
+`api` (TCP/8080 + UDP/9090):
+
+```nft
+chain INGRESS-ag-prod/web {
+    ip saddr { 10.0.0.0/24 } tcp dport 8080 counter accept
+    ip saddr { 10.0.0.0/24 } udp dport 9090 counter accept
+}
+```
+
+  </TabItem>
+</Tabs>

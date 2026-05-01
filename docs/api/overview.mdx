@@ -31,6 +31,25 @@ SGroups предоставляет единый API для управления 
   `}
 </CodeBlock>
 
+## Формат REST Watch
+
+REST `watch` endpoints реализованы через gRPC-Gateway server streaming. Поэтому
+каждое событие в HTTP-потоке приходит не как «голый» объект события, а как JSON
+обёртка с полем `result`.
+
+<CodeBlock language="json">
+  {dedent`
+    {
+      "result": {
+        "type": "ADDED",
+        "...": "resource-specific payload"
+      }
+    }
+  `}
+</CodeBlock>
+
+Если соединение держать открытым через `curl -N`, сервер будет писать такие JSON
+объекты по мере появления событий.
 
 ## Ресурсная модель
 

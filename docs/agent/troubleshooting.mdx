@@ -1,0 +1,208 @@
+---
+id: troubleshooting
+sidebar_position: 8
+title: Отладка
+---
+
+import CodeBlock from '@theme/CodeBlock'
+import dedent from 'ts-dedent'
+
+# Отладка несоответствий nft ↔ API
+
+При расследовании "почему правило не работает" двигаться имеет смысл по тем же доменам,
+по которым устроен тест-харнес `sgroups-test-go`: **api → entities → chains → routing →
+unirule (placement / matchers / modifiers) → ordering**. Если сломан верхний уровень,
+нижние почти всегда тоже посыпятся.
+
+## Шаг 1. API — приклад принял правило?
+
+```bash
+curl -X POST http://localhost:9006/v1/rules/list \
+  -H 'Content-Type: application/json' \
+  -d '{"selectors":[{"fieldSelector":{"name":"my-rule","namespace":"production"}}]}'
+```
+
+Если правила нет в ответе или статус апсёрта был не `accepted` — расхождение начинается на
+сервере. Дальше идти бесполезно.
+
+Типичные причины:
+- невалидная комбинация `endpoints.*.type` + `traffic` (см. матрицу поддержанных пар в [«Соответствие правил nft»](./rule-mapping))
+- `transport` обязателен для текущей пары типов, но не передан
+- `transport` передан там, где не должен (например, `SERVICE → SERVICE` — транспорт наследуется из local-service)
+- `BOTH` для `AG → ICMP` (запрещено)
+
+## Шаг 2. Entities — set'ы существуют и наполнены?
+
+Имя таблицы агента — динамическое (`main-${timestamp}`), поэтому удобнее находить её
+через `nft list ruleset` и фильтровать grep'ом, либо сначала вычислить имя:
+
+```bash
+# найти имя текущей таблицы агента
+TABLE=$(sudo nft list tables | awk '/inet main-/{print $3; exit}')
+
+sudo nft list set inet "$TABLE" NetIPv4-addressGroup-production/web-servers
+```
+
+Что искать:
+- **set отсутствует** → AG не привязан к этому узлу через `HostBinding`
+- **set пустой** (`elements = { }`) → ни один привязанный `Host` не имеет IPv4 в `spec.IPs.IPv4`
+  (нужен `POST /v1/hosts/upd-ips`)
+- **set наполнен, но не теми IP** → `HostBinding` указывает на другой `Host`, или у хоста
+  изменились IP, а агент еще не успел переcинхронизироваться (см. `sync.interval`)
+
+Для FQDN-set'ов проверяйте резолв:
+
+```bash
+sudo nft list set inet "$TABLE" NetIPv4-fqdn-example.com
+nslookup example.com  # сравните с содержимым set'а
+```
+
+## Шаг 3. Chains — цепочки созданы?
+
+```bash
+sudo nft list chains inet "$TABLE"
+```
+
+Должны быть:
+- `INGRESS-MAIN` и `EGRESS-MAIN` — всегда
+- по паре `INGRESS-ag-<ns>/<name>` / `EGRESS-ag-<ns>/<name>` на каждый локальный AG
+
+Если для какого-то локального AG цепочки нет — агент не считает его локальным. Проверьте,
+что для этого AG существует `HostBinding` на узел, на котором живет агент.
+
+## Шаг 4. Routing — есть jump в per-AG цепочку?
+
+```bash
+sudo nft list chain inet "$TABLE" INGRESS-MAIN
+sudo nft list chain inet "$TABLE" EGRESS-MAIN
+```
+
+Тело должно содержать:
+
+```nft
+ip saddr @NetIPv4-addressGroup-<ns>/<name> jump INGRESS-ag-<ns>/<name>
+ip daddr @NetIPv4-addressGroup-<ns>/<name> jump EGRESS-ag-<ns>/<name>
+```
+
+Если jump'а нет — это типичный случай "правила есть, но не работают". Перезапуск агента
+обычно лечит.
+
+## Шаг 5. Unirule placement — правило в **той** цепочке?
+
+Найти строку:
+
+```bash
+sudo nft list ruleset | grep -E "(saddr|daddr).*(@NetIPv4|203\.0\.113|fqdn-example)"
+```
+
+Сверьте с [правилами выбора цепочки](./rule-mapping#общая-форма-строки):
+- `local.type=AG`, `traffic=INGRESS` → `INGRESS-ag-<local.ns>/<local.name>`
+- `local.type=SERVICE` → per-AG того AG, к которому привязан local-сервис
+
+Частые ошибки:
+- правило оказалось в **обеих** цепочках (`INGRESS` и `EGRESS`) при `traffic=INGRESS` —
+  это `unirule-placement: unexpected-chain`
+- правило задвоилось в одной цепочке — `duplicate-in-expected-chain`,
+  обычно из-за повторного апсёрта без удаления старого
+
+## Шаг 6. Matchers — правильные saddr/daddr/dport/icmp type?
+
+```bash
+sudo nft list chain inet "$TABLE" INGRESS-ag-production/web-servers
+```
+
+Сверьте по таблице из [«Соответствие правил nft»](./rule-mapping):
+- saddr/daddr ссылается на правильный set
+- protocol совпадает с `transport.protocol`
+- dport / icmp type совпадают с `transport.entries[].ports` / `.types`
+
+## Шаг 7. Modifiers — action / trace / logs
+
+В строке должны быть:
+- `accept` для `ALLOW`, `drop` для `DENY`
+- `meta nftrace set 1` если `linux-agent.sgroups.io/trace = "true"`
+- `log level debug` если `linux-agent.sgroups.io/logs = "true"`
+
+См. [«Аннотации»](./annotations).
+
+## Шаг 8. Ordering — порядок строк по priority
+
+Внутри per-AG цепочки строки идут **в порядке возрастания** аннотации
+`linux-agent.sgroups.io/priority`. Проверить можно так:
+
+```bash
+sudo nft -a list chain inet "$TABLE" EGRESS-ag-production/web-servers
+```
+
+Аргумент `-a` печатает handle'ы строк — порядок в выводе совпадает с порядком исполнения.
+
+Если порядок нарушен — это **bug агента**, отчет `implementation-audit.json`
+(категория `priority_inversions`) ловит такие случаи в тестовой матрице.
+
+## Полная карта проверок
+
+Из тест-харнеса `sgroups-test-go`:
+
+| Domain | Что проверяет | Как воспроизвести руками |
+|---|---|---|
+| `api` | каждый кейс получил ожидаемый HTTP-status от `/v1/rules/upsert` | `curl POST` и проверьте код |
+| `entities` | для каждого AG/SVC из setup есть nft set | `nft list sets inet "$TABLE"` |
+| `chains` | `INGRESS-MAIN`, `EGRESS-MAIN`, `INGRESS-ag-*`, `EGRESS-ag-*` существуют | `nft list chains inet "$TABLE"` |
+| `routing` | в MAIN-chain есть `jump` в каждый локальный AG-chain | `nft list chain inet "$TABLE" INGRESS-MAIN` |
+| `unirule-placement` | правило в **той** цепочке и **только** в ней | `grep` по выводу `nft list ruleset` |
+| `unirule-matchers` | matcher (saddr/daddr + port/type) есть где-то в nft | то же |
+| `unirule-modifiers` | action/trace/logs совпадают с annotations | сравнение строки и аннотаций |
+| `ordering` | priority возрастает по chain index | `nft -a list chain …` |
+| `known-gaps` | задокументированные расхождения | — |
+
+Зеленый прогон = все 8 доменов 0 failures. Красный — есть реальный баг приклада или
+несоответствие данных.
+
+## Запуск автоматической проверки
+
+Если узел доступен через kubectl exec, запустите тест-харнес:
+
+```bash
+git clone https://github.com/PRO-Robotech/sgroups-test-go
+cd sgroups-test-go
+make build
+./bin/sgnft generate --out resources.json
+./bin/sgnft apply  --resources resources.json --report-dir reports
+sleep 600
+./bin/sgnft verify --resources resources.json --report-dir reports \
+  --api-results reports/api-results.json
+```
+
+Артефакты после verify:
+
+| Файл | Зачем смотреть |
+|---|---|
+| `reports/error-report.md` | сводка по доменам и breakdown по `(family, traffic, transport)` |
+| `reports/case-error-report.md` | подробный список ошибок по конкретным кейсам с диагностикой |
+| `reports/bug-report.md` | сгруппированные fingerprints с canonical reproducer |
+| `reports/domain-audit.json` | результаты 9 доменов в JSON |
+| `reports/implementation-audit.json` | strict findings (missing / duplicates / wrong-action / trace-mismatch / priority-inversion) |
+
+См. [README sgroups-test-go](https://github.com/PRO-Robotech/sgroups-test-go) для деталей.
+
+## Логи агента
+
+```bash
+# systemd
+journalctl -u sg-agent -f
+
+# docker
+docker logs -f sg-agent
+
+# kubernetes
+kubectl logs -n sgroups-system -l app=sgroups-agent -f --tail 100
+```
+
+Ключевые события:
+
+| Уровень | Сообщение | Значение |
+|---|---|---|
+| `info` | `sync completed` | успешный цикл |
+| `warn` | `dns resolve failed` | FQDN не разрешился — set FQDN не пополнится |
+| `error` | `nft apply failed` | вся транзакция отменена, в логе должен быть лежать nft-стектрейс |
+| `error` | `server connection lost` | gRPC до сервера упал, агент в backoff |

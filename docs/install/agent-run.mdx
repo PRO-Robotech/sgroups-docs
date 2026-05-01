@@ -1,0 +1,144 @@
+---
+id: agent-run
+sidebar_position: 3
+title: Запуск
+---
+
+import CodeBlock from '@theme/CodeBlock'
+import dedent from 'ts-dedent'
+
+# Запуск sg-agent
+
+## Бинарник напрямую
+
+Для управления nftables нужен `CAP_NET_ADMIN` — либо запустить под `root`,
+либо повесить файловый capability на бинарник.
+
+<CodeBlock language="bash">
+  {dedent`
+    # вариант 1 — sudo
+    sudo ./bin/sg-agent --config /etc/sg-agent/config.yaml
+
+    # вариант 2 — file capability + запуск от обычного пользователя
+    sudo setcap cap_net_admin=eip ./bin/sg-agent
+    ./bin/sg-agent --config /etc/sg-agent/config.yaml
+  `}
+</CodeBlock>
+
+Бинарник принимает только `--config <path>`; остальные параметры — из YAML
+или env.
+
+## systemd-сервис
+
+Стандартный способ для production-серверов.
+
+### 1. Скопировать бинарник
+
+<CodeBlock language="bash">
+  {dedent`
+    sudo install -m 0755 ./bin/sg-agent /usr/local/bin/sg-agent
+  `}
+</CodeBlock>
+
+### 2. Положить конфигурацию
+
+<CodeBlock language="bash">
+  {dedent`
+    sudo mkdir -p /etc/sg-agent
+    sudo cp config.yaml /etc/sg-agent/config.yaml
+  `}
+</CodeBlock>
+
+### 3. Создать unit-файл
+
+<CodeBlock language="ini">
+  {dedent`
+    # /etc/systemd/system/sg-agent.service
+    [Unit]
+    Description=SGroups Agent
+    After=network-online.target
+    Wants=network-online.target
+
+    [Service]
+    Type=simple
+    ExecStart=/usr/local/bin/sg-agent --config /etc/sg-agent/config.yaml
+    Restart=always
+    RestartSec=5
+
+    User=root
+    AmbientCapabilities=CAP_NET_ADMIN
+    NoNewPrivileges=yes
+    ProtectSystem=strict
+    ProtectHome=yes
+    ReadWritePaths=/run
+
+    [Install]
+    WantedBy=multi-user.target
+  `}
+</CodeBlock>
+
+### 4. Включить и запустить
+
+<CodeBlock language="bash">
+  {dedent`
+    sudo systemctl daemon-reload
+    sudo systemctl enable --now sg-agent
+    sudo systemctl status sg-agent
+  `}
+</CodeBlock>
+
+## Docker
+
+В Dockerfile прописан непривилегированный `USER app`, поэтому для управления
+nftables в контейнере нужно одновременно:
+
+- запустить под root (`--user 0:0`)
+- выдать `CAP_NET_ADMIN` (`--cap-add NET_ADMIN`)
+- использовать сетевое пространство хоста (`--network host`)
+
+<CodeBlock language="bash">
+  {dedent`
+    docker run -d \\
+      --name sg-agent \\
+      --user 0:0 \\
+      --cap-add NET_ADMIN \\
+      --network host \\
+      -v /etc/sg-agent/config.yaml:/etc/sg-agent/config.yaml:ro \\
+      -e NFT_HOSTINFO_NAME="node-01" \\
+      -e NFT_HOSTINFO_NAMESPACE="prod" \\
+      -e NFT_EXTAPI_SVC_SGROUPS_ADDRESS="tcp://sg-server:9006" \\
+      -e NFT_LOGGER_LEVEL="INFO" \\
+      sgroups/sg-agent:0.1.0-rc.1 \\
+      --config /etc/sg-agent/config.yaml
+  `}
+</CodeBlock>
+
+:::caution
+Если используется `netns` в конфиге, дополнительно понадобится
+`--cap-add SYS_ADMIN` либо `--privileged`.
+:::
+
+## Проверка работоспособности
+
+<CodeBlock language="bash">
+  {dedent`
+    # Статус процесса
+    systemctl status sg-agent
+
+    # Локальная телеметрия (по умолчанию 127.0.0.1:5000)
+    curl http://127.0.0.1:5000/healthcheck
+    curl http://127.0.0.1:5000/metrics | head -20
+
+    # Таблица агента в nftables — имя main-<unix-timestamp>
+    sudo nft list tables | grep '^table inet main-'
+
+    # Логи systemd
+    journalctl -u sg-agent -f
+  `}
+</CodeBlock>
+
+См. также:
+
+- [Жизненный цикл](/agent/lifecycle) — что делает агент после старта
+- [Структура nftables](/agent/nft-layout) — какие таблицы/цепочки/set'ы создаются
+- [Отладка](/agent/troubleshooting) — типичные расхождения и как их искать

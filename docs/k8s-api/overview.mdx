@@ -1,0 +1,218 @@
+---
+id: overview
+sidebar_position: 1
+title: Обзор API
+---
+
+import CodeBlock from '@theme/CodeBlock'
+import dedent from 'ts-dedent'
+
+# Обзор Kubernetes API
+
+`sgroups-k8s-api` — это **Kubernetes Aggregated API Server**, который проксирует
+ресурсы SGroups в нативный API Kubernetes. После регистрации `APIService` все
+ресурсы доступны через `kubectl`, любые контроллеры и операторы — как обычные
+объекты `metadata` + `spec`.
+
+## API-группа и версия
+
+- **Группа:** `sgroups.io`
+- **Версия:** `v1alpha1`
+
+Базовый префикс всех URL:
+
+```
+/apis/sgroups.io/v1alpha1/
+```
+
+## Поддерживаемые ресурсы
+
+| Kind | Namespaced | Plural | URL |
+|---|---|---|---|
+| `Tenant` | нет | `tenants` | `/tenants` |
+| `AddressGroup` | да | `addressgroups` | `/namespaces/{ns}/addressgroups` |
+| `Network` | да | `networks` | `/namespaces/{ns}/networks` |
+| `Host` | да | `hosts` | `/namespaces/{ns}/hosts` |
+| `Service` | да | `services` | `/namespaces/{ns}/services` |
+| `HostBinding` | да | `hostbindings` | `/namespaces/{ns}/hostbindings` |
+| `NetworkBinding` | да | `networkbindings` | `/namespaces/{ns}/networkbindings` |
+| `ServiceBinding` | да | `servicebindings` | `/namespaces/{ns}/servicebindings` |
+| `Rule` | да | `rules` | `/namespaces/{ns}/rules` |
+
+## CRUD-операции
+
+Для каждого namespaced-ресурса доступны:
+
+| Операция | HTTP | URL |
+|---|---|---|
+| List (cluster-wide) | GET | `/apis/sgroups.io/v1alpha1/{plural}` |
+| List (namespace) | GET | `/apis/sgroups.io/v1alpha1/namespaces/{ns}/{plural}` |
+| Create | POST | `/apis/sgroups.io/v1alpha1/namespaces/{ns}/{plural}` |
+| Get | GET | `/apis/sgroups.io/v1alpha1/namespaces/{ns}/{plural}/{name}` |
+| Update | PUT | `/apis/sgroups.io/v1alpha1/namespaces/{ns}/{plural}/{name}` |
+| Patch | PATCH | `/apis/sgroups.io/v1alpha1/namespaces/{ns}/{plural}/{name}` |
+| Delete | DELETE | `/apis/sgroups.io/v1alpha1/namespaces/{ns}/{plural}/{name}` |
+
+`Tenant` — cluster-scoped, поэтому без `/namespaces/{ns}` сегмента в URL.
+
+## Работа через kubectl
+
+После регистрации `APIService` все ресурсы видны как нативные объекты Kubernetes:
+
+<CodeBlock language="bash">
+  {dedent`
+    # просмотр
+    kubectl get tenants
+    kubectl get addressgroups -A
+    kubectl get rules -n production
+    kubectl describe rule allow-web-to-db -n production
+
+    # создание / обновление
+    kubectl apply -f my-rule.yaml
+
+    # частичное обновление
+    kubectl patch rule allow-web-to-db -n production --type=merge \\
+      -p '{"spec":{"action":"Deny"}}'
+
+    # редактирование (kubectl edit делает GET → правки → PUT)
+    kubectl edit rule allow-web-to-db -n production
+
+    # удаление
+    kubectl delete rule allow-web-to-db -n production
+  `}
+</CodeBlock>
+
+## Формат объектов
+
+Все ресурсы следуют стандартной K8s-схеме:
+
+<CodeBlock language="yaml">
+  {dedent`
+    apiVersion: sgroups.io/v1alpha1
+    kind: <Kind>
+    metadata:
+      name: <name>
+      namespace: <namespace>            # для namespaced-ресурсов
+      labels: { ... }
+      annotations: { ... }
+    spec:
+      # поля, специфичные для типа ресурса
+  `}
+</CodeBlock>
+
+В ответе сервера дополнительно появляются:
+
+- `metadata.uid` — уникальный ID объекта
+- `metadata.resourceVersion` — версия для optimistic concurrency
+- `metadata.creationTimestamp` — время создания
+- для AddressGroup / Network / Host / Service — `refs[]` (read-only обратные
+  ссылки на привязанные объекты)
+- для Host — `ips`, `metaInfo` (read-only — заполняются агентом)
+
+## Watch
+
+`Aggregated API Server` поддерживает стандартный k8s-механизм подписки на
+изменения:
+
+<CodeBlock language="bash">
+  {dedent`
+    # подписка на события Rule в namespace production
+    kubectl get rules -n production --watch
+
+    # фильтр по labels
+    kubectl get rules -n production --watch -l tier=frontend
+  `}
+</CodeBlock>
+
+Каждое событие в потоке — JSON-объект:
+
+<CodeBlock language="json">
+  {dedent`
+    {
+      "type": "ADDED" | "MODIFIED" | "DELETED",
+      "object": { "...": "Rule" }
+    }
+  `}
+</CodeBlock>
+
+## Аутентификация и авторизация
+
+Используется штатная k8s-аутентификация через kubeconfig:
+
+- ServiceAccount-токены
+- Клиентские сертификаты (mTLS до kube-apiserver)
+- OIDC, LDAP-плагины и пр. — что настроено в кластере
+
+Авторизация — стандартный k8s RBAC (`Role`, `ClusterRole`, `RoleBinding`,
+`ClusterRoleBinding`) на ресурсы группы `sgroups.io`.
+
+## Валидация {#валидация}
+
+`sgroups-k8s-api` — это **тонкая прокси-прослойка**: он принимает
+k8s-объекты, конвертирует их в gRPC-вызовы к `sg-server` и возвращает результат.
+**Валидация полей `spec` целиком делегируется бэкенду** — на уровне k8s-сервера
+проверяются только базовые требования kubernetes-схемы (наличие
+`apiVersion`/`kind`, обязательные поля `metadata.name`/`namespace`, формат имён).
+
+Что проверяется на уровне `sg-server`:
+
+- Корректность CIDR в `Network.spec.CIDR`
+- Уникальность имени в namespace
+- Существование ссылок (`HostBinding.spec.host` ссылается на существующий `Host` и т.д.)
+- Допустимые комбинации `endpoints.local.type` / `endpoints.remote.type` / `traffic` для `Rule`
+- Формат `transport.entries[].ports` (диапазоны, списки)
+- Поддерживаемые значения enum'ов (`Action`, `Traffic`, `Protocol`, `IPv`)
+
+См. подробности валидации в [API sg-server](/api/overview).
+
+## Формат ошибок {#формат-ошибок}
+
+Ошибочные ответы возвращаются как стандартный k8s-объект `Status`:
+
+<CodeBlock language="json">
+  {dedent`
+    {
+      "kind": "Status",
+      "apiVersion": "v1",
+      "metadata": {},
+      "status": "Failure",
+      "message": "Network.sgroups.io \\"corp-net-10\\" is invalid: spec.CIDR: Invalid value: \\"foo\\": not a valid CIDR",
+      "reason": "Invalid",
+      "details": {
+        "name": "corp-net-10",
+        "group": "sgroups.io",
+        "kind": "Network"
+      },
+      "code": 422
+    }
+  `}
+</CodeBlock>
+
+`reason` приходит из gRPC-ошибки бэкенда и нормализуется в k8s-status, `code` —
+соответствующий HTTP-статус.
+
+## Коды ошибок {#коды-ошибок}
+
+| HTTP | `reason` | gRPC (бэкенд) | Когда возвращается |
+|---|---|---|---|
+| **400** | `BadRequest` | `INVALID_ARGUMENT` | Некорректные параметры запроса (битый JSON, неподдерживаемый verb) |
+| **401** | `Unauthorized` | `UNAUTHENTICATED` | Запрос без валидного токена/сертификата |
+| **403** | `Forbidden` | `PERMISSION_DENIED` | RBAC отвергает операцию для текущей роли |
+| **404** | `NotFound` | `NOT_FOUND` | Ресурс не существует |
+| **405** | `MethodNotAllowed` | — | Метод не поддерживается ресурсом (например, PATCH cluster-scoped с неверным path) |
+| **409** | `AlreadyExists` | `ALREADY_EXISTS` | Объект с таким именем уже есть в namespace |
+| **409** | `Conflict` | `ABORTED` | Optimistic concurrency: `metadata.resourceVersion` устарел |
+| **422** | `Invalid` | `INVALID_ARGUMENT` | Валидация полей `spec` на бэкенде не прошла |
+| **500** | `InternalError` | `INTERNAL` | Внутренняя ошибка сервера или бэкенда |
+| **503** | `ServiceUnavailable` | `UNAVAILABLE` | `sg-server` недоступен (gRPC connect failed) |
+| **504** | `Timeout` | `DEADLINE_EXCEEDED` | gRPC-вызов к бэкенду превысил `grpc.timeout` |
+
+`kubectl` сам форматирует ошибку из `Status.message` для пользователя:
+
+<CodeBlock language="bash">
+  {dedent`
+    $ kubectl apply -f bad-network.yaml
+    Error from server (Invalid): error when creating "bad-network.yaml":
+      Network.sgroups.io "corp-net-10" is invalid: spec.CIDR: Invalid value: "foo": not a valid CIDR
+  `}
+</CodeBlock>

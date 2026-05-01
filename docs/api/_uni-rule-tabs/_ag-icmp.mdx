@@ -101,7 +101,7 @@ import dedent from 'ts-dedent'
       <td>{DICTIONARY.protocol.short}</td>
     </tr>
     <tr>
-      <td><code>spec.transport.ipv</code></td>
+      <td><code>spec.transport.IPv</code></td>
       <td>да</td>
       <td><code>{TYPES.enumIpv}</code></td>
       <td>{DICTIONARY.ipv.short}</td>
@@ -203,19 +203,22 @@ import dedent from 'ts-dedent'
       "rules": [
         {
           "metadata": {
-            "uid": "c9d0e1f2-a3b4-5678-cdef-789012345678",
+            "uid": "a2a1f35f-e93f-4781-b69c-e4bf41cdde62",
             "name": "allow-monitoring-icmp-egress",
             "namespace": "production",
+            "labels": {},
             "annotations": {
               "linux-agent.sgroups.io/logs": "true",
-              "linux-agent.sgroups.io/trace": "false",
-              "linux-agent.sgroups.io/priority": "200"
+              "linux-agent.sgroups.io/priority": "200",
+              "linux-agent.sgroups.io/trace": "false"
             },
-            "creationTimestamp": "2025-01-15T10:40:00Z",
-            "resourceVersion": "1"
+            "creationTimestamp": "2026-04-25T21:13:10.665906Z",
+            "resourceVersion": "192"
           },
           "spec": {
             "displayName": "Allow Monitoring ICMP Egress",
+            "comment": "",
+            "description": "",
             "action": "ALLOW",
             "session": {
               "traffic": "EGRESS"
@@ -224,8 +227,12 @@ import dedent from 'ts-dedent'
               "local": {
                 "name": "monitoring-agents",
                 "namespace": "production",
-                "type": "ADDRESS_GROUP"
-              }
+                "type": "ADDRESS_GROUP",
+                "labels": {
+                  "tier": "monitoring"
+                }
+              },
+              "remote": null
             },
             "transport": {
               "protocol": "ICMP",
@@ -234,6 +241,7 @@ import dedent from 'ts-dedent'
                 {
                   "description": "Ping and diagnostics",
                   "comment": "ICMP echo and error messages",
+                  "ports": "",
                   "types": [
                     3,
                     8,

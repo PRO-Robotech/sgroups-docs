@@ -151,14 +151,15 @@ import { ApiOperation } from '@site/src/components/commonBlocks/ApiOperation'
       "hostBindings": [
         {
           "metadata": {
-            "uid": "f6a7b8c9-d0e1-2345-fabc-456789012345",
+            "uid": "77c8394b-6e23-4627-aba5-789052024f9b",
             "name": "web-servers-node-01",
             "namespace": "production",
             "labels": {
               "binding-type": "host"
             },
-            "creationTimestamp": "2025-01-15T10:25:00Z",
-            "resourceVersion": "1"
+            "annotations": {},
+            "creationTimestamp": "2026-04-25T21:12:33.073360Z",
+            "resourceVersion": "186"
           },
           "spec": {
             "displayName": "Web Servers - Node 01",
@@ -238,7 +239,10 @@ import { ApiOperation } from '@site/src/components/commonBlocks/ApiOperation'
 
 > *Необходимо указать `uid` **или** комбинацию `name` + `namespace`.
 
-#### Пример запроса
+#### Примеры запроса
+
+<Tabs groupId="hb-delete">
+  <TabItem value="uid" label="uid" default>
 
 <CodeBlock language="bash">
   {dedent`
@@ -248,7 +252,26 @@ import { ApiOperation } from '@site/src/components/commonBlocks/ApiOperation'
         "hostBindings": [
           {
             "metadata": {
-              "name": "web-servers-node-01",
+              "uid": "3c7fbbc2-aa9d-4795-9c6c-4bd46fec2fda"
+            }
+          }
+        ]
+      }'
+  `}
+</CodeBlock>
+
+  </TabItem>
+  <TabItem value="name" label="name + namespace">
+
+<CodeBlock language="bash">
+  {dedent`
+    curl -X POST http://localhost:9006/v1/host-bindings/delete \\
+      -H 'Content-Type: application/json' \\
+      -d '{
+        "hostBindings": [
+          {
+            "metadata": {
+              "name": "docs-del-host-binding-name-152135",
               "namespace": "production"
             }
           }
@@ -257,13 +280,31 @@ import { ApiOperation } from '@site/src/components/commonBlocks/ApiOperation'
   `}
 </CodeBlock>
 
-#### Пример ответа
+  </TabItem>
+</Tabs>
+
+#### Примеры ответа
+
+<Tabs groupId="hb-delete">
+  <TabItem value="uid" label="uid" default>
 
 <CodeBlock language="json">
   {dedent`
     {}
   `}
 </CodeBlock>
+
+  </TabItem>
+  <TabItem value="name" label="name + namespace">
+
+<CodeBlock language="json">
+  {dedent`
+    {}
+  `}
+</CodeBlock>
+
+  </TabItem>
+</Tabs>
 
 <Restrictions items={[
   { label: 'delete', rules: RESTRICTIONS.deleteWithNamespace },
@@ -490,23 +531,27 @@ import { ApiOperation } from '@site/src/components/commonBlocks/ApiOperation'
   </tbody>
 </table>
 
-#### Пример ответа
+#### Примеры ответа
+
+<Tabs groupId="hb-list">
+  <TabItem value="name" label="name" default>
 
 <CodeBlock language="json">
   {dedent`
     {
-      "resourceVersion": "42",
+      "resourceVersion": "200",
       "hostBindings": [
         {
           "metadata": {
-            "uid": "f6a7b8c9-d0e1-2345-fabc-456789012345",
+            "uid": "77c8394b-6e23-4627-aba5-789052024f9b",
             "name": "web-servers-node-01",
             "namespace": "production",
             "labels": {
               "binding-type": "host"
             },
-            "creationTimestamp": "2025-01-15T10:25:00Z",
-            "resourceVersion": "1"
+            "annotations": {},
+            "creationTimestamp": "2026-04-25T21:12:33.073360Z",
+            "resourceVersion": "186"
           },
           "spec": {
             "displayName": "Web Servers - Node 01",
@@ -526,6 +571,217 @@ import { ApiOperation } from '@site/src/components/commonBlocks/ApiOperation'
     }
   `}
 </CodeBlock>
+
+  </TabItem>
+  <TabItem value="refs" label="refs">
+
+<CodeBlock language="json">
+  {dedent`
+    {
+      "resourceVersion": "200",
+      "hostBindings": [
+        {
+          "metadata": {
+            "uid": "77c8394b-6e23-4627-aba5-789052024f9b",
+            "name": "web-servers-node-01",
+            "namespace": "production",
+            "labels": {
+              "binding-type": "host"
+            },
+            "annotations": {},
+            "creationTimestamp": "2026-04-25T21:12:33.073360Z",
+            "resourceVersion": "186"
+          },
+          "spec": {
+            "displayName": "Web Servers - Node 01",
+            "comment": "Привязка node-01 к группе web-servers",
+            "description": "Привязка рабочего узла к группе веб-серверов",
+            "addressGroup": {
+              "name": "web-servers",
+              "namespace": "production"
+            },
+            "host": {
+              "name": "node-01",
+              "namespace": "production"
+            }
+          }
+        }
+      ]
+    }
+  `}
+</CodeBlock>
+
+  </TabItem>
+  <TabItem value="labels" label="labels">
+
+<CodeBlock language="json">
+  {dedent`
+    {
+      "resourceVersion": "200",
+      "hostBindings": [
+        {
+          "metadata": {
+            "uid": "8757a86c-67d3-4467-82a4-b877614d03e8",
+            "name": "api-servers-node-02",
+            "namespace": "production",
+            "labels": {
+              "binding-type": "host"
+            },
+            "annotations": {},
+            "creationTimestamp": "2026-04-25T21:12:33.073360Z",
+            "resourceVersion": "86"
+          },
+          "spec": {
+            "displayName": "API Servers - Node 02",
+            "comment": "",
+            "description": "",
+            "addressGroup": {
+              "name": "api-servers",
+              "namespace": "production"
+            },
+            "host": {
+              "name": "node-02",
+              "namespace": "production"
+            }
+          }
+        },
+        {
+          "metadata": {
+            "uid": "77c8394b-6e23-4627-aba5-789052024f9b",
+            "name": "web-servers-node-01",
+            "namespace": "production",
+            "labels": {
+              "binding-type": "host"
+            },
+            "annotations": {},
+            "creationTimestamp": "2026-04-25T21:12:33.073360Z",
+            "resourceVersion": "186"
+          },
+          "spec": {
+            "displayName": "Web Servers - Node 01",
+            "comment": "Привязка node-01 к группе web-servers",
+            "description": "Привязка рабочего узла к группе веб-серверов",
+            "addressGroup": {
+              "name": "web-servers",
+              "namespace": "production"
+            },
+            "host": {
+              "name": "node-01",
+              "namespace": "production"
+            }
+          }
+        }
+      ]
+    }
+  `}
+</CodeBlock>
+
+  </TabItem>
+  <TabItem value="and" label="AND">
+
+<CodeBlock language="json">
+  {dedent`
+    {
+      "resourceVersion": "200",
+      "hostBindings": [
+        {
+          "metadata": {
+            "uid": "77c8394b-6e23-4627-aba5-789052024f9b",
+            "name": "web-servers-node-01",
+            "namespace": "production",
+            "labels": {
+              "binding-type": "host"
+            },
+            "annotations": {},
+            "creationTimestamp": "2026-04-25T21:12:33.073360Z",
+            "resourceVersion": "186"
+          },
+          "spec": {
+            "displayName": "Web Servers - Node 01",
+            "comment": "Привязка node-01 к группе web-servers",
+            "description": "Привязка рабочего узла к группе веб-серверов",
+            "addressGroup": {
+              "name": "web-servers",
+              "namespace": "production"
+            },
+            "host": {
+              "name": "node-01",
+              "namespace": "production"
+            }
+          }
+        }
+      ]
+    }
+  `}
+</CodeBlock>
+
+  </TabItem>
+  <TabItem value="or" label="OR">
+
+<CodeBlock language="json">
+  {dedent`
+    {
+      "resourceVersion": "200",
+      "hostBindings": [
+        {
+          "metadata": {
+            "uid": "8757a86c-67d3-4467-82a4-b877614d03e8",
+            "name": "api-servers-node-02",
+            "namespace": "production",
+            "labels": {
+              "binding-type": "host"
+            },
+            "annotations": {},
+            "creationTimestamp": "2026-04-25T21:12:33.073360Z",
+            "resourceVersion": "86"
+          },
+          "spec": {
+            "displayName": "API Servers - Node 02",
+            "comment": "",
+            "description": "",
+            "addressGroup": {
+              "name": "api-servers",
+              "namespace": "production"
+            },
+            "host": {
+              "name": "node-02",
+              "namespace": "production"
+            }
+          }
+        },
+        {
+          "metadata": {
+            "uid": "77c8394b-6e23-4627-aba5-789052024f9b",
+            "name": "web-servers-node-01",
+            "namespace": "production",
+            "labels": {
+              "binding-type": "host"
+            },
+            "annotations": {},
+            "creationTimestamp": "2026-04-25T21:12:33.073360Z",
+            "resourceVersion": "186"
+          },
+          "spec": {
+            "displayName": "Web Servers - Node 01",
+            "comment": "Привязка node-01 к группе web-servers",
+            "description": "Привязка рабочего узла к группе веб-серверов",
+            "addressGroup": {
+              "name": "web-servers",
+              "namespace": "production"
+            },
+            "host": {
+              "name": "node-01",
+              "namespace": "production"
+            }
+          }
+        }
+      ]
+    }
+  `}
+</CodeBlock>
+
+  </TabItem>
+</Tabs>
 
 <Restrictions items={[
   { label: 'selectors', rules: RESTRICTIONS.selectors },
@@ -624,7 +880,7 @@ import { ApiOperation } from '@site/src/components/commonBlocks/ApiOperation'
             }
           }
         ],
-        "resourceVersion": "0"
+        "resourceVersion": "200"
       }'
   `}
 </CodeBlock>
@@ -653,7 +909,7 @@ import { ApiOperation } from '@site/src/components/commonBlocks/ApiOperation'
             }
           }
         ],
-        "resourceVersion": "0"
+        "resourceVersion": "200"
       }'
   `}
 </CodeBlock>
@@ -673,7 +929,7 @@ import { ApiOperation } from '@site/src/components/commonBlocks/ApiOperation'
             }
           }
         ],
-        "resourceVersion": "0"
+        "resourceVersion": "200"
       }'
   `}
 </CodeBlock>
@@ -699,7 +955,7 @@ import { ApiOperation } from '@site/src/components/commonBlocks/ApiOperation'
             }
           }
         ],
-        "resourceVersion": "0"
+        "resourceVersion": "200"
       }'
   `}
 </CodeBlock>
@@ -730,7 +986,7 @@ import { ApiOperation } from '@site/src/components/commonBlocks/ApiOperation'
             }
           }
         ],
-        "resourceVersion": "0"
+        "resourceVersion": "200"
       }'
   `}
 </CodeBlock>
@@ -738,38 +994,215 @@ import { ApiOperation } from '@site/src/components/commonBlocks/ApiOperation'
   </TabItem>
 </Tabs>
 
-#### Пример ответа
+#### Примеры ответа
+
+<Tabs groupId="hb-watch">
+  <TabItem value="name" label="name" default>
 
 <CodeBlock language="json">
   {dedent`
     {
-      "type": "MODIFIED",
-      "hostBindings": [
-        {
-          "metadata": {
-            "uid": "f6a7b8c9-d0e1-2345-fabc-456789012345",
-            "name": "web-servers-node-01",
-            "namespace": "production",
-            "resourceVersion": "2"
-          },
-          "spec": {
-            "displayName": "Web Servers - Node 01",
-            "comment": "Привязка node-01 к группе web-servers (обновлено)",
-            "description": "Привязка рабочего узла к группе веб-серверов",
-            "addressGroup": {
-              "name": "web-servers",
-              "namespace": "production"
+      "result": {
+        "type": "MODIFIED",
+        "hostBindings": [
+          {
+            "metadata": {
+              "uid": "77c8394b-6e23-4627-aba5-789052024f9b",
+              "name": "web-servers-node-01",
+              "namespace": "production",
+              "labels": {
+                "binding-type": "host"
+              },
+              "annotations": {},
+              "creationTimestamp": "2026-04-25T21:12:33.073360Z",
+              "resourceVersion": "201"
             },
-            "host": {
-              "name": "node-01",
-              "namespace": "production"
+            "spec": {
+              "displayName": "Web Servers - Node 01",
+              "comment": "Привязка node-01 к группе web-servers",
+              "description": "Привязка рабочего узла к группе веб-серверов",
+              "addressGroup": {
+                "name": "web-servers",
+                "namespace": "production"
+              },
+              "host": {
+                "name": "node-01",
+                "namespace": "production"
+              }
             }
           }
-        }
-      ]
+        ]
+      }
     }
   `}
 </CodeBlock>
+
+  </TabItem>
+  <TabItem value="refs" label="refs">
+
+<CodeBlock language="json">
+  {dedent`
+    {
+      "result": {
+        "type": "MODIFIED",
+        "hostBindings": [
+          {
+            "metadata": {
+              "uid": "77c8394b-6e23-4627-aba5-789052024f9b",
+              "name": "web-servers-node-01",
+              "namespace": "production",
+              "labels": {
+                "binding-type": "host"
+              },
+              "annotations": {},
+              "creationTimestamp": "2026-04-25T21:12:33.073360Z",
+              "resourceVersion": "201"
+            },
+            "spec": {
+              "displayName": "Web Servers - Node 01",
+              "comment": "Привязка node-01 к группе web-servers",
+              "description": "Привязка рабочего узла к группе веб-серверов",
+              "addressGroup": {
+                "name": "web-servers",
+                "namespace": "production"
+              },
+              "host": {
+                "name": "node-01",
+                "namespace": "production"
+              }
+            }
+          }
+        ]
+      }
+    }
+  `}
+</CodeBlock>
+
+  </TabItem>
+  <TabItem value="labels" label="labels">
+
+<CodeBlock language="json">
+  {dedent`
+    {
+      "result": {
+        "type": "MODIFIED",
+        "hostBindings": [
+          {
+            "metadata": {
+              "uid": "77c8394b-6e23-4627-aba5-789052024f9b",
+              "name": "web-servers-node-01",
+              "namespace": "production",
+              "labels": {
+                "binding-type": "host"
+              },
+              "annotations": {},
+              "creationTimestamp": "2026-04-25T21:12:33.073360Z",
+              "resourceVersion": "201"
+            },
+            "spec": {
+              "displayName": "Web Servers - Node 01",
+              "comment": "Привязка node-01 к группе web-servers",
+              "description": "Привязка рабочего узла к группе веб-серверов",
+              "addressGroup": {
+                "name": "web-servers",
+                "namespace": "production"
+              },
+              "host": {
+                "name": "node-01",
+                "namespace": "production"
+              }
+            }
+          }
+        ]
+      }
+    }
+  `}
+</CodeBlock>
+
+  </TabItem>
+  <TabItem value="and" label="AND">
+
+<CodeBlock language="json">
+  {dedent`
+    {
+      "result": {
+        "type": "MODIFIED",
+        "hostBindings": [
+          {
+            "metadata": {
+              "uid": "77c8394b-6e23-4627-aba5-789052024f9b",
+              "name": "web-servers-node-01",
+              "namespace": "production",
+              "labels": {
+                "binding-type": "host"
+              },
+              "annotations": {},
+              "creationTimestamp": "2026-04-25T21:12:33.073360Z",
+              "resourceVersion": "201"
+            },
+            "spec": {
+              "displayName": "Web Servers - Node 01",
+              "comment": "Привязка node-01 к группе web-servers",
+              "description": "Привязка рабочего узла к группе веб-серверов",
+              "addressGroup": {
+                "name": "web-servers",
+                "namespace": "production"
+              },
+              "host": {
+                "name": "node-01",
+                "namespace": "production"
+              }
+            }
+          }
+        ]
+      }
+    }
+  `}
+</CodeBlock>
+
+  </TabItem>
+  <TabItem value="or" label="OR">
+
+<CodeBlock language="json">
+  {dedent`
+    {
+      "result": {
+        "type": "MODIFIED",
+        "hostBindings": [
+          {
+            "metadata": {
+              "uid": "77c8394b-6e23-4627-aba5-789052024f9b",
+              "name": "web-servers-node-01",
+              "namespace": "production",
+              "labels": {
+                "binding-type": "host"
+              },
+              "annotations": {},
+              "creationTimestamp": "2026-04-25T21:12:33.073360Z",
+              "resourceVersion": "201"
+            },
+            "spec": {
+              "displayName": "Web Servers - Node 01",
+              "comment": "Привязка node-01 к группе web-servers",
+              "description": "Привязка рабочего узла к группе веб-серверов",
+              "addressGroup": {
+                "name": "web-servers",
+                "namespace": "production"
+              },
+              "host": {
+                "name": "node-01",
+                "namespace": "production"
+              }
+            }
+          }
+        ]
+      }
+    }
+  `}
+</CodeBlock>
+
+  </TabItem>
+</Tabs>
 
 <Restrictions items={[
   { label: 'selectors', rules: RESTRICTIONS.selectors },

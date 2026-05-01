@@ -1,0 +1,118 @@
+---
+id: agent-build
+sidebar_position: 1
+title: Сборка
+---
+
+import CodeBlock from '@theme/CodeBlock'
+import dedent from 'ts-dedent'
+
+# Сборка sg-agent
+
+`sg-agent` — локальный сервис на узле, применяющий правила nftables.
+Собирается из `cmd/sg-agent` через `make`.
+
+:::warning Только Linux
+Агент работает с подсистемой ядра **nftables** и существует только на Linux.
+Кросс-сборка под другие ОС не поддерживается.
+:::
+
+## Требования
+
+- Go ≥ 1.25 (для сборки)
+- Make, Bash
+- Docker 24+ (для контейнерной сборки)
+- Linux ≥ 5.x с поддержкой nftables
+
+## Бинарник `sg-agent`
+
+Цель Makefile: `sg-agent [arch=<amd64|arm64>]`. По умолчанию `arch` берётся из
+`go env GOARCH`, `os` всегда `linux` (целевая ОС агента).
+
+<CodeBlock language="bash">
+  {dedent`
+    git clone https://github.com/PRO-Robotech/sgroups.git
+    cd sgroups
+    git checkout release/0.1.0-rc.1
+
+    # сборка под Linux текущей архитектуры
+    make sg-agent
+
+    # либо явно — например, под Linux/arm64
+    make sg-agent arch=arm64
+  `}
+</CodeBlock>
+
+Готовый файл — `bin/sg-agent`. Проверка справки:
+
+<CodeBlock language="bash">
+  {dedent`
+    ./bin/sg-agent --help
+  `}
+</CodeBlock>
+
+## Docker-образ
+
+`Dockerfile.agent` — multi-stage сборка на `golang:1.25-alpine3.22` (builder)
+и `alpine:3.22` (runtime). Контекст сборки — корень репозитория.
+
+<CodeBlock language="bash">
+  {dedent`
+    docker build \\
+      -f Dockerfile.agent \\
+      -t sgroups/sg-agent:0.1.0-rc.1 \\
+      .
+  `}
+</CodeBlock>
+
+Build-аргументы (по умолчанию подставляются автоматически):
+
+<table>
+  <thead>
+    <tr><th>Аргумент</th><th>Значение по умолчанию</th></tr>
+  </thead>
+  <tbody>
+    <tr><td><code>GO_VER</code></td><td><code>1.25</code></td></tr>
+    <tr><td><code>ALPINE_VER</code></td><td><code>3.22</code></td></tr>
+    <tr><td><code>TARGETOS</code> / <code>TARGETARCH</code></td><td>текущая платформа Docker buildx</td></tr>
+  </tbody>
+</table>
+
+:::info
+Финальный этап на `alpine:3.22`, в образе устанавливается `ca-certificates`.
+В Dockerfile прописан `USER app` (UID 101), но для управления nftables в контейнере
+нужны права root + capability `CAP_NET_ADMIN` — см. ниже.
+:::
+
+## Capabilities
+
+Для управления nftables агенту нужны Linux capabilities:
+
+<table>
+  <thead>
+    <tr>
+      <th>Capability</th>
+      <th>Назначение</th>
+      <th>Обязательна</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><code>CAP_NET_ADMIN</code></td>
+      <td>Создание таблиц, цепочек, правил nftables через netlink</td>
+      <td>Да</td>
+    </tr>
+    <tr>
+      <td><code>CAP_SYS_ADMIN</code></td>
+      <td>Работа с network namespaces (когда задан <code>netns</code>)</td>
+      <td>Только для netns</td>
+    </tr>
+  </tbody>
+</table>
+
+Способы выдать capability:
+
+- **bin на хосте**: `setcap cap_net_admin=eip /usr/local/bin/sg-agent` либо запуск под root
+- **Docker**: `--cap-add NET_ADMIN --user 0:0` (root внутри контейнера; альтернативно `--privileged`)
+- **systemd**: директива `AmbientCapabilities=CAP_NET_ADMIN` (см.
+  [Запуск](/install/agent-run))

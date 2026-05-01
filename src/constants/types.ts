@@ -33,4 +33,18 @@ export const TYPES = {
   enumEndpointFQDN: 'Enum("FQDN")',
   enumEndpointCIDR: 'Enum("CIDR")',
   enumResType: toEnum(RES_TYPES),
+
+  // k8s-api (camelCase enum values)
+  enumActionK8s: 'Enum("Allow", "Deny")',
+  enumTrafficK8s: 'Enum("Ingress", "Egress", "Both")',
+  enumProtocolK8s: 'Enum("TCP", "UDP", "ICMP")',
+  enumIpvK8s: 'Enum("IPv4", "IPv6")',
+  enumEndpointTypeK8s: 'Enum("AddressGroup", "Service", "FQDN", "CIDR")',
+  ipv4Strings: 'string[]',
+  cidr: 'CIDR',
+  ruleSession: 'RuleSession',
+  ruleEndpoints: 'RuleEndpoints',
+  ruleEndpoint: 'RuleEndpoint',
+  ruleTransport: 'RuleTransport',
+  serviceTransport: 'ServiceTransport[]',
 } as const

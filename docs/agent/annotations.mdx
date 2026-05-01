@@ -1,0 +1,298 @@
+---
+id: annotations
+sidebar_position: 4
+title: Аннотации
+---
+
+import Tabs from '@theme/Tabs'
+import TabItem from '@theme/TabItem'
+import CodeBlock from '@theme/CodeBlock'
+import dedent from 'ts-dedent'
+
+# Аннотации `linux-agent.sgroups.io/*`
+
+Аннотации правил — это сигналы для агента, которые **не меняют логику матча**, но добавляют
+nft-модификаторы в готовую строку. Все они живут в `metadata.annotations` правила
+(`/v1/rules/upsert`).
+
+## Поддерживаемые ключи
+
+| Аннотация | Тип | Эффект в nft |
+|---|---|---|
+| `linux-agent.sgroups.io/trace` | `"true"` / `"false"` | вставка `meta nftrace set 1` в строку |
+| `linux-agent.sgroups.io/logs` | `"true"` / `"false"` | вставка `log level debug` в строку |
+| `linux-agent.sgroups.io/priority` | целое число (строкой) | задает порядок строк внутри per-AG цепочки |
+
+Любая отсутствующая или равная `"false"` аннотация модификатор не вставляет.
+
+## Куда они попадают в строке
+
+Базовый пример для всех табов ниже:
+
+- local: `prod/web` (AG)
+- remote: `prod/db` (AG)
+- traffic: `INGRESS`, action: `ALLOW`
+- транспорт: TCP/80
+
+Меняется только содержимое `metadata.annotations` — посмотрите, как это отражается
+в nft-строке. `accept`/`drop` всегда стоит **последним токеном** строки.
+
+<Tabs groupId="annotations-set">
+  <TabItem value="none" label="нет аннотаций" default>
+
+```bash
+curl -X POST http://localhost:9006/v1/rules/upsert \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "rules": [
+      {
+        "metadata": {
+          "name": "web-from-db-plain",
+          "namespace": "prod"
+        },
+        "spec": {
+          "action": "ALLOW",
+          "session": {
+            "traffic": "INGRESS"
+          },
+          "endpoints": {
+            "local": {
+              "name": "web",
+              "namespace": "prod",
+              "type": "ADDRESS_GROUP"
+            },
+            "remote": {
+              "name": "db",
+              "namespace": "prod",
+              "type": "ADDRESS_GROUP"
+            }
+          },
+          "transport": {
+            "protocol": "TCP",
+            "IPv": "IPV4",
+            "entries": [
+              {
+                "description": "HTTP",
+                "ports": "80"
+              }
+            ]
+          }
+        }
+      }
+    ]
+  }'
+```
+
+```nft
+chain INGRESS-ag-prod/web {
+    ip saddr @NetIPv4-addressGroup-prod/db tcp dport 80 counter accept
+}
+```
+
+  </TabItem>
+  <TabItem value="trace" label="trace=true">
+
+```bash
+curl -X POST http://localhost:9006/v1/rules/upsert \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "rules": [
+      {
+        "metadata": {
+          "name": "web-from-db-traced",
+          "namespace": "prod",
+          "annotations": {
+            "linux-agent.sgroups.io/trace": "true"
+          }
+        },
+        "spec": {
+          "action": "ALLOW",
+          "session": {
+            "traffic": "INGRESS"
+          },
+          "endpoints": {
+            "local": {
+              "name": "web",
+              "namespace": "prod",
+              "type": "ADDRESS_GROUP"
+            },
+            "remote": {
+              "name": "db",
+              "namespace": "prod",
+              "type": "ADDRESS_GROUP"
+            }
+          },
+          "transport": {
+            "protocol": "TCP",
+            "IPv": "IPV4",
+            "entries": [
+              {
+                "description": "HTTP",
+                "ports": "80"
+              }
+            ]
+          }
+        }
+      }
+    ]
+  }'
+```
+
+```nft
+chain INGRESS-ag-prod/web {
+    ip saddr @NetIPv4-addressGroup-prod/db tcp dport 80 meta nftrace set 1 counter accept
+}
+```
+
+`meta nftrace set 1` помечает пакеты для `nft monitor trace`.
+
+  </TabItem>
+  <TabItem value="logs" label="logs=true">
+
+```bash
+curl -X POST http://localhost:9006/v1/rules/upsert \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "rules": [
+      {
+        "metadata": {
+          "name": "web-from-db-logged",
+          "namespace": "prod",
+          "annotations": {
+            "linux-agent.sgroups.io/logs": "true"
+          }
+        },
+        "spec": {
+          "action": "ALLOW",
+          "session": {
+            "traffic": "INGRESS"
+          },
+          "endpoints": {
+            "local": {
+              "name": "web",
+              "namespace": "prod",
+              "type": "ADDRESS_GROUP"
+            },
+            "remote": {
+              "name": "db",
+              "namespace": "prod",
+              "type": "ADDRESS_GROUP"
+            }
+          },
+          "transport": {
+            "protocol": "TCP",
+            "IPv": "IPV4",
+            "entries": [
+              {
+                "description": "HTTP",
+                "ports": "80"
+              }
+            ]
+          }
+        }
+      }
+    ]
+  }'
+```
+
+```nft
+chain INGRESS-ag-prod/web {
+    ip saddr @NetIPv4-addressGroup-prod/db tcp dport 80 counter log level debug accept
+}
+```
+
+`log level debug` пишет matched-пакеты в kernel log (`dmesg` / `journalctl -k`).
+
+  </TabItem>
+  <TabItem value="both" label="trace + logs">
+
+```bash
+curl -X POST http://localhost:9006/v1/rules/upsert \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "rules": [
+      {
+        "metadata": {
+          "name": "web-from-db-traced-logged",
+          "namespace": "prod",
+          "annotations": {
+            "linux-agent.sgroups.io/trace": "true",
+            "linux-agent.sgroups.io/logs": "true"
+          }
+        },
+        "spec": {
+          "action": "ALLOW",
+          "session": {
+            "traffic": "INGRESS"
+          },
+          "endpoints": {
+            "local": {
+              "name": "web",
+              "namespace": "prod",
+              "type": "ADDRESS_GROUP"
+            },
+            "remote": {
+              "name": "db",
+              "namespace": "prod",
+              "type": "ADDRESS_GROUP"
+            }
+          },
+          "transport": {
+            "protocol": "TCP",
+            "IPv": "IPV4",
+            "entries": [
+              {
+                "description": "HTTP",
+                "ports": "80"
+              }
+            ]
+          }
+        }
+      }
+    ]
+  }'
+```
+
+```nft
+chain INGRESS-ag-prod/web {
+    ip saddr @NetIPv4-addressGroup-prod/db tcp dport 80 meta nftrace set 1 counter log level debug accept
+}
+```
+
+  </TabItem>
+</Tabs>
+
+## priority — порядок строк
+
+`priority` управляет позицией строки в per-AG цепочке. Чем меньше число — тем выше
+строка. Агент сортирует строки в цепочке по возрастанию priority. Если две строки
+имеют одинаковый priority — порядок не детерминирован.
+
+:::caution Инверсия priority — баг
+Если в одной per-AG цепочке строка с `priority=10100` оказалась **выше** строки с
+`priority=10050` — это инверсия. Это значит, что агент применил правила в
+неправильном порядке либо неправильно их пересортировал.
+:::
+
+## Что НЕ влияет на nft-строку
+
+- `linux-agent.sgroups.io/priority` сам по себе **не добавляет токенов в строку** —
+  только меняет её позицию в цепочке.
+- Аннотация `all` (`logs+trace+priority`) с точки зрения nft-модификаторов
+  эквивалентна сочетанию `logs+trace`.
+
+## Просмотр трейса и логов
+
+При `trace=true` пакеты, попавшие в правило, можно смотреть через nft-трейсер:
+
+```bash
+sudo nft monitor trace
+```
+
+При `logs=true` правило пишет debug-уровень в kernel log:
+
+```bash
+sudo dmesg -w | grep sgroups
+# или через journald
+journalctl -kf --grep sgroups
+```

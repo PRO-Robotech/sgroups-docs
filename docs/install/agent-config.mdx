@@ -1,0 +1,393 @@
+---
+id: agent-config
+sidebar_position: 2
+title: Конфигурация
+---
+
+import CodeBlock from '@theme/CodeBlock'
+import dedent from 'ts-dedent'
+
+# Конфигурация sg-agent
+
+`sg-agent` использует `corlib/plain-config`. Источники с приоритетом:
+
+1. **Аргументы командной строки** — `--config <path>` указывает YAML-файл
+2. **Переменные окружения** с префиксом `NFT_` (см. ниже)
+3. **YAML-файл**
+
+Дефис `-` и слеш `/` в ключах превращаются в `_` для env-переменных:
+ключ `extapi/svc/sgroups/sync-status/interval` →
+`NFT_EXTAPI_SVC_SGROUPS_SYNC_STATUS_INTERVAL`.
+
+## Полный пример YAML
+
+<CodeBlock language="yaml">
+  {dedent`
+    hostinfo:
+      name: node-01
+      namespace: prod
+
+    exit-on-success: false
+    continue-on-failure: true
+    continue-after-timeout: 10s
+
+    netns: ""
+    def-policy-accept: false
+
+    netlink:
+      watcher:
+        linger: 10s
+
+    fqdn-rules:
+      strategy: dns
+
+    dns:
+      nameservers: ["8.8.8.8"]
+      proto: udp
+      port: 53
+      retries: 3
+      retry-timeout: 1s
+      dial-duration: 3s
+      read-duration: 5s
+      write-duration: 5s
+
+    extapi:
+      svc:
+        def-daial-duration: 10s
+        sgroups:
+          address: tcp://sg-server:9006
+          dial-duration: 3s
+          sync-status:
+            interval: 10s
+            push: false
+          use-json-codec: false
+          authn:
+            type: none
+
+    telemetry:
+      endpoint: 127.0.0.1:5000
+      nft-collector:
+        min-frequency: 10s
+      metrics:
+        enable: true
+      healthcheck:
+        enable: true
+      profile:
+        enable: true
+
+    logger:
+      level: INFO
+
+    graceful-shutdown: 10s
+  `}
+</CodeBlock>
+
+## Параметры: hostinfo
+
+Идентификатор узла, по которому агент находит свой ресурс `Host` на сервере.
+**Обязательные** параметры — без них агент не найдёт себя в реестре.
+
+<table>
+  <thead>
+    <tr>
+      <th>Ключ YAML</th>
+      <th>Env</th>
+      <th>Default</th>
+      <th>Описание</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><code>hostinfo/name</code></td>
+      <td><code>NFT_HOSTINFO_NAME</code></td>
+      <td>—</td>
+      <td>Имя ресурса <code>Host</code> на сервере</td>
+    </tr>
+    <tr>
+      <td><code>hostinfo/namespace</code></td>
+      <td><code>NFT_HOSTINFO_NAMESPACE</code></td>
+      <td>—</td>
+      <td>Namespace ресурса <code>Host</code></td>
+    </tr>
+  </tbody>
+</table>
+
+## Параметры: подключение к серверу
+
+<table>
+  <thead>
+    <tr>
+      <th>Ключ YAML</th>
+      <th>Env</th>
+      <th>Default</th>
+      <th>Описание</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><code>extapi/svc/sgroups/address</code></td>
+      <td><code>NFT_EXTAPI_SVC_SGROUPS_ADDRESS</code></td>
+      <td><code>tcp://127.0.0.1:9000</code></td>
+      <td>Адрес <code>sg-server</code> (gRPC)</td>
+    </tr>
+    <tr>
+      <td><code>extapi/svc/sgroups/dial-duration</code></td>
+      <td><code>NFT_EXTAPI_SVC_SGROUPS_DIAL_DURATION</code></td>
+      <td><code>10s</code></td>
+      <td>Таймаут на установку соединения</td>
+    </tr>
+    <tr>
+      <td><code>extapi/svc/sgroups/sync-status/interval</code></td>
+      <td><code>NFT_EXTAPI_SVC_SGROUPS_SYNC_STATUS_INTERVAL</code></td>
+      <td><code>10s</code></td>
+      <td>Окно дебаунса серверных событий (см. <a href="/agent/lifecycle">Жизненный цикл</a>)</td>
+    </tr>
+    <tr>
+      <td><code>extapi/svc/sgroups/sync-status/push</code></td>
+      <td><code>NFT_EXTAPI_SVC_SGROUPS_SYNC_STATUS_PUSH</code></td>
+      <td><code>false</code></td>
+      <td>Push-модель уведомлений вместо pull</td>
+    </tr>
+    <tr>
+      <td><code>extapi/svc/sgroups/use-json-codec</code></td>
+      <td><code>NFT_EXTAPI_SVC_SGROUPS_USE_JSON_CODEC</code></td>
+      <td><code>false</code></td>
+      <td>JSON вместо protobuf в gRPC</td>
+    </tr>
+  </tbody>
+</table>
+
+## Параметры: authn (mTLS до сервера)
+
+<table>
+  <thead>
+    <tr>
+      <th>Ключ YAML</th>
+      <th>Env</th>
+      <th>Default</th>
+      <th>Описание</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><code>extapi/svc/sgroups/authn/type</code></td>
+      <td><code>NFT_EXTAPI_SVC_SGROUPS_AUTHN_TYPE</code></td>
+      <td><code>none</code></td>
+      <td><code>none</code> или <code>tls</code></td>
+    </tr>
+    <tr>
+      <td><code>extapi/svc/sgroups/authn/tls/cert-file</code></td>
+      <td>... <code>_CERT_FILE</code></td>
+      <td>—</td>
+      <td>Клиентский сертификат</td>
+    </tr>
+    <tr>
+      <td><code>extapi/svc/sgroups/authn/tls/key-file</code></td>
+      <td>... <code>_KEY_FILE</code></td>
+      <td>—</td>
+      <td>Клиентский приватный ключ</td>
+    </tr>
+    <tr>
+      <td><code>extapi/svc/sgroups/authn/tls/server/verify</code></td>
+      <td>... <code>_SERVER_VERIFY</code></td>
+      <td><code>false</code></td>
+      <td>Проверять серверный сертификат</td>
+    </tr>
+    <tr>
+      <td><code>extapi/svc/sgroups/authn/tls/server/ca-files</code></td>
+      <td>... <code>_SERVER_CA_FILES</code></td>
+      <td>—</td>
+      <td>CA для проверки сервера</td>
+    </tr>
+  </tbody>
+</table>
+
+## Параметры: DNS
+
+<table>
+  <thead>
+    <tr>
+      <th>Ключ YAML</th>
+      <th>Env</th>
+      <th>Default</th>
+      <th>Описание</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><code>dns/nameservers</code></td>
+      <td><code>NFT_DNS_NAMESERVERS</code></td>
+      <td><code>["8.8.8.8"]</code></td>
+      <td>Список IP DNS-серверов для FQDN-правил</td>
+    </tr>
+    <tr>
+      <td><code>dns/proto</code></td>
+      <td><code>NFT_DNS_PROTO</code></td>
+      <td><code>udp</code></td>
+      <td><code>udp</code> или <code>tcp</code></td>
+    </tr>
+    <tr>
+      <td><code>dns/port</code></td>
+      <td><code>NFT_DNS_PORT</code></td>
+      <td><code>53</code></td>
+      <td>Порт DNS-сервера</td>
+    </tr>
+    <tr>
+      <td><code>dns/retries</code></td>
+      <td><code>NFT_DNS_RETRIES</code></td>
+      <td><code>3</code></td>
+      <td>Число повторов при ошибке</td>
+    </tr>
+    <tr>
+      <td><code>dns/retry-timeout</code></td>
+      <td><code>NFT_DNS_RETRY_TIMEOUT</code></td>
+      <td><code>1s</code></td>
+      <td>Пауза между ретраями</td>
+    </tr>
+    <tr>
+      <td><code>dns/dial-duration</code></td>
+      <td><code>NFT_DNS_DIAL_DURATION</code></td>
+      <td><code>3s</code></td>
+      <td>Таймаут установки соединения</td>
+    </tr>
+    <tr>
+      <td><code>dns/read-duration</code> / <code>dns/write-duration</code></td>
+      <td>... <code>_READ/WRITE_DURATION</code></td>
+      <td><code>5s</code></td>
+      <td>Таймауты чтения/записи</td>
+    </tr>
+  </tbody>
+</table>
+
+## Параметры: netlink, политики, режимы
+
+<table>
+  <thead>
+    <tr>
+      <th>Ключ YAML</th>
+      <th>Env</th>
+      <th>Default</th>
+      <th>Описание</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><code>netns</code></td>
+      <td><code>NFT_NETNS</code></td>
+      <td>—</td>
+      <td>Имя network namespace, в котором работать (пусто = host)</td>
+    </tr>
+    <tr>
+      <td><code>def-policy-accept</code></td>
+      <td><code>NFT_DEF_POLICY_ACCEPT</code></td>
+      <td><code>false</code></td>
+      <td><code>true</code> — ставить policy <code>accept</code> на MAIN-цепочки вместо <code>drop</code></td>
+    </tr>
+    <tr>
+      <td><code>netlink/watcher/linger</code></td>
+      <td><code>NFT_NETLINK_WATCHER_LINGER</code></td>
+      <td><code>10s</code></td>
+      <td>Окно дебаунса netlink-сообщений</td>
+    </tr>
+    <tr>
+      <td><code>fqdn-rules/strategy</code></td>
+      <td><code>NFT_FQDN_RULES_STRATEGY</code></td>
+      <td><code>dns</code></td>
+      <td>Способ резолва FQDN (поддерживается только <code>dns</code>)</td>
+    </tr>
+    <tr>
+      <td><code>continue-on-failure</code></td>
+      <td><code>NFT_CONTINUE_ON_FAILURE</code></td>
+      <td><code>true</code></td>
+      <td>При фатальной ошибке перезапускать контуры (см. <a href="/agent/lifecycle">Жизненный цикл</a>)</td>
+    </tr>
+    <tr>
+      <td><code>continue-after-timeout</code></td>
+      <td><code>NFT_CONTINUE_AFTER_TIMEOUT</code></td>
+      <td><code>10s</code></td>
+      <td>Пауза перед перезапуском</td>
+    </tr>
+    <tr>
+      <td><code>exit-on-success</code></td>
+      <td><code>NFT_EXIT_ON_SUCCESS</code></td>
+      <td><code>false</code></td>
+      <td>Выйти после первого успешного цикла (для тестов/CI)</td>
+    </tr>
+    <tr>
+      <td><code>graceful-shutdown</code></td>
+      <td><code>NFT_GRACEFUL_SHUTDOWN</code></td>
+      <td><code>10s</code></td>
+      <td>Период graceful-завершения</td>
+    </tr>
+    <tr>
+      <td><code>logger/level</code></td>
+      <td><code>NFT_LOGGER_LEVEL</code></td>
+      <td><code>DEBUG</code></td>
+      <td>DEBUG / INFO / WARN / ERROR</td>
+    </tr>
+  </tbody>
+</table>
+
+## Параметры: телеметрия
+
+<table>
+  <thead>
+    <tr>
+      <th>Ключ YAML</th>
+      <th>Env</th>
+      <th>Default</th>
+      <th>Описание</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><code>telemetry/endpoint</code></td>
+      <td><code>NFT_TELEMETRY_ENDPOINT</code></td>
+      <td><code>127.0.0.1:5000</code></td>
+      <td>Локальный HTTP-сервер метрик / pprof / healthcheck</td>
+    </tr>
+    <tr>
+      <td><code>telemetry/metrics/enable</code></td>
+      <td><code>NFT_TELEMETRY_METRICS_ENABLE</code></td>
+      <td><code>true</code></td>
+      <td>Эндпоинт <code>/metrics</code> Prometheus</td>
+    </tr>
+    <tr>
+      <td><code>telemetry/healthcheck/enable</code></td>
+      <td><code>NFT_TELEMETRY_HEALTHCHECK_ENABLE</code></td>
+      <td><code>true</code></td>
+      <td>HTTP-healthcheck</td>
+    </tr>
+    <tr>
+      <td><code>telemetry/profile/enable</code></td>
+      <td><code>NFT_TELEMETRY_PROFILE_ENABLE</code></td>
+      <td><code>true</code></td>
+      <td><code>/debug/pprof/*</code></td>
+    </tr>
+    <tr>
+      <td><code>telemetry/nft-collector/min-frequency</code></td>
+      <td><code>NFT_TELEMETRY_NFT_COLLECTOR_MIN_FREQUENCY</code></td>
+      <td><code>10s</code></td>
+      <td>Мин. период чтения nft-метрик</td>
+    </tr>
+  </tbody>
+</table>
+
+## Переменные окружения
+
+Все ключи доступны через env с префиксом `NFT_`:
+
+<CodeBlock language="bash">
+  {dedent`
+    export NFT_HOSTINFO_NAME="node-01"
+    export NFT_HOSTINFO_NAMESPACE="prod"
+    export NFT_EXTAPI_SVC_SGROUPS_ADDRESS="tcp://sg-server:9006"
+    export NFT_LOGGER_LEVEL="INFO"
+  `}
+</CodeBlock>
+
+:::tip
+Минимальный набор для production — `hostinfo/{name,namespace}` +
+`extapi/svc/sgroups/address`. Остальное в большинстве сценариев работает на
+дефолтах.
+:::

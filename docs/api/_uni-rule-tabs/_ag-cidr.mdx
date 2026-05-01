@@ -85,7 +85,7 @@ import dedent from 'ts-dedent'
       <td>{DICTIONARY.protocol.short}</td>
     </tr>
     <tr>
-      <td><code>spec.transport.ipv</code></td>
+      <td><code>spec.transport.IPv</code></td>
       <td>да</td>
       <td><code>{TYPES.enumIpv}</code></td>
       <td>{DICTIONARY.ipv.short}</td>
@@ -185,13 +185,18 @@ import dedent from 'ts-dedent'
       "rules": [
         {
           "metadata": {
-            "uid": "b8c9d0e1-f2a3-4567-1234-56789abcdef0",
+            "uid": "ef30ca33-ad8a-499e-89f1-3338cf9d7593",
             "name": "allow-web-to-internal-net",
             "namespace": "production",
-            "creationTimestamp": "2025-01-15T11:50:00Z",
-            "resourceVersion": "1"
+            "labels": {},
+            "annotations": {},
+            "creationTimestamp": "2026-04-25T21:13:10.640924Z",
+            "resourceVersion": "191"
           },
           "spec": {
+            "displayName": "",
+            "comment": "",
+            "description": "",
             "action": "ALLOW",
             "session": {
               "traffic": "EGRESS"
@@ -200,11 +205,17 @@ import dedent from 'ts-dedent'
               "local": {
                 "name": "web-servers",
                 "namespace": "production",
-                "type": "ADDRESS_GROUP"
+                "type": "ADDRESS_GROUP",
+                "labels": {
+                  "tier": "frontend"
+                }
               },
               "remote": {
+                "name": "",
+                "namespace": "",
                 "type": "CIDR",
-                "value": "10.0.0.0/8"
+                "value": "10.0.0.0/8",
+                "labels": {}
               }
             },
             "transport": {
@@ -213,7 +224,9 @@ import dedent from 'ts-dedent'
               "entries": [
                 {
                   "description": "HTTP",
-                  "ports": "80,443"
+                  "comment": "",
+                  "ports": "80,443",
+                  "types": []
                 }
               ]
             }

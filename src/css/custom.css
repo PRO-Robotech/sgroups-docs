@@ -33,14 +33,50 @@ article h2 {
   margin-top: 2rem;
 }
 
+/* Таблицы: фитят ширину контента, при переполнении — горизонтальный скролл.
+   Длинные code-значения (env-переменные, ключи YAML) переносятся по словам. */
 .markdown table {
-  display: table;
-  width: 100%;
+  display: block;
+  width: max-content;
+  max-width: 100%;
+  overflow-x: auto;
+  table-layout: auto;
 }
 
 .markdown table th,
 .markdown table td {
-  padding: 0.75rem 1rem;
+  padding: 0.5rem 0.75rem;
+  word-break: normal;
+  overflow-wrap: anywhere;
+}
+
+.markdown table code {
+  word-break: break-word;
+  overflow-wrap: anywhere;
+  white-space: normal;
+}
+
+/* Сброс для таблиц внутри стилизованных контейнеров —
+   ApiOperation, error-codes-block, validation-block задают свои
+   границы / отступы / ширину. */
+.markdown .api-operation table,
+.markdown .error-codes-block table,
+.markdown .validation-block table {
+  display: table;
+  width: 100%;
+  max-width: 100%;
+  overflow-x: visible;
+  margin: 0;
+}
+
+.markdown .api-operation table th,
+.markdown .api-operation table td {
+  padding: 0.5rem 0.75rem;
+}
+
+.markdown .error-codes-block table th,
+.markdown .error-codes-block table td {
+  padding: 0.35rem 0.75rem;
 }
 
 footer {
@@ -71,6 +107,16 @@ footer {
 .api-method--delete {
   background: #f93e3e;
   color: #fff;
+}
+
+.api-method--put {
+  background: #fca130;
+  color: #1b1b1d;
+}
+
+.api-method--patch {
+  background: #50e3c2;
+  color: #1b1b1d;
 }
 
 .api-endpoint {
@@ -141,6 +187,20 @@ footer {
 
 .validation-block summary:hover {
   color: var(--ifm-color-primary);
+}
+
+.validation-block__source {
+  display: inline-block;
+  margin-right: 0.4rem;
+  padding: 0 0.4rem;
+  border-radius: 4px;
+  font-size: 0.7rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  background: var(--ifm-color-primary-darkest);
+  color: #fff;
+  vertical-align: middle;
 }
 
 .validation-block ul {

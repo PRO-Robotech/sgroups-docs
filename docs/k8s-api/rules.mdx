@@ -1,0 +1,533 @@
+---
+id: rules
+sidebar_position: 10
+title: Rules
+---
+
+import { TYPES } from '@site/src/constants/types'
+import { ApiOperation } from '@site/src/components/commonBlocks/ApiOperation'
+import { K8sCodes } from '@site/src/components/commonBlocks/K8sCodes'
+import { K8sValidation } from '@site/src/components/commonBlocks/K8sValidation'
+import { RESTRICTIONS } from '@site/src/constants/restrictions'
+import Tabs from '@theme/Tabs'
+import TabItem from '@theme/TabItem'
+import CodeBlock from '@theme/CodeBlock'
+import dedent from 'ts-dedent'
+
+# Rules
+
+`Rule` — правило firewall. Эквивалент `UniRule` из REST API sg-server. Описывает разрешённый/запрещённый трафик между двумя `endpoints` (AG / Service / FQDN / CIDR).
+
+---
+
+:::info Валидация и ошибки
+Все валидации `spec` производятся на уровне `sg-server` (gRPC-бэкенд) — k8s-сервер
+лишь проксирует запрос. Формат ошибочных ответов и таблица кодов — в
+[Обзоре API → Коды ошибок](/k8s-api/overview#коды-ошибок).
+:::
+
+
+## List
+
+<ApiOperation method="GET" endpoint="/apis/sgroups.io/v1alpha1/namespaces/{namespace}/rules">
+
+Получить список ресурсов. Доступны два scope: по namespace и по всему кластеру.
+
+<Tabs groupId="scope">
+  <TabItem value="namespace" label="В namespace" default>
+
+<CodeBlock language="bash">
+  {dedent`
+    kubectl get rules -n production
+  `}
+</CodeBlock>
+
+  </TabItem>
+  <TabItem value="cluster" label="По всему кластеру">
+
+<CodeBlock language="bash">
+  {dedent`
+    kubectl get rules -A
+  `}
+</CodeBlock>
+
+  </TabItem>
+</Tabs>
+
+#### Пример ответа
+
+<CodeBlock language="json">
+  {dedent`
+    {
+      "kind": "RuleList",
+      "apiVersion": "sgroups.io/v1alpha1",
+      "items": [
+        {
+          "kind": "Rule",
+          "metadata": {
+            "name": "allow-web-to-db",
+            "namespace": "production",
+            "resourceVersion": "1200",
+            "annotations": {
+              "linux-agent.sgroups.io/priority": "1000"
+            }
+          },
+          "spec": {
+            "action": "Allow",
+            "session": {
+              "traffic": "Egress"
+            },
+            "endpoints": {
+              "local": {
+                "name": "web",
+                "namespace": "production",
+                "type": "AddressGroup"
+              },
+              "remote": {
+                "name": "db",
+                "namespace": "production",
+                "type": "AddressGroup"
+              }
+            },
+            "transport": {
+              "protocol": "TCP",
+              "IPv": "IPv4",
+              "entries": [
+                {
+                  "description": "PostgreSQL",
+                  "ports": "5432"
+                }
+              ]
+            }
+          }
+        }
+      ]
+    }
+    `}
+</CodeBlock>
+
+
+<K8sValidation op="list" />
+
+<K8sCodes codes={['unauthorized', 'forbidden', 'internal', 'serviceUnavailable']} />
+
+</ApiOperation>
+
+---
+
+## Create
+
+<ApiOperation method="POST" endpoint="/apis/sgroups.io/v1alpha1/namespaces/{namespace}/rules">
+
+Создать новый объект. Имя должно быть уникальным в namespace.
+
+#### Тело запроса
+
+<table>
+  <thead>
+    <tr>
+      <th>Параметр</th>
+      <th>Обязательность</th>
+      <th>Тип</th>
+      <th>Описание</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><code>metadata.name</code></td>
+      <td>да</td>
+      <td><code>{TYPES.string}</code></td>
+      <td>Имя ресурса</td>
+    </tr>
+    <tr>
+      <td><code>metadata.namespace</code></td>
+      <td>да</td>
+      <td><code>{TYPES.string}</code></td>
+      <td>Namespace (имя `Tenant`)</td>
+    </tr>
+    <tr>
+      <td><code>metadata.labels</code></td>
+      <td>нет</td>
+      <td><code>{TYPES.mapStringString}</code></td>
+      <td>Лейблы</td>
+    </tr>
+    <tr>
+      <td><code>metadata.annotations</code></td>
+      <td>нет</td>
+      <td><code>{TYPES.mapStringString}</code></td>
+      <td>Аннотации</td>
+    </tr>
+    <tr>
+      <td><code>spec.displayName</code></td>
+      <td>нет</td>
+      <td><code>{TYPES.string}</code></td>
+      <td>Отображаемое имя</td>
+    </tr>
+    <tr>
+      <td><code>spec.comment</code></td>
+      <td>нет</td>
+      <td><code>{TYPES.string}</code></td>
+      <td>Комментарий</td>
+    </tr>
+    <tr>
+      <td><code>spec.description</code></td>
+      <td>нет</td>
+      <td><code>{TYPES.string}</code></td>
+      <td>Описание</td>
+    </tr>
+    <tr>
+      <td><code>spec.action</code></td>
+      <td>да</td>
+      <td><code>{TYPES.enumActionK8s}</code></td>
+      <td>Действие</td>
+    </tr>
+    <tr>
+      <td><code>spec.session.traffic</code></td>
+      <td>нет</td>
+      <td><code>{TYPES.enumTrafficK8s}</code></td>
+      <td>Направление трафика</td>
+    </tr>
+    <tr>
+      <td><code>spec.endpoints.local</code></td>
+      <td>да</td>
+      <td><code>{TYPES.ruleEndpoint}</code></td>
+      <td>Локальная сторона</td>
+    </tr>
+    <tr>
+      <td><code>spec.endpoints.remote</code></td>
+      <td>нет</td>
+      <td><code>{TYPES.ruleEndpoint}</code></td>
+      <td>Удалённая сторона (отсутствует для AG → ICMP)</td>
+    </tr>
+    <tr>
+      <td><code>endpoints.*.name</code></td>
+      <td>нет</td>
+      <td><code>{TYPES.string}</code></td>
+      <td>Имя ресурса (для типов AG/Service)</td>
+    </tr>
+    <tr>
+      <td><code>endpoints.*.namespace</code></td>
+      <td>нет</td>
+      <td><code>{TYPES.string}</code></td>
+      <td>Namespace ресурса</td>
+    </tr>
+    <tr>
+      <td><code>endpoints.*.type</code></td>
+      <td>да</td>
+      <td><code>{TYPES.enumEndpointTypeK8s}</code></td>
+      <td>Тип endpoint</td>
+    </tr>
+    <tr>
+      <td><code>endpoints.*.value</code></td>
+      <td>нет</td>
+      <td><code>{TYPES.string}</code></td>
+      <td>Значение для FQDN или CIDR</td>
+    </tr>
+    <tr>
+      <td><code>spec.transport</code></td>
+      <td>зависит от типа</td>
+      <td><code>{TYPES.ruleTransport}</code></td>
+      <td>Транспорт; для `Service → Service` и `Service → CIDR / INGRESS` не передаётся</td>
+    </tr>
+  </tbody>
+</table>
+
+#### Пример запроса
+
+<CodeBlock language="bash">
+  {dedent`
+    kubectl apply -f - <<EOF
+    apiVersion: sgroups.io/v1alpha1
+    kind: Rule
+    metadata:
+      name: allow-web-to-db
+      namespace: production
+      annotations:
+        linux-agent.sgroups.io/priority: "1000"
+        linux-agent.sgroups.io/logs: "true"
+    spec:
+      action: Allow
+      session:
+        traffic: Egress
+      endpoints:
+        local:
+          name: web
+          namespace: production
+          type: AddressGroup
+        remote:
+          name: db
+          namespace: production
+          type: AddressGroup
+      transport:
+        protocol: TCP
+        IPv: IPv4
+        entries:
+          - description: PostgreSQL
+            ports: "5432"
+    EOF
+  `}
+</CodeBlock>
+
+#### Пример ответа
+
+<CodeBlock language="json">
+  {dedent`
+    {
+      "kind": "Rule",
+      "apiVersion": "sgroups.io/v1alpha1",
+      "metadata": {
+        "name": "allow-web-to-db",
+        "namespace": "production",
+        "resourceVersion": "1201",
+        "annotations": {
+          "linux-agent.sgroups.io/priority": "1000",
+          "linux-agent.sgroups.io/logs": "true"
+        }
+      },
+      "spec": {
+        "action": "Allow",
+        "session": {
+          "traffic": "Egress"
+        },
+        "endpoints": {
+          "local": {
+            "name": "web",
+            "namespace": "production",
+            "type": "AddressGroup"
+          },
+          "remote": {
+            "name": "db",
+            "namespace": "production",
+            "type": "AddressGroup"
+          }
+        },
+        "transport": {
+          "protocol": "TCP",
+          "IPv": "IPv4",
+          "entries": [
+            {
+              "description": "PostgreSQL",
+              "ports": "5432"
+            }
+          ]
+        }
+      }
+    }
+    `}
+</CodeBlock>
+
+
+<K8sValidation op="create" serverItems={[
+  { label: 'metadata / spec', rules: RESTRICTIONS.metadataRequired },
+  { label: 'metadata.name', rules: RESTRICTIONS.name },
+  { label: 'metadata.namespace', rules: RESTRICTIONS.namespace },
+  { label: 'spec.displayName', rules: RESTRICTIONS.displayName },
+  { label: 'spec.comment', rules: RESTRICTIONS.comment },
+  { label: 'spec.description', rules: RESTRICTIONS.description },
+  { label: 'spec.action', rules: RESTRICTIONS.action },
+  { label: 'spec.session.traffic', rules: RESTRICTIONS.traffic },
+  { label: 'spec.endpoints.local.type', rules: RESTRICTIONS.endpointType },
+  { label: 'spec.endpoints.remote.type', rules: RESTRICTIONS.endpointType },
+  { label: 'spec.transport.protocol', rules: RESTRICTIONS.protocol },
+  { label: 'spec.transport.IPv', rules: RESTRICTIONS.ipv },
+  { label: 'transport.entries[].ports', rules: RESTRICTIONS.ports },
+  { label: 'transport.entries[].types', rules: RESTRICTIONS.icmpType },
+]} />
+
+<K8sCodes codes={['badRequest', 'unauthorized', 'forbidden', 'alreadyExists', 'invalid', 'internal']} />
+
+</ApiOperation>
+
+---
+
+## Get
+
+<ApiOperation method="GET" endpoint="/apis/sgroups.io/v1alpha1/namespaces/{namespace}/rules/{name}">
+
+Получить один объект по имени.
+
+#### Пример запроса
+
+<CodeBlock language="bash">
+  {dedent`
+    kubectl get rule allow-web-to-db -n production -o yaml
+  `}
+</CodeBlock>
+
+#### Пример ответа
+
+<CodeBlock language="json">
+  {dedent`
+    {
+      "kind": "Rule",
+      "apiVersion": "sgroups.io/v1alpha1",
+      "metadata": {
+        "name": "allow-web-to-db",
+        "namespace": "production",
+        "resourceVersion": "1201",
+        "annotations": {
+          "linux-agent.sgroups.io/priority": "1000",
+          "linux-agent.sgroups.io/logs": "true"
+        }
+      },
+      "spec": {
+        "action": "Allow",
+        "session": {
+          "traffic": "Egress"
+        },
+        "endpoints": {
+          "local": {
+            "name": "web",
+            "namespace": "production",
+            "type": "AddressGroup"
+          },
+          "remote": {
+            "name": "db",
+            "namespace": "production",
+            "type": "AddressGroup"
+          }
+        },
+        "transport": {
+          "protocol": "TCP",
+          "IPv": "IPv4",
+          "entries": [
+            {
+              "description": "PostgreSQL",
+              "ports": "5432"
+            }
+          ]
+        }
+      }
+    }
+    `}
+</CodeBlock>
+
+
+<K8sValidation op="get" />
+
+<K8sCodes codes={['unauthorized', 'forbidden', 'notFound', 'internal']} />
+
+</ApiOperation>
+
+---
+
+## Update (PUT)
+
+<ApiOperation method="PUT" endpoint="/apis/sgroups.io/v1alpha1/namespaces/{namespace}/rules/{name}">
+
+Полная замена объекта. Поле `metadata.resourceVersion` обязательно — оно защищает от race-condition (optimistic concurrency).
+
+#### Пример запроса
+
+<CodeBlock language="bash">
+  {dedent`
+    # kubectl edit делает GET → правки → PUT под капотом
+    kubectl edit rule allow-web-to-db -n production
+  `}
+</CodeBlock>
+
+
+<K8sValidation op="put" serverItems={[
+  { label: 'metadata / spec', rules: RESTRICTIONS.metadataRequired },
+  { label: 'metadata.name', rules: RESTRICTIONS.name },
+  { label: 'metadata.namespace', rules: RESTRICTIONS.namespace },
+  { label: 'spec.displayName', rules: RESTRICTIONS.displayName },
+  { label: 'spec.comment', rules: RESTRICTIONS.comment },
+  { label: 'spec.description', rules: RESTRICTIONS.description },
+  { label: 'spec.action', rules: RESTRICTIONS.action },
+  { label: 'spec.session.traffic', rules: RESTRICTIONS.traffic },
+  { label: 'spec.endpoints.local.type', rules: RESTRICTIONS.endpointType },
+  { label: 'spec.endpoints.remote.type', rules: RESTRICTIONS.endpointType },
+  { label: 'spec.transport.protocol', rules: RESTRICTIONS.protocol },
+  { label: 'spec.transport.IPv', rules: RESTRICTIONS.ipv },
+  { label: 'transport.entries[].ports', rules: RESTRICTIONS.ports },
+  { label: 'transport.entries[].types', rules: RESTRICTIONS.icmpType },
+]} />
+
+<K8sCodes codes={['badRequest', 'unauthorized', 'forbidden', 'notFound', 'conflict', 'invalid', 'internal']} />
+
+</ApiOperation>
+
+---
+
+## Patch
+
+<ApiOperation method="PATCH" endpoint="/apis/sgroups.io/v1alpha1/namespaces/{namespace}/rules/{name}">
+
+Частичное обновление. Поддерживаемые `Content-Type`:
+
+- `application/strategic-merge-patch+json` — стандартный k8s-патч
+- `application/merge-patch+json` — RFC 7396
+- `application/json-patch+json` — RFC 6902
+
+#### Пример запроса
+
+<CodeBlock language="bash">
+  {dedent`
+    kubectl patch rule allow-web-to-db -n production --type=merge \\
+      -p '{"spec":{"action":"Deny"}}'
+  `}
+</CodeBlock>
+
+
+<K8sValidation op="patch" serverItems={[
+  { label: 'metadata / spec', rules: RESTRICTIONS.metadataRequired },
+  { label: 'metadata.name', rules: RESTRICTIONS.name },
+  { label: 'metadata.namespace', rules: RESTRICTIONS.namespace },
+  { label: 'spec.displayName', rules: RESTRICTIONS.displayName },
+  { label: 'spec.comment', rules: RESTRICTIONS.comment },
+  { label: 'spec.description', rules: RESTRICTIONS.description },
+  { label: 'spec.action', rules: RESTRICTIONS.action },
+  { label: 'spec.session.traffic', rules: RESTRICTIONS.traffic },
+  { label: 'spec.endpoints.local.type', rules: RESTRICTIONS.endpointType },
+  { label: 'spec.endpoints.remote.type', rules: RESTRICTIONS.endpointType },
+  { label: 'spec.transport.protocol', rules: RESTRICTIONS.protocol },
+  { label: 'spec.transport.IPv', rules: RESTRICTIONS.ipv },
+  { label: 'transport.entries[].ports', rules: RESTRICTIONS.ports },
+  { label: 'transport.entries[].types', rules: RESTRICTIONS.icmpType },
+]} />
+
+<K8sCodes codes={['badRequest', 'unauthorized', 'forbidden', 'notFound', 'invalid', 'internal']} />
+
+</ApiOperation>
+
+---
+
+## Delete
+
+<ApiOperation method="DELETE" endpoint="/apis/sgroups.io/v1alpha1/namespaces/{namespace}/rules/{name}">
+
+Удалить объект по имени. Стандартные опции `--cascade`, `--grace-period`, `--timeout` поддерживаются как query-параметры.
+
+#### Пример запроса
+
+<CodeBlock language="bash">
+  {dedent`
+    kubectl delete rule allow-web-to-db -n production
+  `}
+</CodeBlock>
+
+#### Пример ответа
+
+<CodeBlock language="json">
+  {dedent`
+    {
+      "kind": "Status",
+      "apiVersion": "v1",
+      "status": "Success"
+    }
+    `}
+</CodeBlock>
+
+:::tip
+Подробнее про материализацию `Rule` в строки nftables — в разделе [Соответствие правил nft](/agent/rule-mapping). Аннотации `linux-agent.sgroups.io/{trace,logs,priority}` — в разделе [Аннотации](/agent/annotations).
+:::
+
+
+<K8sValidation op="delete" />
+
+<K8sCodes codes={['unauthorized', 'forbidden', 'notFound', 'conflict', 'internal']} />
+
+</ApiOperation>
+
+---

@@ -1,7 +1,7 @@
 import React, { FC, PropsWithChildren } from 'react'
 
 type Props = {
-  method: 'POST' | 'GET' | 'DELETE'
+  method: 'POST' | 'GET' | 'DELETE' | 'PUT' | 'PATCH'
   endpoint: string
 }
 

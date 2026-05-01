@@ -1,0 +1,187 @@
+---
+id: nft-layout
+sidebar_position: 2
+title: Структура nftables
+---
+
+import CodeBlock from '@theme/CodeBlock'
+import dedent from 'ts-dedent'
+
+# Структура nftables, которую строит агент
+
+Все объекты живут в одной таблице семейства `inet` с динамическим именем
+`main-${ts:1714567890}`. Внутри таблицы агент создаёт **базовые цепочки**, **per-AG
+цепочки** и **set'ы** с IP-данными. Имена цепочек и set'ов строго детерминированы —
+именно по ним verify-инструменты соотносят `UniRule` с конкретной строкой nft.
+
+Все примеры — **шаблоны**: `${имя:образец}` означает плейсхолдер с именем `имя`
+и примером значения `образец`. Используемые плейсхолдеры:
+
+Префиксы `l-` / `r-` означают **local** / **remote** (стороны правила), а не
+left/right (позиции в nft-выражении).
+
+- `${ts:1714567890}` — timestamp таблицы
+- `${l-ns:prod}` — namespace локальной AG
+- `${l-ag:web}` — имя локальной AG
+- `${r-ns:partner}` — namespace удалённой AG
+- `${r-ag:billing}` — имя удалённой AG
+- `${svc:api}` — имя сервиса
+- `${fqdn:example.com}` — FQDN
+- `${cidr:10.0.0.0/24}` — CIDR
+- `${ip:10.0.0.1}` — IP хоста
+- `${port:8080}` — порт
+
+## Таблица
+
+```nft
+table inet main-${ts:1714567890} { … }
+```
+
+- семейство `inet` — единое для IPv4/IPv6 (фактически правила работают с IPv4)
+- имя таблицы — `main-${ts:1714567890}`. Меняется на каждом новом цикле сборки и
+  **не настраивается** через конфиг
+- свои таблицы агент опознаёт по префиксу `main-`. Сторонние nftables-таблицы агент не
+  трогает
+
+## Базовые цепочки
+
+| Цепочка | Hook | Priority | Policy | Назначение |
+|---|---|---|---|---|
+| `INGRESS-MAIN` | `prerouting` | `-130` | `drop` | принимает входящий трафик и `jump`'ает в per-AG цепочку, если saddr принадлежит локальному AG |
+| `EGRESS-MAIN` | `postrouting` | `300` (`conntrack helper`) | `drop` | обрабатывает исходящий и `jump`'ает в per-AG цепочку, если daddr принадлежит локальному AG |
+
+Policy цепочек:
+
+- по умолчанию — `drop` (всё, что не подходит ни под одно правило, отбрасывается);
+- если в конфиге агента включен `def-policy-accept: true` либо все локальные AG имеют
+  `defaultAction = ALLOW`, policy переключается на `accept`.
+
+Первой строкой в каждой MAIN-цепочке агент добавляет
+`ct state established,related accept` — это ускоряет прохождение установленных
+сессий мимо всех правил.
+
+Тело базовых цепочек дальше — только `jump`'ы, по одному на каждый локальный AG,
+привязанный к этому узлу через `HostBinding`:
+
+```nft
+chain INGRESS-MAIN {
+    type filter hook prerouting priority -130; policy drop;
+    ct state established,related accept
+    ip saddr @NetIPv4-addressGroup-${l-ns:prod}/${l-ag:web} jump INGRESS-ag-${l-ns:prod}/${l-ag:web}
+}
+chain EGRESS-MAIN {
+    type filter hook postrouting priority 300; policy drop;
+    ct state established,related accept
+    ip daddr @NetIPv4-addressGroup-${l-ns:prod}/${l-ag:web} jump EGRESS-ag-${l-ns:prod}/${l-ag:web}
+}
+```
+
+:::tip Что проверяет verify
+Тест-харнес `sgroups-test-go` (домен `routing`) для каждого локального AG проверяет
+наличие `jump INGRESS-ag-${l-ns:prod}/${l-ag:web}` в `INGRESS-MAIN` и аналогично для
+`EGRESS-MAIN`. Если jump'а нет — правила в per-AG цепочке существуют, но трафик до
+них не доходит.
+:::
+
+## Per-AG цепочки
+
+На каждый AG, привязанный к узлу, агент создаёт пару цепочек:
+
+```nft
+chain INGRESS-ag-${l-ns:prod}/${l-ag:web} { … }
+chain EGRESS-ag-${l-ns:prod}/${l-ag:web} { … }
+```
+
+Имя цепочки **включает namespace и имя AG со слэшем**. Это значимо — verify-инструмент
+ищет правила именно по такому ключу.
+
+Внутрь цепочки агент пишет `nft`-строки, по одной на каждое
+(порт / тип / cidr / fqdn) из `UniRule`. Структура строки зависит от направления:
+для INGRESS используется `saddr` (откуда пришёл пакет), для EGRESS — `daddr`
+(куда уходит пакет).
+
+```nft
+chain INGRESS-ag-${l-ns:prod}/${l-ag:web} {
+    ip [saddr <left>] <protocol> <port-or-type> [meta nftrace set 1] [log level debug] <accept|drop>
+}
+
+chain EGRESS-ag-${l-ns:prod}/${l-ag:web} {
+    ip [daddr <right>] <protocol> <port-or-type> [meta nftrace set 1] [log level debug] <accept|drop>
+}
+```
+
+Конкретные виды `<left>` / `<right>` для каждого типа `UniRule` — в разделе
+[«Соответствие правил nft»](./rule-mapping).
+
+## Set'ы
+
+Set'ы — таблицы IP-адресов, которые наполняются IP'шниками хостов и подсетей. Агент создаёт их
+с типом `ipv4_addr` и флагом `interval` (чтобы можно было хранить и одиночные адреса, и CIDR).
+
+| Имя set'а | Источник | Как наполняется |
+|---|---|---|
+| `NetIPv4-addressGroup-${l-ns:prod}/${l-ag:web}` | `AddressGroup` | объединение IPv4 всех `Host`, привязанных через `HostBinding` к этому AG, плюс CIDR из `Network`, привязанных через `NetworkBinding` |
+| `NetIPv4-svc-${l-ns:prod}/${svc:api}` | `Service` | объединение IPv4 всех `Host`, привязанных к AG, к которому привязан этот сервис через `ServiceBinding` |
+| `NetIPv4-fqdn-${fqdn:example.com}` | inline в `UniRule` (`remote.type = FQDN`) | результат A-записи DNS, кешируется на `dns.cache-ttl` |
+
+```nft
+set NetIPv4-addressGroup-${l-ns:prod}/${l-ag:web} {
+    type ipv4_addr
+    flags interval
+    elements = { ${ip:10.0.0.1} }
+}
+```
+
+CIDR-значения (`remote.type = CIDR`) вкладываются в строку правила **inline**, без отдельного set'а:
+
+```nft
+chain EGRESS-ag-${l-ns:prod}/${l-ag:web} {
+    ip daddr { ${cidr:10.0.0.0/24} } tcp dport ${port:8080} accept
+}
+```
+
+## Полный пример
+
+Минимальный ruleset на одном AG с одним правилом `tcp dport ${port:8080} accept`:
+
+```nft
+table inet main-${ts:1714567890} {
+    set NetIPv4-addressGroup-${l-ns:prod}/${l-ag:web} {
+        type ipv4_addr
+        flags interval
+        elements = { ${ip:10.0.0.1} }
+    }
+    chain INGRESS-MAIN {
+        type filter hook prerouting priority -130; policy drop;
+        ct state established,related accept
+        ip saddr @NetIPv4-addressGroup-${l-ns:prod}/${l-ag:web} jump INGRESS-ag-${l-ns:prod}/${l-ag:web}
+    }
+    chain EGRESS-MAIN {
+        type filter hook postrouting priority 300; policy drop;
+        ct state established,related accept
+        ip daddr @NetIPv4-addressGroup-${l-ns:prod}/${l-ag:web} jump EGRESS-ag-${l-ns:prod}/${l-ag:web}
+    }
+    chain INGRESS-ag-${l-ns:prod}/${l-ag:web} {
+        ip saddr @NetIPv4-addressGroup-${l-ns:prod}/${l-ag:web} tcp dport ${port:8080} accept
+    }
+    chain EGRESS-ag-${l-ns:prod}/${l-ag:web} {
+    }
+}
+```
+
+## Соответствие имён
+
+Минимальный mapping API-объектов в имена nft (плейсхолдеры — то, что подставляется
+агентом из API):
+
+| Объект API | Имя в nft |
+|---|---|
+| `AddressGroup{namespace, name}` | set `NetIPv4-addressGroup-${l-ns:prod}/${l-ag:web}`, цепочки `INGRESS-ag-${l-ns:prod}/${l-ag:web}` / `EGRESS-ag-${l-ns:prod}/${l-ag:web}` |
+| `Service{namespace, name}` | set `NetIPv4-svc-${l-ns:prod}/${svc:api}` |
+| `UniRule{remote.type=FQDN, value}` | set `NetIPv4-fqdn-${fqdn:example.com}` |
+| `UniRule{remote.type=CIDR, value}` | inline в строке (`ip saddr { ${cidr:10.0.0.0/24} }` либо `ip daddr { ${cidr:10.0.0.0/24} }`) |
+
+:::warning Если set отсутствует
+Если `Host` не привязан к AG (нет `HostBinding`) — set создаётся пустым, правила есть,
+но матча не будет. Verify-домен `entities` отлавливает это как `missing`.
+:::

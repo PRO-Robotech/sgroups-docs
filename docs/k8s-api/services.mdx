@@ -1,0 +1,435 @@
+---
+id: services
+sidebar_position: 6
+title: Services
+---
+
+import { TYPES } from '@site/src/constants/types'
+import { ApiOperation } from '@site/src/components/commonBlocks/ApiOperation'
+import { K8sCodes } from '@site/src/components/commonBlocks/K8sCodes'
+import { K8sValidation } from '@site/src/components/commonBlocks/K8sValidation'
+import { RESTRICTIONS } from '@site/src/constants/restrictions'
+import Tabs from '@theme/Tabs'
+import TabItem from '@theme/TabItem'
+import CodeBlock from '@theme/CodeBlock'
+import dedent from 'ts-dedent'
+
+# Services
+
+`Service` — логический сервис с одним или несколькими транспортами (TCP/UDP/ICMP). Привязывается к `AddressGroup` через `ServiceBinding`. Используется в `Rule` через `endpoints.{local,remote}.type = Service`.
+
+---
+
+:::info Валидация и ошибки
+Все валидации `spec` производятся на уровне `sg-server` (gRPC-бэкенд) — k8s-сервер
+лишь проксирует запрос. Формат ошибочных ответов и таблица кодов — в
+[Обзоре API → Коды ошибок](/k8s-api/overview#коды-ошибок).
+:::
+
+
+## List
+
+<ApiOperation method="GET" endpoint="/apis/sgroups.io/v1alpha1/namespaces/{namespace}/services">
+
+Получить список ресурсов. Доступны два scope: по namespace и по всему кластеру.
+
+<Tabs groupId="scope">
+  <TabItem value="namespace" label="В namespace" default>
+
+<CodeBlock language="bash">
+  {dedent`
+    kubectl get services -n production
+  `}
+</CodeBlock>
+
+  </TabItem>
+  <TabItem value="cluster" label="По всему кластеру">
+
+<CodeBlock language="bash">
+  {dedent`
+    kubectl get services -A
+  `}
+</CodeBlock>
+
+  </TabItem>
+</Tabs>
+
+#### Пример ответа
+
+<CodeBlock language="json">
+  {dedent`
+    {
+      "kind": "ServiceList",
+      "apiVersion": "sgroups.io/v1alpha1",
+      "items": [
+        {
+          "kind": "Service",
+          "metadata": {
+            "name": "api",
+            "namespace": "production",
+            "resourceVersion": "1130"
+          },
+          "spec": {
+            "displayName": "API service",
+            "transports": [
+              {
+                "protocol": "TCP",
+                "IPv": "IPv4",
+                "entries": [
+                  {
+                    "description": "HTTP",
+                    "ports": "80,443"
+                  }
+                ]
+              }
+            ]
+          },
+          "refs": []
+        }
+      ]
+    }
+    `}
+</CodeBlock>
+
+
+<K8sValidation op="list" />
+
+<K8sCodes codes={['unauthorized', 'forbidden', 'internal', 'serviceUnavailable']} />
+
+</ApiOperation>
+
+---
+
+## Create
+
+<ApiOperation method="POST" endpoint="/apis/sgroups.io/v1alpha1/namespaces/{namespace}/services">
+
+Создать новый объект. Имя должно быть уникальным в namespace.
+
+#### Тело запроса
+
+<table>
+  <thead>
+    <tr>
+      <th>Параметр</th>
+      <th>Обязательность</th>
+      <th>Тип</th>
+      <th>Описание</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><code>metadata.name</code></td>
+      <td>да</td>
+      <td><code>{TYPES.string}</code></td>
+      <td>Имя ресурса</td>
+    </tr>
+    <tr>
+      <td><code>metadata.namespace</code></td>
+      <td>да</td>
+      <td><code>{TYPES.string}</code></td>
+      <td>Namespace (имя `Tenant`)</td>
+    </tr>
+    <tr>
+      <td><code>metadata.labels</code></td>
+      <td>нет</td>
+      <td><code>{TYPES.mapStringString}</code></td>
+      <td>Лейблы</td>
+    </tr>
+    <tr>
+      <td><code>metadata.annotations</code></td>
+      <td>нет</td>
+      <td><code>{TYPES.mapStringString}</code></td>
+      <td>Аннотации</td>
+    </tr>
+    <tr>
+      <td><code>spec.displayName</code></td>
+      <td>нет</td>
+      <td><code>{TYPES.string}</code></td>
+      <td>Отображаемое имя</td>
+    </tr>
+    <tr>
+      <td><code>spec.comment</code></td>
+      <td>нет</td>
+      <td><code>{TYPES.string}</code></td>
+      <td>Комментарий</td>
+    </tr>
+    <tr>
+      <td><code>spec.description</code></td>
+      <td>нет</td>
+      <td><code>{TYPES.string}</code></td>
+      <td>Описание</td>
+    </tr>
+    <tr>
+      <td><code>spec.transports[]</code></td>
+      <td>да</td>
+      <td><code>{TYPES.serviceTransport}</code></td>
+      <td>Список транспортов</td>
+    </tr>
+    <tr>
+      <td><code>transport.protocol</code></td>
+      <td>да</td>
+      <td><code>{TYPES.enumProtocolK8s}</code></td>
+      <td>Протокол</td>
+    </tr>
+    <tr>
+      <td><code>transport.IPv</code></td>
+      <td>да</td>
+      <td><code>{TYPES.enumIpvK8s}</code></td>
+      <td>IP-семейство</td>
+    </tr>
+    <tr>
+      <td><code>transport.entries[]</code></td>
+      <td>нет</td>
+      <td><code>{TYPES.entry}</code></td>
+      <td>`{ports?, types?, description?, comment?}`</td>
+    </tr>
+    <tr>
+      <td><code>refs[]</code></td>
+      <td>read-only</td>
+      <td><code>{TYPES.resourceRef}</code></td>
+      <td>Обратные ссылки на `ServiceBinding` и `Rule`</td>
+    </tr>
+  </tbody>
+</table>
+
+#### Пример запроса
+
+<CodeBlock language="bash">
+  {dedent`
+    kubectl apply -f - <<EOF
+    apiVersion: sgroups.io/v1alpha1
+    kind: Service
+    metadata:
+      name: api
+      namespace: production
+    spec:
+      displayName: API service
+      transports:
+        - protocol: TCP
+          IPv: IPv4
+          entries:
+            - description: HTTP
+              ports: "80,443"
+        - protocol: UDP
+          IPv: IPv4
+          entries:
+            - description: Health
+              ports: "9090"
+    EOF
+  `}
+</CodeBlock>
+
+#### Пример ответа
+
+<CodeBlock language="json">
+  {dedent`
+    {
+      "kind": "Service",
+      "apiVersion": "sgroups.io/v1alpha1",
+      "metadata": {
+        "name": "api",
+        "namespace": "production",
+        "resourceVersion": "1131"
+      },
+      "spec": {
+        "displayName": "API service",
+        "transports": [
+          {
+            "protocol": "TCP",
+            "IPv": "IPv4",
+            "entries": [
+              {
+                "description": "HTTP",
+                "ports": "80,443"
+              }
+            ]
+          }
+        ]
+      }
+    }
+    `}
+</CodeBlock>
+
+
+<K8sValidation op="create" serverItems={[
+  { label: 'metadata / spec', rules: RESTRICTIONS.metadataRequired },
+  { label: 'metadata.name', rules: RESTRICTIONS.name },
+  { label: 'metadata.namespace', rules: RESTRICTIONS.namespace },
+  { label: 'spec.displayName', rules: RESTRICTIONS.displayName },
+  { label: 'spec.comment', rules: RESTRICTIONS.comment },
+  { label: 'spec.description', rules: RESTRICTIONS.description },
+  { label: 'transport.protocol', rules: RESTRICTIONS.protocol },
+  { label: 'transport.IPv', rules: RESTRICTIONS.ipv },
+  { label: 'entry.ports', rules: RESTRICTIONS.ports },
+  { label: 'entry.types', rules: RESTRICTIONS.icmpType },
+]} />
+
+<K8sCodes codes={['badRequest', 'unauthorized', 'forbidden', 'alreadyExists', 'invalid', 'internal']} />
+
+</ApiOperation>
+
+---
+
+## Get
+
+<ApiOperation method="GET" endpoint="/apis/sgroups.io/v1alpha1/namespaces/{namespace}/services/{name}">
+
+Получить один объект по имени.
+
+#### Пример запроса
+
+<CodeBlock language="bash">
+  {dedent`
+    kubectl get service api -n production -o yaml
+  `}
+</CodeBlock>
+
+#### Пример ответа
+
+<CodeBlock language="json">
+  {dedent`
+    {
+      "kind": "Service",
+      "apiVersion": "sgroups.io/v1alpha1",
+      "metadata": {
+        "name": "api",
+        "namespace": "production",
+        "resourceVersion": "1131"
+      },
+      "spec": {
+        "displayName": "API service",
+        "transports": [
+          {
+            "protocol": "TCP",
+            "IPv": "IPv4",
+            "entries": [
+              {
+                "description": "HTTP",
+                "ports": "80,443"
+              }
+            ]
+          }
+        ]
+      }
+    }
+    `}
+</CodeBlock>
+
+
+<K8sValidation op="get" />
+
+<K8sCodes codes={['unauthorized', 'forbidden', 'notFound', 'internal']} />
+
+</ApiOperation>
+
+---
+
+## Update (PUT)
+
+<ApiOperation method="PUT" endpoint="/apis/sgroups.io/v1alpha1/namespaces/{namespace}/services/{name}">
+
+Полная замена объекта. Поле `metadata.resourceVersion` обязательно — оно защищает от race-condition (optimistic concurrency).
+
+#### Пример запроса
+
+<CodeBlock language="bash">
+  {dedent`
+    # kubectl edit делает GET → правки → PUT под капотом
+    kubectl edit service api -n production
+  `}
+</CodeBlock>
+
+
+<K8sValidation op="put" serverItems={[
+  { label: 'metadata / spec', rules: RESTRICTIONS.metadataRequired },
+  { label: 'metadata.name', rules: RESTRICTIONS.name },
+  { label: 'metadata.namespace', rules: RESTRICTIONS.namespace },
+  { label: 'spec.displayName', rules: RESTRICTIONS.displayName },
+  { label: 'spec.comment', rules: RESTRICTIONS.comment },
+  { label: 'spec.description', rules: RESTRICTIONS.description },
+  { label: 'transport.protocol', rules: RESTRICTIONS.protocol },
+  { label: 'transport.IPv', rules: RESTRICTIONS.ipv },
+  { label: 'entry.ports', rules: RESTRICTIONS.ports },
+  { label: 'entry.types', rules: RESTRICTIONS.icmpType },
+]} />
+
+<K8sCodes codes={['badRequest', 'unauthorized', 'forbidden', 'notFound', 'conflict', 'invalid', 'internal']} />
+
+</ApiOperation>
+
+---
+
+## Patch
+
+<ApiOperation method="PATCH" endpoint="/apis/sgroups.io/v1alpha1/namespaces/{namespace}/services/{name}">
+
+Частичное обновление. Поддерживаемые `Content-Type`:
+
+- `application/strategic-merge-patch+json` — стандартный k8s-патч
+- `application/merge-patch+json` — RFC 7396
+- `application/json-patch+json` — RFC 6902
+
+#### Пример запроса
+
+<CodeBlock language="bash">
+  {dedent`
+    kubectl patch service api -n production --type=merge \\
+      -p '{"spec":{"comment":"updated"}}'
+  `}
+</CodeBlock>
+
+
+<K8sValidation op="patch" serverItems={[
+  { label: 'metadata / spec', rules: RESTRICTIONS.metadataRequired },
+  { label: 'metadata.name', rules: RESTRICTIONS.name },
+  { label: 'metadata.namespace', rules: RESTRICTIONS.namespace },
+  { label: 'spec.displayName', rules: RESTRICTIONS.displayName },
+  { label: 'spec.comment', rules: RESTRICTIONS.comment },
+  { label: 'spec.description', rules: RESTRICTIONS.description },
+  { label: 'transport.protocol', rules: RESTRICTIONS.protocol },
+  { label: 'transport.IPv', rules: RESTRICTIONS.ipv },
+  { label: 'entry.ports', rules: RESTRICTIONS.ports },
+  { label: 'entry.types', rules: RESTRICTIONS.icmpType },
+]} />
+
+<K8sCodes codes={['badRequest', 'unauthorized', 'forbidden', 'notFound', 'invalid', 'internal']} />
+
+</ApiOperation>
+
+---
+
+## Delete
+
+<ApiOperation method="DELETE" endpoint="/apis/sgroups.io/v1alpha1/namespaces/{namespace}/services/{name}">
+
+Удалить объект по имени. Стандартные опции `--cascade`, `--grace-period`, `--timeout` поддерживаются как query-параметры.
+
+#### Пример запроса
+
+<CodeBlock language="bash">
+  {dedent`
+    kubectl delete service api -n production
+  `}
+</CodeBlock>
+
+#### Пример ответа
+
+<CodeBlock language="json">
+  {dedent`
+    {
+      "kind": "Status",
+      "apiVersion": "v1",
+      "status": "Success"
+    }
+    `}
+</CodeBlock>
+
+
+<K8sValidation op="delete" />
+
+<K8sCodes codes={['unauthorized', 'forbidden', 'notFound', 'conflict', 'internal']} />
+
+</ApiOperation>
+
+---

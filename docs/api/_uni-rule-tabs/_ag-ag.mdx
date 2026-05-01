@@ -121,7 +121,7 @@ import dedent from 'ts-dedent'
       <td>{DICTIONARY.protocol.short}</td>
     </tr>
     <tr>
-      <td><code>spec.transport.ipv</code></td>
+      <td><code>spec.transport.IPv</code></td>
       <td>да</td>
       <td><code>{TYPES.enumIpv}</code></td>
       <td>{DICTIONARY.ipv.short}</td>
@@ -227,18 +227,20 @@ import dedent from 'ts-dedent'
       "rules": [
         {
           "metadata": {
-            "uid": "c9d0e1f2-a3b4-5678-cdef-789012345678",
+            "uid": "7b06e971-0e22-4bf9-b322-42994097c586",
             "name": "allow-web-to-db",
             "namespace": "production",
             "labels": {
               "policy": "web-access"
             },
-            "creationTimestamp": "2025-01-15T10:40:00Z",
-            "resourceVersion": "1"
+            "annotations": {},
+            "creationTimestamp": "2026-04-25T21:12:33.141661Z",
+            "resourceVersion": "189"
           },
           "spec": {
             "displayName": "Allow Web to DB",
             "comment": "Разрешить трафик от веб-серверов к БД",
+            "description": "",
             "action": "ALLOW",
             "session": {
               "traffic": "EGRESS"
@@ -247,12 +249,19 @@ import dedent from 'ts-dedent'
               "local": {
                 "name": "web-servers",
                 "namespace": "production",
-                "type": "ADDRESS_GROUP"
+                "type": "ADDRESS_GROUP",
+                "labels": {
+                  "tier": "frontend"
+                }
               },
               "remote": {
                 "name": "db-servers",
                 "namespace": "production",
-                "type": "ADDRESS_GROUP"
+                "type": "ADDRESS_GROUP",
+                "value": "",
+                "labels": {
+                  "tier": "database"
+                }
               }
             },
             "transport": {
@@ -261,7 +270,9 @@ import dedent from 'ts-dedent'
               "entries": [
                 {
                   "description": "PostgreSQL",
-                  "ports": "5432"
+                  "comment": "",
+                  "ports": "5432",
+                  "types": []
                 }
               ]
             }

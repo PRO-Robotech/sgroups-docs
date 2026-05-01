@@ -1,0 +1,348 @@
+---
+id: tenants
+sidebar_position: 2
+title: Tenants
+---
+
+import { TYPES } from '@site/src/constants/types'
+import { ApiOperation } from '@site/src/components/commonBlocks/ApiOperation'
+import { K8sCodes } from '@site/src/components/commonBlocks/K8sCodes'
+import { K8sValidation } from '@site/src/components/commonBlocks/K8sValidation'
+import { RESTRICTIONS } from '@site/src/constants/restrictions'
+import Tabs from '@theme/Tabs'
+import TabItem from '@theme/TabItem'
+import CodeBlock from '@theme/CodeBlock'
+import dedent from 'ts-dedent'
+
+# Tenants
+
+`Tenant` — **cluster-scoped** ресурс, представляющий логическое пространство имён SGroups. Имя `Tenant` совпадает с именем k8s-namespace, в котором будут создаваться все namespaced-ресурсы.
+
+---
+
+:::info Валидация и ошибки
+Все валидации `spec` производятся на уровне `sg-server` (gRPC-бэкенд) — k8s-сервер
+лишь проксирует запрос. Формат ошибочных ответов и таблица кодов — в
+[Обзоре API → Коды ошибок](/k8s-api/overview#коды-ошибок).
+:::
+
+
+## List
+
+<ApiOperation method="GET" endpoint="/apis/sgroups.io/v1alpha1/tenants">
+
+Получить список всех ресурсов в кластере.
+
+#### Пример запроса
+
+<CodeBlock language="bash">
+  {dedent`
+    kubectl get tenants
+  `}
+</CodeBlock>
+
+#### Пример ответа
+
+<CodeBlock language="json">
+  {dedent`
+    {
+      "kind": "TenantList",
+      "apiVersion": "sgroups.io/v1alpha1",
+      "metadata": {
+        "resourceVersion": "1234"
+      },
+      "items": [
+        {
+          "kind": "Tenant",
+          "apiVersion": "sgroups.io/v1alpha1",
+          "metadata": {
+            "name": "production",
+            "uid": "8b7e4f1a-...",
+            "creationTimestamp": "2026-05-01T10:00:00Z",
+            "resourceVersion": "1100",
+            "labels": {
+              "env": "prod"
+            }
+          },
+          "spec": {
+            "displayName": "Production",
+            "comment": "Продуктивное окружение"
+          }
+        }
+      ]
+    }
+    `}
+</CodeBlock>
+
+
+<K8sValidation op="list" />
+
+<K8sCodes codes={['unauthorized', 'forbidden', 'internal', 'serviceUnavailable']} />
+
+</ApiOperation>
+
+---
+
+## Create
+
+<ApiOperation method="POST" endpoint="/apis/sgroups.io/v1alpha1/tenants">
+
+Создать новый объект. Имя должно быть уникальным в namespace.
+
+#### Тело запроса
+
+<table>
+  <thead>
+    <tr>
+      <th>Параметр</th>
+      <th>Обязательность</th>
+      <th>Тип</th>
+      <th>Описание</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><code>metadata.name</code></td>
+      <td>да</td>
+      <td><code>{TYPES.string}</code></td>
+      <td>Имя ресурса</td>
+    </tr>
+    <tr>
+      <td><code>metadata.labels</code></td>
+      <td>нет</td>
+      <td><code>{TYPES.mapStringString}</code></td>
+      <td>Лейблы</td>
+    </tr>
+    <tr>
+      <td><code>metadata.annotations</code></td>
+      <td>нет</td>
+      <td><code>{TYPES.mapStringString}</code></td>
+      <td>Аннотации</td>
+    </tr>
+    <tr>
+      <td><code>spec.displayName</code></td>
+      <td>нет</td>
+      <td><code>{TYPES.string}</code></td>
+      <td>Отображаемое имя</td>
+    </tr>
+    <tr>
+      <td><code>spec.comment</code></td>
+      <td>нет</td>
+      <td><code>{TYPES.string}</code></td>
+      <td>Комментарий</td>
+    </tr>
+    <tr>
+      <td><code>spec.description</code></td>
+      <td>нет</td>
+      <td><code>{TYPES.string}</code></td>
+      <td>Описание</td>
+    </tr>
+  </tbody>
+</table>
+
+#### Пример запроса
+
+<CodeBlock language="bash">
+  {dedent`
+    kubectl apply -f - <<EOF
+    apiVersion: sgroups.io/v1alpha1
+    kind: Tenant
+    metadata:
+      name: production
+      labels:
+        env: prod
+    spec:
+      displayName: Production
+      comment: Продуктивное окружение
+      description: Тенант для продакшен-сервисов
+    EOF
+  `}
+</CodeBlock>
+
+#### Пример ответа
+
+<CodeBlock language="json">
+  {dedent`
+    {
+      "kind": "Tenant",
+      "apiVersion": "sgroups.io/v1alpha1",
+      "metadata": {
+        "name": "production",
+        "uid": "8b7e4f1a-...",
+        "resourceVersion": "1100",
+        "creationTimestamp": "2026-05-01T10:00:00Z",
+        "labels": {
+          "env": "prod"
+        }
+      },
+      "spec": {
+        "displayName": "Production",
+        "comment": "Продуктивное окружение",
+        "description": "Тенант для продакшен-сервисов"
+      }
+    }
+    `}
+</CodeBlock>
+
+
+<K8sValidation op="create" serverItems={[
+  { label: 'metadata.name', rules: RESTRICTIONS.name },
+  { label: 'spec.displayName', rules: RESTRICTIONS.displayName },
+  { label: 'spec.comment', rules: RESTRICTIONS.comment },
+  { label: 'spec.description', rules: RESTRICTIONS.description },
+]} />
+
+<K8sCodes codes={['badRequest', 'unauthorized', 'forbidden', 'alreadyExists', 'invalid', 'internal']} />
+
+</ApiOperation>
+
+---
+
+## Get
+
+<ApiOperation method="GET" endpoint="/apis/sgroups.io/v1alpha1/tenants/{name}">
+
+Получить один объект по имени.
+
+#### Пример запроса
+
+<CodeBlock language="bash">
+  {dedent`
+    kubectl get tenant production -o yaml
+  `}
+</CodeBlock>
+
+#### Пример ответа
+
+<CodeBlock language="json">
+  {dedent`
+    {
+      "kind": "Tenant",
+      "apiVersion": "sgroups.io/v1alpha1",
+      "metadata": {
+        "name": "production",
+        "uid": "8b7e4f1a-...",
+        "resourceVersion": "1100",
+        "creationTimestamp": "2026-05-01T10:00:00Z",
+        "labels": {
+          "env": "prod"
+        }
+      },
+      "spec": {
+        "displayName": "Production",
+        "comment": "Продуктивное окружение",
+        "description": "Тенант для продакшен-сервисов"
+      }
+    }
+    `}
+</CodeBlock>
+
+
+<K8sValidation op="get" />
+
+<K8sCodes codes={['unauthorized', 'forbidden', 'notFound', 'internal']} />
+
+</ApiOperation>
+
+---
+
+## Update (PUT)
+
+<ApiOperation method="PUT" endpoint="/apis/sgroups.io/v1alpha1/tenants/{name}">
+
+Полная замена объекта. Поле `metadata.resourceVersion` обязательно — оно защищает от race-condition (optimistic concurrency).
+
+#### Пример запроса
+
+<CodeBlock language="bash">
+  {dedent`
+    # kubectl edit делает GET → правки → PUT под капотом
+    kubectl edit tenant production
+  `}
+</CodeBlock>
+
+
+<K8sValidation op="put" serverItems={[
+  { label: 'metadata.name', rules: RESTRICTIONS.name },
+  { label: 'spec.displayName', rules: RESTRICTIONS.displayName },
+  { label: 'spec.comment', rules: RESTRICTIONS.comment },
+  { label: 'spec.description', rules: RESTRICTIONS.description },
+]} />
+
+<K8sCodes codes={['badRequest', 'unauthorized', 'forbidden', 'notFound', 'conflict', 'invalid', 'internal']} />
+
+</ApiOperation>
+
+---
+
+## Patch
+
+<ApiOperation method="PATCH" endpoint="/apis/sgroups.io/v1alpha1/tenants/{name}">
+
+Частичное обновление. Поддерживаемые `Content-Type`:
+
+- `application/strategic-merge-patch+json` — стандартный k8s-патч
+- `application/merge-patch+json` — RFC 7396
+- `application/json-patch+json` — RFC 6902
+
+#### Пример запроса
+
+<CodeBlock language="bash">
+  {dedent`
+    kubectl patch tenant production --type=merge \\
+      -p '{"spec":{"description":"Updated"}}'
+  `}
+</CodeBlock>
+
+
+<K8sValidation op="patch" serverItems={[
+  { label: 'metadata.name', rules: RESTRICTIONS.name },
+  { label: 'spec.displayName', rules: RESTRICTIONS.displayName },
+  { label: 'spec.comment', rules: RESTRICTIONS.comment },
+  { label: 'spec.description', rules: RESTRICTIONS.description },
+]} />
+
+<K8sCodes codes={['badRequest', 'unauthorized', 'forbidden', 'notFound', 'invalid', 'internal']} />
+
+</ApiOperation>
+
+---
+
+## Delete
+
+<ApiOperation method="DELETE" endpoint="/apis/sgroups.io/v1alpha1/tenants/{name}">
+
+Удалить объект по имени. Стандартные опции `--cascade`, `--grace-period`, `--timeout` поддерживаются как query-параметры.
+
+#### Пример запроса
+
+<CodeBlock language="bash">
+  {dedent`
+    kubectl delete tenant production
+  `}
+</CodeBlock>
+
+#### Пример ответа
+
+<CodeBlock language="json">
+  {dedent`
+    {
+      "kind": "Status",
+      "apiVersion": "v1",
+      "status": "Success"
+    }
+    `}
+</CodeBlock>
+
+:::caution
+Удаление тенанта каскадно удалит все namespaced-ресурсы (`AddressGroup`, `Rule`, и т.д.) в одноимённом namespace.
+:::
+
+
+<K8sValidation op="delete" />
+
+<K8sCodes codes={['unauthorized', 'forbidden', 'notFound', 'conflict', 'internal']} />
+
+</ApiOperation>
+
+---

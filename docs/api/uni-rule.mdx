@@ -17,13 +17,12 @@ import { ApiOperation } from '@site/src/components/commonBlocks/ApiOperation'
 
 import AgAg from './_uni-rule-tabs/_ag-ag.mdx'
 import AgIcmp from './_uni-rule-tabs/_ag-icmp.mdx'
-import AgSvc from './_uni-rule-tabs/_ag-svc.mdx'
-import SvcAg from './_uni-rule-tabs/_svc-ag.mdx'
 import SvcSvc from './_uni-rule-tabs/_svc-svc.mdx'
 import AgFqdn from './_uni-rule-tabs/_ag-fqdn.mdx'
 import SvcFqdn from './_uni-rule-tabs/_svc-fqdn.mdx'
 import AgCidr from './_uni-rule-tabs/_ag-cidr.mdx'
 import SvcCidr from './_uni-rule-tabs/_svc-cidr.mdx'
+import Matrix from './_uni-rule-tabs/_matrix.mdx'
 
 # UniRule
 
@@ -35,17 +34,19 @@ import SvcCidr from './_uni-rule-tabs/_svc-cidr.mdx'
 
 <ApiOperation method="POST" endpoint="/v1/rules/upsert">
 
-Создает новое правило или обновляет существующее. Тип правила определяется комбинацией `endpoints.local.type` и `endpoints.remote.type` (oneOf):
+Создает новое правило или обновляет существующее. Тип правила определяется комбинацией `endpoints.local.type`,
+`endpoints.remote.type` и `transport.protocol` (oneOf). Поддерживаются только комбинации, которые имеют
+физическую rule-таблицу в БД: `ADDRESS_GROUP → ADDRESS_GROUP`, `ADDRESS_GROUP → FQDN`, `ADDRESS_GROUP → CIDR`,
+локальное `ADDRESS_GROUP → ICMP`, `SERVICE → SERVICE`, `SERVICE → FQDN`, `SERVICE → CIDR`.
+
+<Matrix />
 
 <Tabs>
+  <TabItem value="matrix" label="matrix">
+    <Matrix />
+  </TabItem>
   <TabItem value="ag-ag" label="AG → AG" default>
     <AgAg />
-  </TabItem>
-  <TabItem value="ag-svc" label="AG → Service">
-    <AgSvc />
-  </TabItem>
-  <TabItem value="svc-ag" label="Service → AG">
-    <SvcAg />
   </TabItem>
   <TabItem value="svc-svc" label="Service → Service">
     <SvcSvc />
@@ -114,7 +115,10 @@ import SvcCidr from './_uni-rule-tabs/_svc-cidr.mdx'
 
 > *Необходимо указать `uid` **или** комбинацию `name` + `namespace`.
 
-#### Удаление по uid
+#### Примеры запроса
+
+<Tabs groupId="rule-delete">
+  <TabItem value="uid" label="uid" default>
 
 <CodeBlock language="bash">
   {dedent`
@@ -124,7 +128,7 @@ import SvcCidr from './_uni-rule-tabs/_svc-cidr.mdx'
         "rules": [
           {
             "metadata": {
-              "uid": "c9d0e1f2-a3b4-5678-cdef-789012345678"
+              "uid": "4d8a8083-ba1e-4594-a35f-231a5251fba5"
             }
           }
         ]
@@ -132,7 +136,8 @@ import SvcCidr from './_uni-rule-tabs/_svc-cidr.mdx'
   `}
 </CodeBlock>
 
-#### Удаление по name + namespace
+  </TabItem>
+  <TabItem value="name" label="name + namespace">
 
 <CodeBlock language="bash">
   {dedent`
@@ -142,7 +147,7 @@ import SvcCidr from './_uni-rule-tabs/_svc-cidr.mdx'
         "rules": [
           {
             "metadata": {
-              "name": "allow-monitoring-icmp-egress",
+              "name": "docs-del-rule-name-152143",
               "namespace": "production"
             }
           }
@@ -151,13 +156,31 @@ import SvcCidr from './_uni-rule-tabs/_svc-cidr.mdx'
   `}
 </CodeBlock>
 
-#### Пример ответа
+  </TabItem>
+</Tabs>
+
+#### Примеры ответа
+
+<Tabs groupId="rule-delete">
+  <TabItem value="uid" label="uid" default>
 
 <CodeBlock language="json">
   {dedent`
     {}
   `}
 </CodeBlock>
+
+  </TabItem>
+  <TabItem value="name" label="name + namespace">
+
+<CodeBlock language="json">
+  {dedent`
+    {}
+  `}
+</CodeBlock>
+
+  </TabItem>
+</Tabs>
 
 <Restrictions items={[
   { label: 'delete', rules: RESTRICTIONS.deleteWithNamespace },
@@ -391,26 +414,32 @@ import SvcCidr from './_uni-rule-tabs/_svc-cidr.mdx'
   </tbody>
 </table>
 
-#### Пример ответа
+#### Примеры ответа
+
+<Tabs groupId="rule-list">
+  <TabItem value="name" label="name" default>
 
 <CodeBlock language="json">
   {dedent`
     {
-      "resourceVersion": "42",
+      "resourceVersion": "203",
       "rules": [
         {
           "metadata": {
-            "uid": "c9d0e1f2-a3b4-5678-cdef-789012345678",
+            "uid": "7b06e971-0e22-4bf9-b322-42994097c586",
             "name": "allow-web-to-db",
             "namespace": "production",
             "labels": {
               "policy": "web-access"
             },
-            "creationTimestamp": "2025-01-15T10:40:00Z",
-            "resourceVersion": "1"
+            "annotations": {},
+            "creationTimestamp": "2026-04-25T21:12:33.141661Z",
+            "resourceVersion": "189"
           },
           "spec": {
             "displayName": "Allow Web to DB",
+            "comment": "Разрешить трафик от веб-серверов к БД",
+            "description": "",
             "action": "ALLOW",
             "session": {
               "traffic": "EGRESS"
@@ -419,12 +448,19 @@ import SvcCidr from './_uni-rule-tabs/_svc-cidr.mdx'
               "local": {
                 "name": "web-servers",
                 "namespace": "production",
-                "type": "ADDRESS_GROUP"
+                "type": "ADDRESS_GROUP",
+                "labels": {
+                  "tier": "frontend"
+                }
               },
               "remote": {
                 "name": "db-servers",
                 "namespace": "production",
-                "type": "ADDRESS_GROUP"
+                "type": "ADDRESS_GROUP",
+                "value": "",
+                "labels": {
+                  "tier": "database"
+                }
               }
             },
             "transport": {
@@ -433,7 +469,9 @@ import SvcCidr from './_uni-rule-tabs/_svc-cidr.mdx'
               "entries": [
                 {
                   "description": "PostgreSQL",
-                  "ports": "5432"
+                  "comment": "",
+                  "ports": "5432",
+                  "types": []
                 }
               ]
             }
@@ -443,6 +481,703 @@ import SvcCidr from './_uni-rule-tabs/_svc-cidr.mdx'
     }
   `}
 </CodeBlock>
+
+  </TabItem>
+  <TabItem value="refs" label="refs">
+
+<CodeBlock language="json">
+  {dedent`
+    {
+      "resourceVersion": "203",
+      "rules": [
+        {
+          "metadata": {
+            "uid": "7b06e971-0e22-4bf9-b322-42994097c586",
+            "name": "allow-web-to-db",
+            "namespace": "production",
+            "labels": {
+              "policy": "web-access"
+            },
+            "annotations": {},
+            "creationTimestamp": "2026-04-25T21:12:33.141661Z",
+            "resourceVersion": "189"
+          },
+          "spec": {
+            "displayName": "Allow Web to DB",
+            "comment": "Разрешить трафик от веб-серверов к БД",
+            "description": "",
+            "action": "ALLOW",
+            "session": {
+              "traffic": "EGRESS"
+            },
+            "endpoints": {
+              "local": {
+                "name": "web-servers",
+                "namespace": "production",
+                "type": "ADDRESS_GROUP",
+                "labels": {
+                  "tier": "frontend"
+                }
+              },
+              "remote": {
+                "name": "db-servers",
+                "namespace": "production",
+                "type": "ADDRESS_GROUP",
+                "value": "",
+                "labels": {
+                  "tier": "database"
+                }
+              }
+            },
+            "transport": {
+              "protocol": "TCP",
+              "IPv": "IPV4",
+              "entries": [
+                {
+                  "description": "PostgreSQL",
+                  "comment": "",
+                  "ports": "5432",
+                  "types": []
+                }
+              ]
+            }
+          }
+        }
+      ]
+    }
+  `}
+</CodeBlock>
+
+  </TabItem>
+  <TabItem value="labels" label="labels">
+
+<CodeBlock language="json">
+  {dedent`
+    {
+      "resourceVersion": "203",
+      "rules": [
+        {
+          "metadata": {
+            "uid": "a2a1f35f-e93f-4781-b69c-e4bf41cdde62",
+            "name": "allow-monitoring-icmp-egress",
+            "namespace": "production",
+            "labels": {},
+            "annotations": {
+              "linux-agent.sgroups.io/logs": "true",
+              "linux-agent.sgroups.io/priority": "200",
+              "linux-agent.sgroups.io/trace": "false"
+            },
+            "creationTimestamp": "2026-04-25T21:13:10.665906Z",
+            "resourceVersion": "192"
+          },
+          "spec": {
+            "displayName": "Allow Monitoring ICMP Egress",
+            "comment": "",
+            "description": "",
+            "action": "ALLOW",
+            "session": {
+              "traffic": "EGRESS"
+            },
+            "endpoints": {
+              "local": {
+                "name": "monitoring-agents",
+                "namespace": "production",
+                "type": "ADDRESS_GROUP",
+                "labels": {
+                  "tier": "monitoring"
+                }
+              },
+              "remote": null
+            },
+            "transport": {
+              "protocol": "ICMP",
+              "IPv": "IPV4",
+              "entries": [
+                {
+                  "description": "Ping and diagnostics",
+                  "comment": "ICMP echo and error messages",
+                  "ports": "",
+                  "types": [
+                    3,
+                    8,
+                    11
+                  ]
+                }
+              ]
+            }
+          }
+        },
+        {
+          "metadata": {
+            "uid": "ef30ca33-ad8a-499e-89f1-3338cf9d7593",
+            "name": "allow-web-to-internal-net",
+            "namespace": "production",
+            "labels": {},
+            "annotations": {},
+            "creationTimestamp": "2026-04-25T21:13:10.640924Z",
+            "resourceVersion": "191"
+          },
+          "spec": {
+            "displayName": "",
+            "comment": "",
+            "description": "",
+            "action": "ALLOW",
+            "session": {
+              "traffic": "EGRESS"
+            },
+            "endpoints": {
+              "local": {
+                "name": "web-servers",
+                "namespace": "production",
+                "type": "ADDRESS_GROUP",
+                "labels": {
+                  "tier": "frontend"
+                }
+              },
+              "remote": {
+                "name": "",
+                "namespace": "",
+                "type": "CIDR",
+                "value": "10.0.0.0/8",
+                "labels": {}
+              }
+            },
+            "transport": {
+              "protocol": "TCP",
+              "IPv": "IPV4",
+              "entries": [
+                {
+                  "description": "HTTP",
+                  "comment": "",
+                  "ports": "80,443",
+                  "types": []
+                }
+              ]
+            }
+          }
+        },
+        {
+          "metadata": {
+            "uid": "bcddfd42-0215-46ff-8a06-4221b32192fa",
+            "name": "allow-web-to-external-api",
+            "namespace": "production",
+            "labels": {},
+            "annotations": {},
+            "creationTimestamp": "2026-04-25T21:13:10.613496Z",
+            "resourceVersion": "190"
+          },
+          "spec": {
+            "displayName": "",
+            "comment": "",
+            "description": "",
+            "action": "ALLOW",
+            "session": {
+              "traffic": "EGRESS"
+            },
+            "endpoints": {
+              "local": {
+                "name": "web-servers",
+                "namespace": "production",
+                "type": "ADDRESS_GROUP",
+                "labels": {
+                  "tier": "frontend"
+                }
+              },
+              "remote": {
+                "name": "",
+                "namespace": "",
+                "type": "FQDN",
+                "value": "api.example.com",
+                "labels": {}
+              }
+            },
+            "transport": {
+              "protocol": "TCP",
+              "IPv": "IPV4",
+              "entries": [
+                {
+                  "description": "HTTPS",
+                  "comment": "",
+                  "ports": "443",
+                  "types": []
+                }
+              ]
+            }
+          }
+        },
+        {
+          "metadata": {
+            "uid": "ed642c97-4308-488b-ad2f-90c9bd6fc714",
+            "name": "allow-api-to-cache",
+            "namespace": "production",
+            "labels": {},
+            "annotations": {},
+            "creationTimestamp": "2026-04-25T21:13:10.596589Z",
+            "resourceVersion": "193"
+          },
+          "spec": {
+            "displayName": "",
+            "comment": "",
+            "description": "",
+            "action": "ALLOW",
+            "session": {
+              "traffic": "BOTH"
+            },
+            "endpoints": {
+              "local": {
+                "name": "api-service",
+                "namespace": "production",
+                "type": "SERVICE",
+                "labels": {
+                  "app": "api"
+                }
+              },
+              "remote": {
+                "name": "cache-service",
+                "namespace": "production",
+                "type": "SERVICE",
+                "value": "",
+                "labels": {
+                  "app": "cache"
+                }
+              }
+            },
+            "transport": null
+          }
+        },
+        {
+          "metadata": {
+            "uid": "fd56bd50-6de4-4448-b4a9-f4d67cc1f44f",
+            "name": "allow-proxy-svc-to-cdn",
+            "namespace": "production",
+            "labels": {},
+            "annotations": {},
+            "creationTimestamp": "2026-04-25T21:13:10.628863Z",
+            "resourceVersion": "194"
+          },
+          "spec": {
+            "displayName": "",
+            "comment": "",
+            "description": "",
+            "action": "ALLOW",
+            "session": {
+              "traffic": "EGRESS"
+            },
+            "endpoints": {
+              "local": {
+                "name": "proxy-service",
+                "namespace": "production",
+                "type": "SERVICE",
+                "labels": {
+                  "app": "proxy"
+                }
+              },
+              "remote": {
+                "name": "",
+                "namespace": "",
+                "type": "FQDN",
+                "value": "cdn.example.com",
+                "labels": {}
+              }
+            },
+            "transport": {
+              "protocol": "TCP",
+              "IPv": "IPV4",
+              "entries": [
+                {
+                  "description": "HTTPS",
+                  "comment": "",
+                  "ports": "443",
+                  "types": []
+                }
+              ]
+            }
+          }
+        },
+        {
+          "metadata": {
+            "uid": "9c625b9b-b69f-4157-966e-9dcfb3fc430c",
+            "name": "deny-monitoring-to-external",
+            "namespace": "production",
+            "labels": {},
+            "annotations": {},
+            "creationTimestamp": "2026-04-25T21:16:12.279065Z",
+            "resourceVersion": "195"
+          },
+          "spec": {
+            "displayName": "",
+            "comment": "",
+            "description": "",
+            "action": "DENY",
+            "session": {
+              "traffic": "EGRESS"
+            },
+            "endpoints": {
+              "local": {
+                "name": "monitoring-service",
+                "namespace": "production",
+                "type": "SERVICE",
+                "labels": {
+                  "app": "monitoring"
+                }
+              },
+              "remote": {
+                "name": "",
+                "namespace": "",
+                "type": "CIDR",
+                "value": "0.0.0.0/0",
+                "labels": {}
+              }
+            },
+            "transport": {
+              "protocol": "TCP",
+              "IPv": "IPV4",
+              "entries": [
+                {
+                  "description": "HTTPS",
+                  "comment": "",
+                  "ports": "443",
+                  "types": []
+                }
+              ]
+            }
+          }
+        }
+      ]
+    }
+  `}
+</CodeBlock>
+
+  </TabItem>
+  <TabItem value="and" label="AND">
+
+<CodeBlock language="json">
+  {dedent`
+    {
+      "resourceVersion": "203",
+      "rules": [
+        {
+          "metadata": {
+            "uid": "7b06e971-0e22-4bf9-b322-42994097c586",
+            "name": "allow-web-to-db",
+            "namespace": "production",
+            "labels": {
+              "policy": "web-access"
+            },
+            "annotations": {},
+            "creationTimestamp": "2026-04-25T21:12:33.141661Z",
+            "resourceVersion": "189"
+          },
+          "spec": {
+            "displayName": "Allow Web to DB",
+            "comment": "Разрешить трафик от веб-серверов к БД",
+            "description": "",
+            "action": "ALLOW",
+            "session": {
+              "traffic": "EGRESS"
+            },
+            "endpoints": {
+              "local": {
+                "name": "web-servers",
+                "namespace": "production",
+                "type": "ADDRESS_GROUP",
+                "labels": {
+                  "tier": "frontend"
+                }
+              },
+              "remote": {
+                "name": "db-servers",
+                "namespace": "production",
+                "type": "ADDRESS_GROUP",
+                "value": "",
+                "labels": {
+                  "tier": "database"
+                }
+              }
+            },
+            "transport": {
+              "protocol": "TCP",
+              "IPv": "IPV4",
+              "entries": [
+                {
+                  "description": "PostgreSQL",
+                  "comment": "",
+                  "ports": "5432",
+                  "types": []
+                }
+              ]
+            }
+          }
+        },
+        {
+          "metadata": {
+            "uid": "ef30ca33-ad8a-499e-89f1-3338cf9d7593",
+            "name": "allow-web-to-internal-net",
+            "namespace": "production",
+            "labels": {},
+            "annotations": {},
+            "creationTimestamp": "2026-04-25T21:13:10.640924Z",
+            "resourceVersion": "191"
+          },
+          "spec": {
+            "displayName": "",
+            "comment": "",
+            "description": "",
+            "action": "ALLOW",
+            "session": {
+              "traffic": "EGRESS"
+            },
+            "endpoints": {
+              "local": {
+                "name": "web-servers",
+                "namespace": "production",
+                "type": "ADDRESS_GROUP",
+                "labels": {
+                  "tier": "frontend"
+                }
+              },
+              "remote": {
+                "name": "",
+                "namespace": "",
+                "type": "CIDR",
+                "value": "10.0.0.0/8",
+                "labels": {}
+              }
+            },
+            "transport": {
+              "protocol": "TCP",
+              "IPv": "IPV4",
+              "entries": [
+                {
+                  "description": "HTTP",
+                  "comment": "",
+                  "ports": "80,443",
+                  "types": []
+                }
+              ]
+            }
+          }
+        },
+        {
+          "metadata": {
+            "uid": "bcddfd42-0215-46ff-8a06-4221b32192fa",
+            "name": "allow-web-to-external-api",
+            "namespace": "production",
+            "labels": {},
+            "annotations": {},
+            "creationTimestamp": "2026-04-25T21:13:10.613496Z",
+            "resourceVersion": "190"
+          },
+          "spec": {
+            "displayName": "",
+            "comment": "",
+            "description": "",
+            "action": "ALLOW",
+            "session": {
+              "traffic": "EGRESS"
+            },
+            "endpoints": {
+              "local": {
+                "name": "web-servers",
+                "namespace": "production",
+                "type": "ADDRESS_GROUP",
+                "labels": {
+                  "tier": "frontend"
+                }
+              },
+              "remote": {
+                "name": "",
+                "namespace": "",
+                "type": "FQDN",
+                "value": "api.example.com",
+                "labels": {}
+              }
+            },
+            "transport": {
+              "protocol": "TCP",
+              "IPv": "IPV4",
+              "entries": [
+                {
+                  "description": "HTTPS",
+                  "comment": "",
+                  "ports": "443",
+                  "types": []
+                }
+              ]
+            }
+          }
+        }
+      ]
+    }
+  `}
+</CodeBlock>
+
+  </TabItem>
+  <TabItem value="or" label="OR">
+
+<CodeBlock language="json">
+  {dedent`
+    {
+      "resourceVersion": "203",
+      "rules": [
+        {
+          "metadata": {
+            "uid": "7b06e971-0e22-4bf9-b322-42994097c586",
+            "name": "allow-web-to-db",
+            "namespace": "production",
+            "labels": {
+              "policy": "web-access"
+            },
+            "annotations": {},
+            "creationTimestamp": "2026-04-25T21:12:33.141661Z",
+            "resourceVersion": "189"
+          },
+          "spec": {
+            "displayName": "Allow Web to DB",
+            "comment": "Разрешить трафик от веб-серверов к БД",
+            "description": "",
+            "action": "ALLOW",
+            "session": {
+              "traffic": "EGRESS"
+            },
+            "endpoints": {
+              "local": {
+                "name": "web-servers",
+                "namespace": "production",
+                "type": "ADDRESS_GROUP",
+                "labels": {
+                  "tier": "frontend"
+                }
+              },
+              "remote": {
+                "name": "db-servers",
+                "namespace": "production",
+                "type": "ADDRESS_GROUP",
+                "value": "",
+                "labels": {
+                  "tier": "database"
+                }
+              }
+            },
+            "transport": {
+              "protocol": "TCP",
+              "IPv": "IPV4",
+              "entries": [
+                {
+                  "description": "PostgreSQL",
+                  "comment": "",
+                  "ports": "5432",
+                  "types": []
+                }
+              ]
+            }
+          }
+        },
+        {
+          "metadata": {
+            "uid": "ef30ca33-ad8a-499e-89f1-3338cf9d7593",
+            "name": "allow-web-to-internal-net",
+            "namespace": "production",
+            "labels": {},
+            "annotations": {},
+            "creationTimestamp": "2026-04-25T21:13:10.640924Z",
+            "resourceVersion": "191"
+          },
+          "spec": {
+            "displayName": "",
+            "comment": "",
+            "description": "",
+            "action": "ALLOW",
+            "session": {
+              "traffic": "EGRESS"
+            },
+            "endpoints": {
+              "local": {
+                "name": "web-servers",
+                "namespace": "production",
+                "type": "ADDRESS_GROUP",
+                "labels": {
+                  "tier": "frontend"
+                }
+              },
+              "remote": {
+                "name": "",
+                "namespace": "",
+                "type": "CIDR",
+                "value": "10.0.0.0/8",
+                "labels": {}
+              }
+            },
+            "transport": {
+              "protocol": "TCP",
+              "IPv": "IPV4",
+              "entries": [
+                {
+                  "description": "HTTP",
+                  "comment": "",
+                  "ports": "80,443",
+                  "types": []
+                }
+              ]
+            }
+          }
+        },
+        {
+          "metadata": {
+            "uid": "bcddfd42-0215-46ff-8a06-4221b32192fa",
+            "name": "allow-web-to-external-api",
+            "namespace": "production",
+            "labels": {},
+            "annotations": {},
+            "creationTimestamp": "2026-04-25T21:13:10.613496Z",
+            "resourceVersion": "190"
+          },
+          "spec": {
+            "displayName": "",
+            "comment": "",
+            "description": "",
+            "action": "ALLOW",
+            "session": {
+              "traffic": "EGRESS"
+            },
+            "endpoints": {
+              "local": {
+                "name": "web-servers",
+                "namespace": "production",
+                "type": "ADDRESS_GROUP",
+                "labels": {
+                  "tier": "frontend"
+                }
+              },
+              "remote": {
+                "name": "",
+                "namespace": "",
+                "type": "FQDN",
+                "value": "api.example.com",
+                "labels": {}
+              }
+            },
+            "transport": {
+              "protocol": "TCP",
+              "IPv": "IPV4",
+              "entries": [
+                {
+                  "description": "HTTPS",
+                  "comment": "",
+                  "ports": "443",
+                  "types": []
+                }
+              ]
+            }
+          }
+        }
+      ]
+    }
+  `}
+</CodeBlock>
+
+  </TabItem>
+</Tabs>
 
 <Restrictions items={[
   { label: 'selectors', rules: RESTRICTIONS.selectors },
@@ -535,7 +1270,7 @@ import SvcCidr from './_uni-rule-tabs/_svc-cidr.mdx'
             }
           }
         ],
-        "resourceVersion": "0"
+        "resourceVersion": "203"
       }'
   `}
 </CodeBlock>
@@ -570,7 +1305,7 @@ import SvcCidr from './_uni-rule-tabs/_svc-cidr.mdx'
             }
           }
         ],
-        "resourceVersion": "0"
+        "resourceVersion": "203"
       }'
   `}
 </CodeBlock>
@@ -590,7 +1325,7 @@ import SvcCidr from './_uni-rule-tabs/_svc-cidr.mdx'
             }
           }
         ],
-        "resourceVersion": "0"
+        "resourceVersion": "203"
       }'
   `}
 </CodeBlock>
@@ -614,7 +1349,7 @@ import SvcCidr from './_uni-rule-tabs/_svc-cidr.mdx'
             }
           }
         ],
-        "resourceVersion": "0"
+        "resourceVersion": "203"
       }'
   `}
 </CodeBlock>
@@ -641,7 +1376,7 @@ import SvcCidr from './_uni-rule-tabs/_svc-cidr.mdx'
             }
           }
         ],
-        "resourceVersion": "0"
+        "resourceVersion": "203"
       }'
   `}
 </CodeBlock>
@@ -649,62 +1384,350 @@ import SvcCidr from './_uni-rule-tabs/_svc-cidr.mdx'
   </TabItem>
 </Tabs>
 
-#### Пример ответа
+#### Примеры ответа
+
+<Tabs groupId="rule-watch">
+  <TabItem value="name" label="name" default>
 
 <CodeBlock language="json">
   {dedent`
     {
-      "type": "MODIFIED",
-      "rules": [
-        {
-          "metadata": {
-            "uid": "c9d0e1f2-a3b4-5678-cdef-789012345678",
-            "name": "allow-web-to-db",
-            "namespace": "production",
-            "labels": {
-              "policy": "web-access"
-            },
-            "resourceVersion": "2"
-          },
-          "spec": {
-            "displayName": "Allow Web to DB",
-            "comment": "Разрешить трафик от веб-серверов к БД (обновлено)",
-            "action": "ALLOW",
-            "session": {
-              "traffic": "BOTH"
-            },
-            "endpoints": {
-              "local": {
-                "name": "web-servers",
-                "namespace": "production",
-                "type": "ADDRESS_GROUP"
+      "result": {
+        "type": "MODIFIED",
+        "rules": [
+          {
+            "metadata": {
+              "uid": "7b06e971-0e22-4bf9-b322-42994097c586",
+              "name": "allow-web-to-db",
+              "namespace": "production",
+              "labels": {
+                "policy": "web-access"
               },
-              "remote": {
-                "name": "db-servers",
-                "namespace": "production",
-                "type": "ADDRESS_GROUP"
-              }
+              "annotations": {},
+              "creationTimestamp": "2026-04-25T21:12:33.141661Z",
+              "resourceVersion": "204"
             },
-            "transport": {
-              "protocol": "TCP",
-              "IPv": "IPV4",
-              "entries": [
-                {
-                  "description": "PostgreSQL",
-                  "ports": "5432"
+            "spec": {
+              "displayName": "Allow Web to DB",
+              "comment": "Разрешить трафик от веб-серверов к БД",
+              "description": "",
+              "action": "ALLOW",
+              "session": {
+                "traffic": "EGRESS"
+              },
+              "endpoints": {
+                "local": {
+                  "name": "web-servers",
+                  "namespace": "production",
+                  "type": "ADDRESS_GROUP",
+                  "labels": {
+                    "tier": "frontend"
+                  }
                 },
-                {
-                  "description": "PostgreSQL Replication",
-                  "ports": "5433"
+                "remote": {
+                  "name": "db-servers",
+                  "namespace": "production",
+                  "type": "ADDRESS_GROUP",
+                  "value": "",
+                  "labels": {
+                    "tier": "database"
+                  }
                 }
-              ]
+              },
+              "transport": {
+                "protocol": "TCP",
+                "IPv": "IPV4",
+                "entries": [
+                  {
+                    "description": "PostgreSQL",
+                    "comment": "",
+                    "ports": "5432",
+                    "types": []
+                  }
+                ]
+              }
             }
           }
-        }
-      ]
+        ]
+      }
     }
   `}
 </CodeBlock>
+
+  </TabItem>
+  <TabItem value="refs" label="refs">
+
+<CodeBlock language="json">
+  {dedent`
+    {
+      "result": {
+        "type": "MODIFIED",
+        "rules": [
+          {
+            "metadata": {
+              "uid": "7b06e971-0e22-4bf9-b322-42994097c586",
+              "name": "allow-web-to-db",
+              "namespace": "production",
+              "labels": {
+                "policy": "web-access"
+              },
+              "annotations": {},
+              "creationTimestamp": "2026-04-25T21:12:33.141661Z",
+              "resourceVersion": "204"
+            },
+            "spec": {
+              "displayName": "Allow Web to DB",
+              "comment": "Разрешить трафик от веб-серверов к БД",
+              "description": "",
+              "action": "ALLOW",
+              "session": {
+                "traffic": "EGRESS"
+              },
+              "endpoints": {
+                "local": {
+                  "name": "web-servers",
+                  "namespace": "production",
+                  "type": "ADDRESS_GROUP",
+                  "labels": {
+                    "tier": "frontend"
+                  }
+                },
+                "remote": {
+                  "name": "db-servers",
+                  "namespace": "production",
+                  "type": "ADDRESS_GROUP",
+                  "value": "",
+                  "labels": {
+                    "tier": "database"
+                  }
+                }
+              },
+              "transport": {
+                "protocol": "TCP",
+                "IPv": "IPV4",
+                "entries": [
+                  {
+                    "description": "PostgreSQL",
+                    "comment": "",
+                    "ports": "5432",
+                    "types": []
+                  }
+                ]
+              }
+            }
+          }
+        ]
+      }
+    }
+  `}
+</CodeBlock>
+
+  </TabItem>
+  <TabItem value="labels" label="labels">
+
+<CodeBlock language="json">
+  {dedent`
+    {
+      "result": {
+        "type": "MODIFIED",
+        "rules": [
+          {
+            "metadata": {
+              "uid": "7b06e971-0e22-4bf9-b322-42994097c586",
+              "name": "allow-web-to-db",
+              "namespace": "production",
+              "labels": {
+                "policy": "web-access"
+              },
+              "annotations": {},
+              "creationTimestamp": "2026-04-25T21:12:33.141661Z",
+              "resourceVersion": "204"
+            },
+            "spec": {
+              "displayName": "Allow Web to DB",
+              "comment": "Разрешить трафик от веб-серверов к БД",
+              "description": "",
+              "action": "ALLOW",
+              "session": {
+                "traffic": "EGRESS"
+              },
+              "endpoints": {
+                "local": {
+                  "name": "web-servers",
+                  "namespace": "production",
+                  "type": "ADDRESS_GROUP",
+                  "labels": {
+                    "tier": "frontend"
+                  }
+                },
+                "remote": {
+                  "name": "db-servers",
+                  "namespace": "production",
+                  "type": "ADDRESS_GROUP",
+                  "value": "",
+                  "labels": {
+                    "tier": "database"
+                  }
+                }
+              },
+              "transport": {
+                "protocol": "TCP",
+                "IPv": "IPV4",
+                "entries": [
+                  {
+                    "description": "PostgreSQL",
+                    "comment": "",
+                    "ports": "5432",
+                    "types": []
+                  }
+                ]
+              }
+            }
+          }
+        ]
+      }
+    }
+  `}
+</CodeBlock>
+
+  </TabItem>
+  <TabItem value="and" label="AND">
+
+<CodeBlock language="json">
+  {dedent`
+    {
+      "result": {
+        "type": "MODIFIED",
+        "rules": [
+          {
+            "metadata": {
+              "uid": "7b06e971-0e22-4bf9-b322-42994097c586",
+              "name": "allow-web-to-db",
+              "namespace": "production",
+              "labels": {
+                "policy": "web-access"
+              },
+              "annotations": {},
+              "creationTimestamp": "2026-04-25T21:12:33.141661Z",
+              "resourceVersion": "204"
+            },
+            "spec": {
+              "displayName": "Allow Web to DB",
+              "comment": "Разрешить трафик от веб-серверов к БД",
+              "description": "",
+              "action": "ALLOW",
+              "session": {
+                "traffic": "EGRESS"
+              },
+              "endpoints": {
+                "local": {
+                  "name": "web-servers",
+                  "namespace": "production",
+                  "type": "ADDRESS_GROUP",
+                  "labels": {
+                    "tier": "frontend"
+                  }
+                },
+                "remote": {
+                  "name": "db-servers",
+                  "namespace": "production",
+                  "type": "ADDRESS_GROUP",
+                  "value": "",
+                  "labels": {
+                    "tier": "database"
+                  }
+                }
+              },
+              "transport": {
+                "protocol": "TCP",
+                "IPv": "IPV4",
+                "entries": [
+                  {
+                    "description": "PostgreSQL",
+                    "comment": "",
+                    "ports": "5432",
+                    "types": []
+                  }
+                ]
+              }
+            }
+          }
+        ]
+      }
+    }
+  `}
+</CodeBlock>
+
+  </TabItem>
+  <TabItem value="or" label="OR">
+
+<CodeBlock language="json">
+  {dedent`
+    {
+      "result": {
+        "type": "MODIFIED",
+        "rules": [
+          {
+            "metadata": {
+              "uid": "7b06e971-0e22-4bf9-b322-42994097c586",
+              "name": "allow-web-to-db",
+              "namespace": "production",
+              "labels": {
+                "policy": "web-access"
+              },
+              "annotations": {},
+              "creationTimestamp": "2026-04-25T21:12:33.141661Z",
+              "resourceVersion": "204"
+            },
+            "spec": {
+              "displayName": "Allow Web to DB",
+              "comment": "Разрешить трафик от веб-серверов к БД",
+              "description": "",
+              "action": "ALLOW",
+              "session": {
+                "traffic": "EGRESS"
+              },
+              "endpoints": {
+                "local": {
+                  "name": "web-servers",
+                  "namespace": "production",
+                  "type": "ADDRESS_GROUP",
+                  "labels": {
+                    "tier": "frontend"
+                  }
+                },
+                "remote": {
+                  "name": "db-servers",
+                  "namespace": "production",
+                  "type": "ADDRESS_GROUP",
+                  "value": "",
+                  "labels": {
+                    "tier": "database"
+                  }
+                }
+              },
+              "transport": {
+                "protocol": "TCP",
+                "IPv": "IPV4",
+                "entries": [
+                  {
+                    "description": "PostgreSQL",
+                    "comment": "",
+                    "ports": "5432",
+                    "types": []
+                  }
+                ]
+              }
+            }
+          }
+        ]
+      }
+    }
+  `}
+</CodeBlock>
+
+  </TabItem>
+</Tabs>
 
 <Restrictions items={[
   { label: 'selectors', rules: RESTRICTIONS.selectors },

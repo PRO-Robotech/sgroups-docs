@@ -112,13 +112,15 @@ import dedent from 'ts-dedent'
       "namespaces": [
         {
           "metadata": {
-            "uid": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+            "uid": "d0ec0499-9408-4959-be27-bc305d920ba9",
             "name": "production",
+            "namespace": "",
             "labels": {
               "env": "prod"
             },
-            "creationTimestamp": "2025-01-15T10:00:00Z",
-            "resourceVersion": "1"
+            "annotations": {},
+            "creationTimestamp": "2026-04-25T21:12:32.985771Z",
+            "resourceVersion": "181"
           },
           "spec": {
             "displayName": "Production",
@@ -181,7 +183,10 @@ import dedent from 'ts-dedent'
 
 > *Необходимо указать `uid` **или** `name`.
 
-#### Удаление по uid
+#### Примеры запроса
+
+<Tabs groupId="ns-delete">
+  <TabItem value="uid" label="uid" default>
 
 <CodeBlock language="bash">
   {dedent`
@@ -191,7 +196,7 @@ import dedent from 'ts-dedent'
         "namespaces": [
           {
             "metadata": {
-              "uid": "a1b2c3d4-e5f6-7890-abcd-ef1234567890"
+              "uid": "3a46b4eb-273f-4fc3-a0e8-57b9a0401504"
             }
           }
         ]
@@ -199,7 +204,8 @@ import dedent from 'ts-dedent'
   `}
 </CodeBlock>
 
-#### Удаление по name
+  </TabItem>
+  <TabItem value="name" label="name">
 
 <CodeBlock language="bash">
   {dedent`
@@ -209,7 +215,7 @@ import dedent from 'ts-dedent'
         "namespaces": [
           {
             "metadata": {
-              "name": "production"
+              "name": "docs-del-ns-name-152112"
             }
           }
         ]
@@ -217,13 +223,31 @@ import dedent from 'ts-dedent'
   `}
 </CodeBlock>
 
-#### Пример ответа
+  </TabItem>
+</Tabs>
+
+#### Примеры ответа
+
+<Tabs groupId="ns-delete">
+  <TabItem value="uid" label="uid" default>
 
 <CodeBlock language="json">
   {dedent`
     {}
   `}
 </CodeBlock>
+
+  </TabItem>
+  <TabItem value="name" label="name">
+
+<CodeBlock language="json">
+  {dedent`
+    {}
+  `}
+</CodeBlock>
+
+  </TabItem>
+</Tabs>
 
 <Restrictions items={[
   { label: 'delete', rules: RESTRICTIONS.deleteNamespace },
@@ -381,22 +405,27 @@ import dedent from 'ts-dedent'
   </tbody>
 </table>
 
-#### Пример ответа
+#### Примеры ответа
+
+<Tabs groupId="ns-list">
+  <TabItem value="name" label="name" default>
 
 <CodeBlock language="json">
   {dedent`
     {
-      "resourceVersion": "42",
+      "resourceVersion": "195",
       "namespaces": [
         {
           "metadata": {
-            "uid": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+            "uid": "d0ec0499-9408-4959-be27-bc305d920ba9",
             "name": "production",
+            "namespace": "",
             "labels": {
               "env": "prod"
             },
-            "creationTimestamp": "2025-01-15T10:00:00Z",
-            "resourceVersion": "1"
+            "annotations": {},
+            "creationTimestamp": "2026-04-25T21:12:32.985771Z",
+            "resourceVersion": "181"
           },
           "spec": {
             "displayName": "Production",
@@ -408,6 +437,102 @@ import dedent from 'ts-dedent'
     }
   `}
 </CodeBlock>
+
+  </TabItem>
+  <TabItem value="labels" label="labels">
+
+<CodeBlock language="json">
+  {dedent`
+    {
+      "resourceVersion": "195",
+      "namespaces": [
+        {
+          "metadata": {
+            "uid": "d0ec0499-9408-4959-be27-bc305d920ba9",
+            "name": "production",
+            "namespace": "",
+            "labels": {
+              "env": "prod"
+            },
+            "annotations": {},
+            "creationTimestamp": "2026-04-25T21:12:32.985771Z",
+            "resourceVersion": "181"
+          },
+          "spec": {
+            "displayName": "Production",
+            "comment": "Продуктивное окружение",
+            "description": "Пространство имен для продуктивных сервисов"
+          }
+        }
+      ]
+    }
+  `}
+</CodeBlock>
+
+  </TabItem>
+  <TabItem value="and" label="AND">
+
+<CodeBlock language="json">
+  {dedent`
+    {
+      "resourceVersion": "195",
+      "namespaces": [
+        {
+          "metadata": {
+            "uid": "d0ec0499-9408-4959-be27-bc305d920ba9",
+            "name": "production",
+            "namespace": "",
+            "labels": {
+              "env": "prod"
+            },
+            "annotations": {},
+            "creationTimestamp": "2026-04-25T21:12:32.985771Z",
+            "resourceVersion": "181"
+          },
+          "spec": {
+            "displayName": "Production",
+            "comment": "Продуктивное окружение",
+            "description": "Пространство имен для продуктивных сервисов"
+          }
+        }
+      ]
+    }
+  `}
+</CodeBlock>
+
+  </TabItem>
+  <TabItem value="or" label="OR">
+
+<CodeBlock language="json">
+  {dedent`
+    {
+      "resourceVersion": "195",
+      "namespaces": [
+        {
+          "metadata": {
+            "uid": "d0ec0499-9408-4959-be27-bc305d920ba9",
+            "name": "production",
+            "namespace": "",
+            "labels": {
+              "env": "prod"
+            },
+            "annotations": {},
+            "creationTimestamp": "2026-04-25T21:12:32.985771Z",
+            "resourceVersion": "181"
+          },
+          "spec": {
+            "displayName": "Production",
+            "comment": "Продуктивное окружение",
+            "description": "Пространство имен для продуктивных сервисов"
+          }
+        }
+      ]
+    }
+  `}
+</CodeBlock>
+
+  </TabItem>
+</Tabs>
 
 <Restrictions items={[
   { label: 'selectors', rules: RESTRICTIONS.selectors },
@@ -475,7 +600,7 @@ import dedent from 'ts-dedent'
             }
           }
         ],
-        "resourceVersion": "0"
+        "resourceVersion": "195"
       }'
   `}
 </CodeBlock>
@@ -495,7 +620,7 @@ import dedent from 'ts-dedent'
             }
           }
         ],
-        "resourceVersion": "0"
+        "resourceVersion": "195"
       }'
   `}
 </CodeBlock>
@@ -518,7 +643,7 @@ import dedent from 'ts-dedent'
             }
           }
         ],
-        "resourceVersion": "0"
+        "resourceVersion": "195"
       }'
   `}
 </CodeBlock>
@@ -543,7 +668,7 @@ import dedent from 'ts-dedent'
             }
           }
         ],
-        "resourceVersion": "0"
+        "resourceVersion": "195"
       }'
   `}
 </CodeBlock>
@@ -551,33 +676,142 @@ import dedent from 'ts-dedent'
   </TabItem>
 </Tabs>
 
-#### Пример ответа
+#### Примеры ответа
+
+<Tabs groupId="ns-watch">
+  <TabItem value="name" label="name" default>
 
 <CodeBlock language="json">
   {dedent`
     {
-      "type": "MODIFIED",
-      "namespaces": [
-        {
-          "metadata": {
-            "uid": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
-            "name": "production",
-            "labels": {
-              "env": "prod"
+      "result": {
+        "type": "MODIFIED",
+        "namespaces": [
+          {
+            "metadata": {
+              "uid": "d0ec0499-9408-4959-be27-bc305d920ba9",
+              "name": "production",
+              "namespace": "",
+              "labels": {
+                "env": "prod"
+              },
+              "annotations": {},
+              "creationTimestamp": "2026-04-25T21:12:32.985771Z",
+              "resourceVersion": "196"
             },
-            "creationTimestamp": "2025-01-15T10:00:00Z",
-            "resourceVersion": "2"
-          },
-          "spec": {
-            "displayName": "Production",
-            "comment": "Продуктивное окружение (обновлено)",
-            "description": "Пространство имен для продуктивных сервисов"
+            "spec": {
+              "displayName": "Production",
+              "comment": "Продуктивное окружение",
+              "description": "Пространство имен для продуктивных сервисов"
+            }
           }
-        }
-      ]
+        ]
+      }
     }
   `}
 </CodeBlock>
+
+  </TabItem>
+  <TabItem value="labels" label="labels">
+
+<CodeBlock language="json">
+  {dedent`
+    {
+      "result": {
+        "type": "MODIFIED",
+        "namespaces": [
+          {
+            "metadata": {
+              "uid": "d0ec0499-9408-4959-be27-bc305d920ba9",
+              "name": "production",
+              "namespace": "",
+              "labels": {
+                "env": "prod"
+              },
+              "annotations": {},
+              "creationTimestamp": "2026-04-25T21:12:32.985771Z",
+              "resourceVersion": "196"
+            },
+            "spec": {
+              "displayName": "Production",
+              "comment": "Продуктивное окружение",
+              "description": "Пространство имен для продуктивных сервисов"
+            }
+          }
+        ]
+      }
+    }
+  `}
+</CodeBlock>
+
+  </TabItem>
+  <TabItem value="and" label="AND">
+
+<CodeBlock language="json">
+  {dedent`
+    {
+      "result": {
+        "type": "MODIFIED",
+        "namespaces": [
+          {
+            "metadata": {
+              "uid": "d0ec0499-9408-4959-be27-bc305d920ba9",
+              "name": "production",
+              "namespace": "",
+              "labels": {
+                "env": "prod"
+              },
+              "annotations": {},
+              "creationTimestamp": "2026-04-25T21:12:32.985771Z",
+              "resourceVersion": "196"
+            },
+            "spec": {
+              "displayName": "Production",
+              "comment": "Продуктивное окружение",
+              "description": "Пространство имен для продуктивных сервисов"
+            }
+          }
+        ]
+      }
+    }
+  `}
+</CodeBlock>
+
+  </TabItem>
+  <TabItem value="or" label="OR">
+
+<CodeBlock language="json">
+  {dedent`
+    {
+      "result": {
+        "type": "MODIFIED",
+        "namespaces": [
+          {
+            "metadata": {
+              "uid": "d0ec0499-9408-4959-be27-bc305d920ba9",
+              "name": "production",
+              "namespace": "",
+              "labels": {
+                "env": "prod"
+              },
+              "annotations": {},
+              "creationTimestamp": "2026-04-25T21:12:32.985771Z",
+              "resourceVersion": "196"
+            },
+            "spec": {
+              "displayName": "Production",
+              "comment": "Продуктивное окружение",
+              "description": "Пространство имен для продуктивных сервисов"
+            }
+          }
+        ]
+      }
+    }
+  `}
+</CodeBlock>
+
+  </TabItem>
+</Tabs>
 
 <Restrictions items={[
   { label: 'selectors', rules: RESTRICTIONS.selectors },

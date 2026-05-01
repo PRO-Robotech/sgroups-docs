@@ -140,14 +140,15 @@ import { ApiOperation } from '@site/src/components/commonBlocks/ApiOperation'
       "addressGroups": [
         {
           "metadata": {
-            "uid": "b2c3d4e5-f6a7-8901-bcde-f12345678901",
+            "uid": "139aa834-1370-430a-840b-e7c0b03a8fc3",
             "name": "web-servers",
             "namespace": "production",
             "labels": {
               "tier": "frontend"
             },
-            "creationTimestamp": "2025-01-15T10:05:00Z",
-            "resourceVersion": "1"
+            "annotations": {},
+            "creationTimestamp": "2026-04-25T21:12:33.007050Z",
+            "resourceVersion": "182"
           },
           "spec": {
             "displayName": "Web Servers",
@@ -221,7 +222,10 @@ import { ApiOperation } from '@site/src/components/commonBlocks/ApiOperation'
 
 > *Необходимо указать `uid` **или** комбинацию `name` + `namespace`.
 
-#### Удаление по uid
+#### Примеры запроса
+
+<Tabs groupId="ag-delete">
+  <TabItem value="uid" label="uid" default>
 
 <CodeBlock language="bash">
   {dedent`
@@ -231,7 +235,7 @@ import { ApiOperation } from '@site/src/components/commonBlocks/ApiOperation'
         "addressGroups": [
           {
             "metadata": {
-              "uid": "b2c3d4e5-f6a7-8901-bcde-f12345678901"
+              "uid": "e744f9f6-2256-41fc-a5b3-07475ef8058e"
             }
           }
         ]
@@ -239,7 +243,8 @@ import { ApiOperation } from '@site/src/components/commonBlocks/ApiOperation'
   `}
 </CodeBlock>
 
-#### Удаление по name + namespace
+  </TabItem>
+  <TabItem value="name" label="name + namespace">
 
 <CodeBlock language="bash">
   {dedent`
@@ -249,7 +254,7 @@ import { ApiOperation } from '@site/src/components/commonBlocks/ApiOperation'
         "addressGroups": [
           {
             "metadata": {
-              "name": "web-servers",
+              "name": "docs-del-ag-name-152112",
               "namespace": "production"
             }
           }
@@ -258,13 +263,31 @@ import { ApiOperation } from '@site/src/components/commonBlocks/ApiOperation'
   `}
 </CodeBlock>
 
-#### Пример ответа
+  </TabItem>
+</Tabs>
+
+#### Примеры ответа
+
+<Tabs groupId="ag-delete">
+  <TabItem value="uid" label="uid" default>
 
 <CodeBlock language="json">
   {dedent`
     {}
   `}
 </CodeBlock>
+
+  </TabItem>
+  <TabItem value="name" label="name + namespace">
+
+<CodeBlock language="json">
+  {dedent`
+    {}
+  `}
+</CodeBlock>
+
+  </TabItem>
+</Tabs>
 
 <Restrictions items={[
   { label: 'delete', rules: RESTRICTIONS.deleteWithNamespace },
@@ -481,23 +504,27 @@ import { ApiOperation } from '@site/src/components/commonBlocks/ApiOperation'
   </tbody>
 </table>
 
-#### Пример ответа
+#### Примеры ответа
+
+<Tabs groupId="ag-list">
+  <TabItem value="name" label="name" default>
 
 <CodeBlock language="json">
   {dedent`
     {
-      "resourceVersion": "42",
+      "resourceVersion": "196",
       "addressGroups": [
         {
           "metadata": {
-            "uid": "b2c3d4e5-f6a7-8901-bcde-f12345678901",
+            "uid": "139aa834-1370-430a-840b-e7c0b03a8fc3",
             "name": "web-servers",
             "namespace": "production",
             "labels": {
               "tier": "frontend"
             },
-            "creationTimestamp": "2025-01-15T10:05:00Z",
-            "resourceVersion": "1"
+            "annotations": {},
+            "creationTimestamp": "2026-04-25T21:12:33.007050Z",
+            "resourceVersion": "182"
           },
           "spec": {
             "displayName": "Web Servers",
@@ -526,7 +553,17 @@ import { ApiOperation } from '@site/src/components/commonBlocks/ApiOperation'
             {
               "name": "allow-web-to-db",
               "namespace": "production",
-              "resType": "Rule"
+              "resType": "Ag2AgRule"
+            },
+            {
+              "name": "allow-web-to-internal-net",
+              "namespace": "production",
+              "resType": "Ag2CidrRule"
+            },
+            {
+              "name": "allow-web-to-external-api",
+              "namespace": "production",
+              "resType": "Ag2FqdnRule"
             }
           ]
         }
@@ -534,6 +571,273 @@ import { ApiOperation } from '@site/src/components/commonBlocks/ApiOperation'
     }
   `}
 </CodeBlock>
+
+  </TabItem>
+  <TabItem value="refs" label="refs">
+
+<CodeBlock language="json">
+  {dedent`
+    {
+      "resourceVersion": "196",
+      "addressGroups": [
+        {
+          "metadata": {
+            "uid": "139aa834-1370-430a-840b-e7c0b03a8fc3",
+            "name": "web-servers",
+            "namespace": "production",
+            "labels": {
+              "tier": "frontend"
+            },
+            "annotations": {},
+            "creationTimestamp": "2026-04-25T21:12:33.007050Z",
+            "resourceVersion": "182"
+          },
+          "spec": {
+            "displayName": "Web Servers",
+            "comment": "Группа для веб-серверов",
+            "description": "Группа безопасности для веб-серверов фронтенда",
+            "defaultAction": "DENY",
+            "logs": true,
+            "trace": false
+          },
+          "refs": [
+            {
+              "name": "node-01",
+              "namespace": "production",
+              "resType": "Host"
+            },
+            {
+              "name": "internal-net",
+              "namespace": "production",
+              "resType": "Network"
+            },
+            {
+              "name": "web-service",
+              "namespace": "production",
+              "resType": "Service"
+            },
+            {
+              "name": "allow-web-to-db",
+              "namespace": "production",
+              "resType": "Ag2AgRule"
+            },
+            {
+              "name": "allow-web-to-internal-net",
+              "namespace": "production",
+              "resType": "Ag2CidrRule"
+            },
+            {
+              "name": "allow-web-to-external-api",
+              "namespace": "production",
+              "resType": "Ag2FqdnRule"
+            }
+          ]
+        }
+      ]
+    }
+  `}
+</CodeBlock>
+
+  </TabItem>
+  <TabItem value="labels" label="labels">
+
+<CodeBlock language="json">
+  {dedent`
+    {
+      "resourceVersion": "196",
+      "addressGroups": [
+        {
+          "metadata": {
+            "uid": "139aa834-1370-430a-840b-e7c0b03a8fc3",
+            "name": "web-servers",
+            "namespace": "production",
+            "labels": {
+              "tier": "frontend"
+            },
+            "annotations": {},
+            "creationTimestamp": "2026-04-25T21:12:33.007050Z",
+            "resourceVersion": "182"
+          },
+          "spec": {
+            "displayName": "Web Servers",
+            "comment": "Группа для веб-серверов",
+            "description": "Группа безопасности для веб-серверов фронтенда",
+            "defaultAction": "DENY",
+            "logs": true,
+            "trace": false
+          },
+          "refs": [
+            {
+              "name": "node-01",
+              "namespace": "production",
+              "resType": "Host"
+            },
+            {
+              "name": "internal-net",
+              "namespace": "production",
+              "resType": "Network"
+            },
+            {
+              "name": "web-service",
+              "namespace": "production",
+              "resType": "Service"
+            },
+            {
+              "name": "allow-web-to-db",
+              "namespace": "production",
+              "resType": "Ag2AgRule"
+            },
+            {
+              "name": "allow-web-to-internal-net",
+              "namespace": "production",
+              "resType": "Ag2CidrRule"
+            },
+            {
+              "name": "allow-web-to-external-api",
+              "namespace": "production",
+              "resType": "Ag2FqdnRule"
+            }
+          ]
+        }
+      ]
+    }
+  `}
+</CodeBlock>
+
+  </TabItem>
+  <TabItem value="and" label="AND">
+
+<CodeBlock language="json">
+  {dedent`
+    {
+      "resourceVersion": "196",
+      "addressGroups": [
+        {
+          "metadata": {
+            "uid": "139aa834-1370-430a-840b-e7c0b03a8fc3",
+            "name": "web-servers",
+            "namespace": "production",
+            "labels": {
+              "tier": "frontend"
+            },
+            "annotations": {},
+            "creationTimestamp": "2026-04-25T21:12:33.007050Z",
+            "resourceVersion": "182"
+          },
+          "spec": {
+            "displayName": "Web Servers",
+            "comment": "Группа для веб-серверов",
+            "description": "Группа безопасности для веб-серверов фронтенда",
+            "defaultAction": "DENY",
+            "logs": true,
+            "trace": false
+          },
+          "refs": [
+            {
+              "name": "node-01",
+              "namespace": "production",
+              "resType": "Host"
+            },
+            {
+              "name": "internal-net",
+              "namespace": "production",
+              "resType": "Network"
+            },
+            {
+              "name": "web-service",
+              "namespace": "production",
+              "resType": "Service"
+            },
+            {
+              "name": "allow-web-to-db",
+              "namespace": "production",
+              "resType": "Ag2AgRule"
+            },
+            {
+              "name": "allow-web-to-internal-net",
+              "namespace": "production",
+              "resType": "Ag2CidrRule"
+            },
+            {
+              "name": "allow-web-to-external-api",
+              "namespace": "production",
+              "resType": "Ag2FqdnRule"
+            }
+          ]
+        }
+      ]
+    }
+  `}
+</CodeBlock>
+
+  </TabItem>
+  <TabItem value="or" label="OR">
+
+<CodeBlock language="json">
+  {dedent`
+    {
+      "resourceVersion": "196",
+      "addressGroups": [
+        {
+          "metadata": {
+            "uid": "139aa834-1370-430a-840b-e7c0b03a8fc3",
+            "name": "web-servers",
+            "namespace": "production",
+            "labels": {
+              "tier": "frontend"
+            },
+            "annotations": {},
+            "creationTimestamp": "2026-04-25T21:12:33.007050Z",
+            "resourceVersion": "182"
+          },
+          "spec": {
+            "displayName": "Web Servers",
+            "comment": "Группа для веб-серверов",
+            "description": "Группа безопасности для веб-серверов фронтенда",
+            "defaultAction": "DENY",
+            "logs": true,
+            "trace": false
+          },
+          "refs": [
+            {
+              "name": "node-01",
+              "namespace": "production",
+              "resType": "Host"
+            },
+            {
+              "name": "internal-net",
+              "namespace": "production",
+              "resType": "Network"
+            },
+            {
+              "name": "web-service",
+              "namespace": "production",
+              "resType": "Service"
+            },
+            {
+              "name": "allow-web-to-db",
+              "namespace": "production",
+              "resType": "Ag2AgRule"
+            },
+            {
+              "name": "allow-web-to-internal-net",
+              "namespace": "production",
+              "resType": "Ag2CidrRule"
+            },
+            {
+              "name": "allow-web-to-external-api",
+              "namespace": "production",
+              "resType": "Ag2FqdnRule"
+            }
+          ]
+        }
+      ]
+    }
+  `}
+</CodeBlock>
+
+  </TabItem>
+</Tabs>
 
 <Restrictions items={[
   { label: 'selectors', rules: RESTRICTIONS.selectors },
@@ -614,7 +918,7 @@ import { ApiOperation } from '@site/src/components/commonBlocks/ApiOperation'
             }
           }
         ],
-        "resourceVersion": "0"
+        "resourceVersion": "196"
       }'
   `}
 </CodeBlock>
@@ -642,7 +946,7 @@ import { ApiOperation } from '@site/src/components/commonBlocks/ApiOperation'
             }
           }
         ],
-        "resourceVersion": "0"
+        "resourceVersion": "196"
       }'
   `}
 </CodeBlock>
@@ -662,7 +966,7 @@ import { ApiOperation } from '@site/src/components/commonBlocks/ApiOperation'
             }
           }
         ],
-        "resourceVersion": "0"
+        "resourceVersion": "196"
       }'
   `}
 </CodeBlock>
@@ -692,7 +996,7 @@ import { ApiOperation } from '@site/src/components/commonBlocks/ApiOperation'
             }
           }
         ],
-        "resourceVersion": "0"
+        "resourceVersion": "196"
       }'
   `}
 </CodeBlock>
@@ -720,7 +1024,7 @@ import { ApiOperation } from '@site/src/components/commonBlocks/ApiOperation'
             }
           }
         ],
-        "resourceVersion": "0"
+        "resourceVersion": "196"
       }'
   `}
 </CodeBlock>
@@ -747,59 +1051,350 @@ import { ApiOperation } from '@site/src/components/commonBlocks/ApiOperation'
   </tbody>
 </table>
 
-#### Пример ответа
+#### Примеры ответа
+
+<Tabs groupId="ag-watch">
+  <TabItem value="name" label="name" default>
 
 <CodeBlock language="json">
   {dedent`
     {
-      "type": "MODIFIED",
-      "addressGroups": [
-        {
-          "metadata": {
-            "uid": "b2c3d4e5-f6a7-8901-bcde-f12345678901",
-            "name": "web-servers",
-            "namespace": "production",
-            "labels": {
-              "tier": "frontend"
-            },
-            "creationTimestamp": "2025-01-15T10:05:00Z",
-            "resourceVersion": "2"
-          },
-          "spec": {
-            "displayName": "Web Servers",
-            "comment": "Группа для веб-серверов (обновлено)",
-            "description": "Группа безопасности для веб-серверов фронтенда",
-            "defaultAction": "DENY",
-            "logs": true,
-            "trace": true
-          },
-          "refs": [
-            {
-              "name": "node-01",
+      "result": {
+        "type": "MODIFIED",
+        "addressGroups": [
+          {
+            "metadata": {
+              "uid": "139aa834-1370-430a-840b-e7c0b03a8fc3",
+              "name": "web-servers",
               "namespace": "production",
-              "resType": "Host"
+              "labels": {
+                "tier": "frontend"
+              },
+              "annotations": {},
+              "creationTimestamp": "2026-04-25T21:12:33.007050Z",
+              "resourceVersion": "197"
             },
-            {
-              "name": "internal-net",
-              "namespace": "production",
-              "resType": "Network"
+            "spec": {
+              "displayName": "Web Servers",
+              "comment": "Группа для веб-серверов",
+              "description": "Группа безопасности для веб-серверов фронтенда",
+              "defaultAction": "DENY",
+              "logs": true,
+              "trace": false
             },
-            {
-              "name": "web-service",
-              "namespace": "production",
-              "resType": "Service"
-            },
-            {
-              "name": "allow-web-to-db",
-              "namespace": "production",
-              "resType": "Rule"
-            }
-          ]
-        }
-      ]
+            "refs": [
+              {
+                "name": "node-01",
+                "namespace": "production",
+                "resType": "Host"
+              },
+              {
+                "name": "internal-net",
+                "namespace": "production",
+                "resType": "Network"
+              },
+              {
+                "name": "web-service",
+                "namespace": "production",
+                "resType": "Service"
+              },
+              {
+                "name": "allow-web-to-db",
+                "namespace": "production",
+                "resType": "Ag2AgRule"
+              },
+              {
+                "name": "allow-web-to-internal-net",
+                "namespace": "production",
+                "resType": "Ag2CidrRule"
+              },
+              {
+                "name": "allow-web-to-external-api",
+                "namespace": "production",
+                "resType": "Ag2FqdnRule"
+              }
+            ]
+          }
+        ]
+      }
     }
   `}
 </CodeBlock>
+
+  </TabItem>
+  <TabItem value="refs" label="refs">
+
+<CodeBlock language="json">
+  {dedent`
+    {
+      "result": {
+        "type": "MODIFIED",
+        "addressGroups": [
+          {
+            "metadata": {
+              "uid": "139aa834-1370-430a-840b-e7c0b03a8fc3",
+              "name": "web-servers",
+              "namespace": "production",
+              "labels": {
+                "tier": "frontend"
+              },
+              "annotations": {},
+              "creationTimestamp": "2026-04-25T21:12:33.007050Z",
+              "resourceVersion": "197"
+            },
+            "spec": {
+              "displayName": "Web Servers",
+              "comment": "Группа для веб-серверов",
+              "description": "Группа безопасности для веб-серверов фронтенда",
+              "defaultAction": "DENY",
+              "logs": true,
+              "trace": false
+            },
+            "refs": [
+              {
+                "name": "node-01",
+                "namespace": "production",
+                "resType": "Host"
+              },
+              {
+                "name": "internal-net",
+                "namespace": "production",
+                "resType": "Network"
+              },
+              {
+                "name": "web-service",
+                "namespace": "production",
+                "resType": "Service"
+              },
+              {
+                "name": "allow-web-to-db",
+                "namespace": "production",
+                "resType": "Ag2AgRule"
+              },
+              {
+                "name": "allow-web-to-internal-net",
+                "namespace": "production",
+                "resType": "Ag2CidrRule"
+              },
+              {
+                "name": "allow-web-to-external-api",
+                "namespace": "production",
+                "resType": "Ag2FqdnRule"
+              }
+            ]
+          }
+        ]
+      }
+    }
+  `}
+</CodeBlock>
+
+  </TabItem>
+  <TabItem value="labels" label="labels">
+
+<CodeBlock language="json">
+  {dedent`
+    {
+      "result": {
+        "type": "MODIFIED",
+        "addressGroups": [
+          {
+            "metadata": {
+              "uid": "139aa834-1370-430a-840b-e7c0b03a8fc3",
+              "name": "web-servers",
+              "namespace": "production",
+              "labels": {
+                "tier": "frontend"
+              },
+              "annotations": {},
+              "creationTimestamp": "2026-04-25T21:12:33.007050Z",
+              "resourceVersion": "197"
+            },
+            "spec": {
+              "displayName": "Web Servers",
+              "comment": "Группа для веб-серверов",
+              "description": "Группа безопасности для веб-серверов фронтенда",
+              "defaultAction": "DENY",
+              "logs": true,
+              "trace": false
+            },
+            "refs": [
+              {
+                "name": "node-01",
+                "namespace": "production",
+                "resType": "Host"
+              },
+              {
+                "name": "internal-net",
+                "namespace": "production",
+                "resType": "Network"
+              },
+              {
+                "name": "web-service",
+                "namespace": "production",
+                "resType": "Service"
+              },
+              {
+                "name": "allow-web-to-db",
+                "namespace": "production",
+                "resType": "Ag2AgRule"
+              },
+              {
+                "name": "allow-web-to-internal-net",
+                "namespace": "production",
+                "resType": "Ag2CidrRule"
+              },
+              {
+                "name": "allow-web-to-external-api",
+                "namespace": "production",
+                "resType": "Ag2FqdnRule"
+              }
+            ]
+          }
+        ]
+      }
+    }
+  `}
+</CodeBlock>
+
+  </TabItem>
+  <TabItem value="and" label="AND">
+
+<CodeBlock language="json">
+  {dedent`
+    {
+      "result": {
+        "type": "MODIFIED",
+        "addressGroups": [
+          {
+            "metadata": {
+              "uid": "139aa834-1370-430a-840b-e7c0b03a8fc3",
+              "name": "web-servers",
+              "namespace": "production",
+              "labels": {
+                "tier": "frontend"
+              },
+              "annotations": {},
+              "creationTimestamp": "2026-04-25T21:12:33.007050Z",
+              "resourceVersion": "197"
+            },
+            "spec": {
+              "displayName": "Web Servers",
+              "comment": "Группа для веб-серверов",
+              "description": "Группа безопасности для веб-серверов фронтенда",
+              "defaultAction": "DENY",
+              "logs": true,
+              "trace": false
+            },
+            "refs": [
+              {
+                "name": "node-01",
+                "namespace": "production",
+                "resType": "Host"
+              },
+              {
+                "name": "internal-net",
+                "namespace": "production",
+                "resType": "Network"
+              },
+              {
+                "name": "web-service",
+                "namespace": "production",
+                "resType": "Service"
+              },
+              {
+                "name": "allow-web-to-db",
+                "namespace": "production",
+                "resType": "Ag2AgRule"
+              },
+              {
+                "name": "allow-web-to-internal-net",
+                "namespace": "production",
+                "resType": "Ag2CidrRule"
+              },
+              {
+                "name": "allow-web-to-external-api",
+                "namespace": "production",
+                "resType": "Ag2FqdnRule"
+              }
+            ]
+          }
+        ]
+      }
+    }
+  `}
+</CodeBlock>
+
+  </TabItem>
+  <TabItem value="or" label="OR">
+
+<CodeBlock language="json">
+  {dedent`
+    {
+      "result": {
+        "type": "MODIFIED",
+        "addressGroups": [
+          {
+            "metadata": {
+              "uid": "139aa834-1370-430a-840b-e7c0b03a8fc3",
+              "name": "web-servers",
+              "namespace": "production",
+              "labels": {
+                "tier": "frontend"
+              },
+              "annotations": {},
+              "creationTimestamp": "2026-04-25T21:12:33.007050Z",
+              "resourceVersion": "197"
+            },
+            "spec": {
+              "displayName": "Web Servers",
+              "comment": "Группа для веб-серверов",
+              "description": "Группа безопасности для веб-серверов фронтенда",
+              "defaultAction": "DENY",
+              "logs": true,
+              "trace": false
+            },
+            "refs": [
+              {
+                "name": "node-01",
+                "namespace": "production",
+                "resType": "Host"
+              },
+              {
+                "name": "internal-net",
+                "namespace": "production",
+                "resType": "Network"
+              },
+              {
+                "name": "web-service",
+                "namespace": "production",
+                "resType": "Service"
+              },
+              {
+                "name": "allow-web-to-db",
+                "namespace": "production",
+                "resType": "Ag2AgRule"
+              },
+              {
+                "name": "allow-web-to-internal-net",
+                "namespace": "production",
+                "resType": "Ag2CidrRule"
+              },
+              {
+                "name": "allow-web-to-external-api",
+                "namespace": "production",
+                "resType": "Ag2FqdnRule"
+              }
+            ]
+          }
+        ]
+      }
+    }
+  `}
+</CodeBlock>
+
+  </TabItem>
+</Tabs>
 
 <Restrictions items={[
   { label: 'selectors', rules: RESTRICTIONS.selectors },

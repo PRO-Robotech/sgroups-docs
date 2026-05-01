@@ -85,7 +85,7 @@ import dedent from 'ts-dedent'
       <td>{DICTIONARY.protocol.short}</td>
     </tr>
     <tr>
-      <td><code>spec.transport.ipv</code></td>
+      <td><code>spec.transport.IPv</code></td>
       <td>да</td>
       <td><code>{TYPES.enumIpv}</code></td>
       <td>{DICTIONARY.ipv.short}</td>
@@ -185,13 +185,18 @@ import dedent from 'ts-dedent'
       "rules": [
         {
           "metadata": {
-            "uid": "a7b8c9d0-e1f2-3456-0123-456789abcdef",
+            "uid": "fd56bd50-6de4-4448-b4a9-f4d67cc1f44f",
             "name": "allow-proxy-svc-to-cdn",
             "namespace": "production",
-            "creationTimestamp": "2025-01-15T11:40:00Z",
-            "resourceVersion": "1"
+            "labels": {},
+            "annotations": {},
+            "creationTimestamp": "2026-04-25T21:13:10.628863Z",
+            "resourceVersion": "194"
           },
           "spec": {
+            "displayName": "",
+            "comment": "",
+            "description": "",
             "action": "ALLOW",
             "session": {
               "traffic": "EGRESS"
@@ -200,11 +205,17 @@ import dedent from 'ts-dedent'
               "local": {
                 "name": "proxy-service",
                 "namespace": "production",
-                "type": "SERVICE"
+                "type": "SERVICE",
+                "labels": {
+                  "app": "proxy"
+                }
               },
               "remote": {
+                "name": "",
+                "namespace": "",
                 "type": "FQDN",
-                "value": "cdn.example.com"
+                "value": "cdn.example.com",
+                "labels": {}
               }
             },
             "transport": {
@@ -213,7 +224,9 @@ import dedent from 'ts-dedent'
               "entries": [
                 {
                   "description": "HTTPS",
-                  "ports": "443"
+                  "comment": "",
+                  "ports": "443",
+                  "types": []
                 }
               ]
             }

@@ -43,10 +43,26 @@ const config: Config = {
       title: 'SGroups',
       items: [
         {
-          type: 'docSidebar',
-          sidebarId: 'techDocs',
-          position: 'left',
+          type: 'dropdown',
           label: 'Техническая документация',
+          position: 'left',
+          items: [
+            {
+              type: 'docSidebar',
+              sidebarId: 'serverSidebar',
+              label: 'server (API)',
+            },
+            {
+              type: 'docSidebar',
+              sidebarId: 'k8sSidebar',
+              label: 'proxy (k8s)',
+            },
+            {
+              type: 'docSidebar',
+              sidebarId: 'agentSidebar',
+              label: 'agent (Linux)',
+            },
+          ],
         },
         {
           href: 'https://github.com/PRO-Robotech',

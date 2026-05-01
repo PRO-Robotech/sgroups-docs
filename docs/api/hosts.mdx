@@ -123,19 +123,32 @@ import { ApiOperation } from '@site/src/components/commonBlocks/ApiOperation'
       "hosts": [
         {
           "metadata": {
-            "uid": "c3d4e5f6-a7b8-9012-cdef-123456789012",
+            "uid": "023e074c-461d-4abd-8ee1-9c9604da49c6",
             "name": "node-01",
             "namespace": "production",
             "labels": {
               "role": "worker"
             },
-            "creationTimestamp": "2025-01-15T10:10:00Z",
-            "resourceVersion": "1"
+            "annotations": {},
+            "creationTimestamp": "2026-04-25T21:12:33.030954Z",
+            "resourceVersion": "183"
           },
           "spec": {
             "displayName": "Node 01",
             "comment": "Рабочий узел",
-            "description": "Первый рабочий узел кластера"
+            "description": "Первый рабочий узел кластера",
+            "IPs": {
+              "IPv4": [],
+              "IPv6": []
+            },
+            "metaInfo": {
+              "hostName": "",
+              "os": "",
+              "platform": "",
+              "platformFamily": "",
+              "platformVersion": "",
+              "kernelVersion": ""
+            }
           }
         }
       ]
@@ -198,9 +211,12 @@ import { ApiOperation } from '@site/src/components/commonBlocks/ApiOperation'
   </tbody>
 </table>
 
-> *Необходимо указать `uid` **или** комбинацию `name` + `namespace`.
+> *Для этой операции необходимо указать все три поля: `uid`, `name` и `namespace`.
 
-#### Пример запроса
+#### Примеры запроса
+
+<Tabs groupId="host-delete">
+  <TabItem value="uid" label="uid" default>
 
 <CodeBlock language="bash">
   {dedent`
@@ -210,7 +226,26 @@ import { ApiOperation } from '@site/src/components/commonBlocks/ApiOperation'
         "hosts": [
           {
             "metadata": {
-              "name": "node-01",
+              "uid": "a7222de3-6f4b-403d-8fa6-7177f65c00f2"
+            }
+          }
+        ]
+      }'
+  `}
+</CodeBlock>
+
+  </TabItem>
+  <TabItem value="name" label="name + namespace">
+
+<CodeBlock language="bash">
+  {dedent`
+    curl -X POST http://localhost:9006/v1/hosts/delete \\
+      -H 'Content-Type: application/json' \\
+      -d '{
+        "hosts": [
+          {
+            "metadata": {
+              "name": "docs-del-host-name-152112",
               "namespace": "production"
             }
           }
@@ -219,13 +254,31 @@ import { ApiOperation } from '@site/src/components/commonBlocks/ApiOperation'
   `}
 </CodeBlock>
 
-#### Пример ответа
+  </TabItem>
+</Tabs>
+
+#### Примеры ответа
+
+<Tabs groupId="host-delete">
+  <TabItem value="uid" label="uid" default>
 
 <CodeBlock language="json">
   {dedent`
     {}
   `}
 </CodeBlock>
+
+  </TabItem>
+  <TabItem value="name" label="name + namespace">
+
+<CodeBlock language="json">
+  {dedent`
+    {}
+  `}
+</CodeBlock>
+
+  </TabItem>
+</Tabs>
 
 <Restrictions items={[
   { label: 'delete', rules: RESTRICTIONS.deleteWithNamespace },
@@ -439,44 +492,43 @@ import { ApiOperation } from '@site/src/components/commonBlocks/ApiOperation'
   </tbody>
 </table>
 
-#### Пример ответа
+#### Примеры ответа
+
+<Tabs groupId="host-list">
+  <TabItem value="name" label="name" default>
 
 <CodeBlock language="json">
   {dedent`
     {
-      "resourceVersion": "42",
+      "resourceVersion": "197",
       "hosts": [
         {
           "metadata": {
-            "uid": "c3d4e5f6-a7b8-9012-cdef-123456789012",
+            "uid": "023e074c-461d-4abd-8ee1-9c9604da49c6",
             "name": "node-01",
             "namespace": "production",
             "labels": {
               "role": "worker"
             },
-            "creationTimestamp": "2025-01-15T10:10:00Z",
-            "resourceVersion": "3"
+            "annotations": {},
+            "creationTimestamp": "2026-04-25T21:12:33.030954Z",
+            "resourceVersion": "183"
           },
           "spec": {
             "displayName": "Node 01",
             "comment": "Рабочий узел",
             "description": "Первый рабочий узел кластера",
             "IPs": {
-              "IPv4": [
-                "10.0.1.10",
-                "10.0.1.11"
-              ],
-              "IPv6": [
-                "fd00::1:10"
-              ]
+              "IPv4": [],
+              "IPv6": []
             },
             "metaInfo": {
-              "hostName": "node-01.example.com",
-              "os": "linux",
-              "platform": "ubuntu",
-              "platformFamily": "debian",
-              "platformVersion": "22.04",
-              "kernelVersion": "5.15.0-91-generic"
+              "hostName": "",
+              "os": "",
+              "platform": "",
+              "platformFamily": "",
+              "platformVersion": "",
+              "kernelVersion": ""
             }
           },
           "refs": [
@@ -491,6 +543,283 @@ import { ApiOperation } from '@site/src/components/commonBlocks/ApiOperation'
     }
   `}
 </CodeBlock>
+
+  </TabItem>
+  <TabItem value="refs" label="refs">
+
+<CodeBlock language="json">
+  {dedent`
+    {
+      "resourceVersion": "197",
+      "hosts": [
+        {
+          "metadata": {
+            "uid": "023e074c-461d-4abd-8ee1-9c9604da49c6",
+            "name": "node-01",
+            "namespace": "production",
+            "labels": {
+              "role": "worker"
+            },
+            "annotations": {},
+            "creationTimestamp": "2026-04-25T21:12:33.030954Z",
+            "resourceVersion": "183"
+          },
+          "spec": {
+            "displayName": "Node 01",
+            "comment": "Рабочий узел",
+            "description": "Первый рабочий узел кластера",
+            "IPs": {
+              "IPv4": [],
+              "IPv6": []
+            },
+            "metaInfo": {
+              "hostName": "",
+              "os": "",
+              "platform": "",
+              "platformFamily": "",
+              "platformVersion": "",
+              "kernelVersion": ""
+            }
+          },
+          "refs": [
+            {
+              "name": "web-servers",
+              "namespace": "production",
+              "resType": "AddressGroup"
+            }
+          ]
+        }
+      ]
+    }
+  `}
+</CodeBlock>
+
+  </TabItem>
+  <TabItem value="labels" label="labels">
+
+<CodeBlock language="json">
+  {dedent`
+    {
+      "resourceVersion": "197",
+      "hosts": [
+        {
+          "metadata": {
+            "uid": "d1314a7f-d4fb-4699-9ccd-e43b41588c00",
+            "name": "node-02",
+            "namespace": "production",
+            "labels": {
+              "role": "worker"
+            },
+            "annotations": {},
+            "creationTimestamp": "2026-04-25T21:12:33.030954Z",
+            "resourceVersion": "87"
+          },
+          "spec": {
+            "displayName": "Node 02",
+            "comment": "",
+            "description": "",
+            "IPs": {
+              "IPv4": [],
+              "IPv6": []
+            },
+            "metaInfo": {
+              "hostName": "",
+              "os": "",
+              "platform": "",
+              "platformFamily": "",
+              "platformVersion": "",
+              "kernelVersion": ""
+            }
+          },
+          "refs": [
+            {
+              "name": "api-servers",
+              "namespace": "production",
+              "resType": "AddressGroup"
+            }
+          ]
+        },
+        {
+          "metadata": {
+            "uid": "023e074c-461d-4abd-8ee1-9c9604da49c6",
+            "name": "node-01",
+            "namespace": "production",
+            "labels": {
+              "role": "worker"
+            },
+            "annotations": {},
+            "creationTimestamp": "2026-04-25T21:12:33.030954Z",
+            "resourceVersion": "183"
+          },
+          "spec": {
+            "displayName": "Node 01",
+            "comment": "Рабочий узел",
+            "description": "Первый рабочий узел кластера",
+            "IPs": {
+              "IPv4": [],
+              "IPv6": []
+            },
+            "metaInfo": {
+              "hostName": "",
+              "os": "",
+              "platform": "",
+              "platformFamily": "",
+              "platformVersion": "",
+              "kernelVersion": ""
+            }
+          },
+          "refs": [
+            {
+              "name": "web-servers",
+              "namespace": "production",
+              "resType": "AddressGroup"
+            }
+          ]
+        }
+      ]
+    }
+  `}
+</CodeBlock>
+
+  </TabItem>
+  <TabItem value="and" label="AND">
+
+<CodeBlock language="json">
+  {dedent`
+    {
+      "resourceVersion": "197",
+      "hosts": [
+        {
+          "metadata": {
+            "uid": "023e074c-461d-4abd-8ee1-9c9604da49c6",
+            "name": "node-01",
+            "namespace": "production",
+            "labels": {
+              "role": "worker"
+            },
+            "annotations": {},
+            "creationTimestamp": "2026-04-25T21:12:33.030954Z",
+            "resourceVersion": "183"
+          },
+          "spec": {
+            "displayName": "Node 01",
+            "comment": "Рабочий узел",
+            "description": "Первый рабочий узел кластера",
+            "IPs": {
+              "IPv4": [],
+              "IPv6": []
+            },
+            "metaInfo": {
+              "hostName": "",
+              "os": "",
+              "platform": "",
+              "platformFamily": "",
+              "platformVersion": "",
+              "kernelVersion": ""
+            }
+          },
+          "refs": [
+            {
+              "name": "web-servers",
+              "namespace": "production",
+              "resType": "AddressGroup"
+            }
+          ]
+        }
+      ]
+    }
+  `}
+</CodeBlock>
+
+  </TabItem>
+  <TabItem value="or" label="OR">
+
+<CodeBlock language="json">
+  {dedent`
+    {
+      "resourceVersion": "197",
+      "hosts": [
+        {
+          "metadata": {
+            "uid": "d1314a7f-d4fb-4699-9ccd-e43b41588c00",
+            "name": "node-02",
+            "namespace": "production",
+            "labels": {
+              "role": "worker"
+            },
+            "annotations": {},
+            "creationTimestamp": "2026-04-25T21:12:33.030954Z",
+            "resourceVersion": "87"
+          },
+          "spec": {
+            "displayName": "Node 02",
+            "comment": "",
+            "description": "",
+            "IPs": {
+              "IPv4": [],
+              "IPv6": []
+            },
+            "metaInfo": {
+              "hostName": "",
+              "os": "",
+              "platform": "",
+              "platformFamily": "",
+              "platformVersion": "",
+              "kernelVersion": ""
+            }
+          },
+          "refs": [
+            {
+              "name": "api-servers",
+              "namespace": "production",
+              "resType": "AddressGroup"
+            }
+          ]
+        },
+        {
+          "metadata": {
+            "uid": "023e074c-461d-4abd-8ee1-9c9604da49c6",
+            "name": "node-01",
+            "namespace": "production",
+            "labels": {
+              "role": "worker"
+            },
+            "annotations": {},
+            "creationTimestamp": "2026-04-25T21:12:33.030954Z",
+            "resourceVersion": "183"
+          },
+          "spec": {
+            "displayName": "Node 01",
+            "comment": "Рабочий узел",
+            "description": "Первый рабочий узел кластера",
+            "IPs": {
+              "IPv4": [],
+              "IPv6": []
+            },
+            "metaInfo": {
+              "hostName": "",
+              "os": "",
+              "platform": "",
+              "platformFamily": "",
+              "platformVersion": "",
+              "kernelVersion": ""
+            }
+          },
+          "refs": [
+            {
+              "name": "web-servers",
+              "namespace": "production",
+              "resType": "AddressGroup"
+            }
+          ]
+        }
+      ]
+    }
+  `}
+</CodeBlock>
+
+  </TabItem>
+</Tabs>
 
 <Restrictions items={[
   { label: 'selectors', rules: RESTRICTIONS.selectors },
@@ -571,7 +900,7 @@ import { ApiOperation } from '@site/src/components/commonBlocks/ApiOperation'
             }
           }
         ],
-        "resourceVersion": "0"
+        "resourceVersion": "197"
       }'
   `}
 </CodeBlock>
@@ -599,7 +928,7 @@ import { ApiOperation } from '@site/src/components/commonBlocks/ApiOperation'
             }
           }
         ],
-        "resourceVersion": "0"
+        "resourceVersion": "197"
       }'
   `}
 </CodeBlock>
@@ -619,7 +948,7 @@ import { ApiOperation } from '@site/src/components/commonBlocks/ApiOperation'
             }
           }
         ],
-        "resourceVersion": "0"
+        "resourceVersion": "197"
       }'
   `}
 </CodeBlock>
@@ -649,7 +978,7 @@ import { ApiOperation } from '@site/src/components/commonBlocks/ApiOperation'
             }
           }
         ],
-        "resourceVersion": "0"
+        "resourceVersion": "197"
       }'
   `}
 </CodeBlock>
@@ -674,7 +1003,7 @@ import { ApiOperation } from '@site/src/components/commonBlocks/ApiOperation'
             }
           }
         ],
-        "resourceVersion": "0"
+        "resourceVersion": "197"
       }'
   `}
 </CodeBlock>
@@ -701,55 +1030,270 @@ import { ApiOperation } from '@site/src/components/commonBlocks/ApiOperation'
   </tbody>
 </table>
 
-#### Пример ответа
+#### Примеры ответа
+
+<Tabs groupId="host-watch">
+  <TabItem value="name" label="name" default>
 
 <CodeBlock language="json">
   {dedent`
     {
-      "type": "MODIFIED",
-      "hosts": [
-        {
-          "metadata": {
-            "uid": "c3d4e5f6-a7b8-9012-cdef-123456789012",
-            "name": "node-01",
-            "namespace": "production",
-            "resourceVersion": "4"
-          },
-          "spec": {
-            "displayName": "Node 01",
-            "comment": "Рабочий узел",
-            "description": "Первый рабочий узел кластера",
-            "IPs": {
-              "IPv4": [
-                "10.0.1.10",
-                "10.0.1.11",
-                "10.0.1.12"
-              ],
-              "IPv6": [
-                "fd00::1:10"
-              ]
-            },
-            "metaInfo": {
-              "hostName": "node-01.example.com",
-              "os": "linux",
-              "platform": "ubuntu",
-              "platformFamily": "debian",
-              "platformVersion": "22.04",
-              "kernelVersion": "5.15.0-91-generic"
-            }
-          },
-          "refs": [
-            {
-              "name": "web-servers",
+      "result": {
+        "type": "MODIFIED",
+        "hosts": [
+          {
+            "metadata": {
+              "uid": "023e074c-461d-4abd-8ee1-9c9604da49c6",
+              "name": "node-01",
               "namespace": "production",
-              "resType": "AddressGroup"
-            }
-          ]
-        }
-      ]
+              "labels": {
+                "role": "worker"
+              },
+              "annotations": {},
+              "creationTimestamp": "2026-04-25T21:12:33.030954Z",
+              "resourceVersion": "198"
+            },
+            "spec": {
+              "displayName": "Node 01",
+              "comment": "Рабочий узел",
+              "description": "Первый рабочий узел кластера",
+              "IPs": {
+                "IPv4": [],
+                "IPv6": []
+              },
+              "metaInfo": {
+                "hostName": "",
+                "os": "",
+                "platform": "",
+                "platformFamily": "",
+                "platformVersion": "",
+                "kernelVersion": ""
+              }
+            },
+            "refs": [
+              {
+                "name": "web-servers",
+                "namespace": "production",
+                "resType": "AddressGroup"
+              }
+            ]
+          }
+        ]
+      }
     }
   `}
 </CodeBlock>
+
+  </TabItem>
+  <TabItem value="refs" label="refs">
+
+<CodeBlock language="json">
+  {dedent`
+    {
+      "result": {
+        "type": "MODIFIED",
+        "hosts": [
+          {
+            "metadata": {
+              "uid": "023e074c-461d-4abd-8ee1-9c9604da49c6",
+              "name": "node-01",
+              "namespace": "production",
+              "labels": {
+                "role": "worker"
+              },
+              "annotations": {},
+              "creationTimestamp": "2026-04-25T21:12:33.030954Z",
+              "resourceVersion": "198"
+            },
+            "spec": {
+              "displayName": "Node 01",
+              "comment": "Рабочий узел",
+              "description": "Первый рабочий узел кластера",
+              "IPs": {
+                "IPv4": [],
+                "IPv6": []
+              },
+              "metaInfo": {
+                "hostName": "",
+                "os": "",
+                "platform": "",
+                "platformFamily": "",
+                "platformVersion": "",
+                "kernelVersion": ""
+              }
+            },
+            "refs": [
+              {
+                "name": "web-servers",
+                "namespace": "production",
+                "resType": "AddressGroup"
+              }
+            ]
+          }
+        ]
+      }
+    }
+  `}
+</CodeBlock>
+
+  </TabItem>
+  <TabItem value="labels" label="labels">
+
+<CodeBlock language="json">
+  {dedent`
+    {
+      "result": {
+        "type": "MODIFIED",
+        "hosts": [
+          {
+            "metadata": {
+              "uid": "023e074c-461d-4abd-8ee1-9c9604da49c6",
+              "name": "node-01",
+              "namespace": "production",
+              "labels": {
+                "role": "worker"
+              },
+              "annotations": {},
+              "creationTimestamp": "2026-04-25T21:12:33.030954Z",
+              "resourceVersion": "198"
+            },
+            "spec": {
+              "displayName": "Node 01",
+              "comment": "Рабочий узел",
+              "description": "Первый рабочий узел кластера",
+              "IPs": {
+                "IPv4": [],
+                "IPv6": []
+              },
+              "metaInfo": {
+                "hostName": "",
+                "os": "",
+                "platform": "",
+                "platformFamily": "",
+                "platformVersion": "",
+                "kernelVersion": ""
+              }
+            },
+            "refs": [
+              {
+                "name": "web-servers",
+                "namespace": "production",
+                "resType": "AddressGroup"
+              }
+            ]
+          }
+        ]
+      }
+    }
+  `}
+</CodeBlock>
+
+  </TabItem>
+  <TabItem value="and" label="AND">
+
+<CodeBlock language="json">
+  {dedent`
+    {
+      "result": {
+        "type": "MODIFIED",
+        "hosts": [
+          {
+            "metadata": {
+              "uid": "023e074c-461d-4abd-8ee1-9c9604da49c6",
+              "name": "node-01",
+              "namespace": "production",
+              "labels": {
+                "role": "worker"
+              },
+              "annotations": {},
+              "creationTimestamp": "2026-04-25T21:12:33.030954Z",
+              "resourceVersion": "198"
+            },
+            "spec": {
+              "displayName": "Node 01",
+              "comment": "Рабочий узел",
+              "description": "Первый рабочий узел кластера",
+              "IPs": {
+                "IPv4": [],
+                "IPv6": []
+              },
+              "metaInfo": {
+                "hostName": "",
+                "os": "",
+                "platform": "",
+                "platformFamily": "",
+                "platformVersion": "",
+                "kernelVersion": ""
+              }
+            },
+            "refs": [
+              {
+                "name": "web-servers",
+                "namespace": "production",
+                "resType": "AddressGroup"
+              }
+            ]
+          }
+        ]
+      }
+    }
+  `}
+</CodeBlock>
+
+  </TabItem>
+  <TabItem value="or" label="OR">
+
+<CodeBlock language="json">
+  {dedent`
+    {
+      "result": {
+        "type": "MODIFIED",
+        "hosts": [
+          {
+            "metadata": {
+              "uid": "023e074c-461d-4abd-8ee1-9c9604da49c6",
+              "name": "node-01",
+              "namespace": "production",
+              "labels": {
+                "role": "worker"
+              },
+              "annotations": {},
+              "creationTimestamp": "2026-04-25T21:12:33.030954Z",
+              "resourceVersion": "198"
+            },
+            "spec": {
+              "displayName": "Node 01",
+              "comment": "Рабочий узел",
+              "description": "Первый рабочий узел кластера",
+              "IPs": {
+                "IPv4": [],
+                "IPv6": []
+              },
+              "metaInfo": {
+                "hostName": "",
+                "os": "",
+                "platform": "",
+                "platformFamily": "",
+                "platformVersion": "",
+                "kernelVersion": ""
+              }
+            },
+            "refs": [
+              {
+                "name": "web-servers",
+                "namespace": "production",
+                "resType": "AddressGroup"
+              }
+            ]
+          }
+        ]
+      }
+    }
+  `}
+</CodeBlock>
+
+  </TabItem>
+</Tabs>
 
 <Restrictions items={[
   { label: 'selectors', rules: RESTRICTIONS.selectors },
@@ -818,7 +1362,7 @@ import { ApiOperation } from '@site/src/components/commonBlocks/ApiOperation'
   </tbody>
 </table>
 
-> *Необходимо указать `uid` **или** комбинацию `name` + `namespace`.
+> *Для этой операции необходимо указать все три поля: `uid`, `name` и `namespace`.
 
 #### Пример запроса
 
@@ -830,9 +1374,9 @@ import { ApiOperation } from '@site/src/components/commonBlocks/ApiOperation'
         "hosts": [
           {
             "metadata": {
-              "name": "host-3",
-              "namespace": "namespace-1",
-              "uid": "f315d9db-691e-4e9c-9bfc-546d59d35a68"
+              "name": "node-01",
+              "namespace": "production",
+              "uid": "023e074c-461d-4abd-8ee1-9c9604da49c6"
             },
             "spec": {
               "IPs": {
@@ -858,11 +1402,20 @@ import { ApiOperation } from '@site/src/components/commonBlocks/ApiOperation'
       "hosts": [
         {
           "metadata": {
-            "uid": "f315d9db-691e-4e9c-9bfc-546d59d35a68",
-            "name": "host-3",
-            "namespace": "namespace-1"
+            "uid": "023e074c-461d-4abd-8ee1-9c9604da49c6",
+            "name": "node-01",
+            "namespace": "production",
+            "labels": {
+              "role": "worker"
+            },
+            "annotations": {},
+            "creationTimestamp": "2026-04-25T21:12:33.030954Z",
+            "resourceVersion": "205"
           },
           "spec": {
+            "displayName": "Node 01",
+            "comment": "Рабочий узел",
+            "description": "Первый рабочий узел кластера",
             "IPs": {
               "IPv4": [
                 "127.0.0.1"
@@ -870,6 +1423,14 @@ import { ApiOperation } from '@site/src/components/commonBlocks/ApiOperation'
               "IPv6": [
                 "::1"
               ]
+            },
+            "metaInfo": {
+              "hostName": "",
+              "os": "",
+              "platform": "",
+              "platformFamily": "",
+              "platformVersion": "",
+              "kernelVersion": ""
             }
           }
         }
@@ -983,7 +1544,7 @@ import { ApiOperation } from '@site/src/components/commonBlocks/ApiOperation'
             "metadata": {
               "name": "node-01",
               "namespace": "production",
-              "uid": "f315d9db-691e-4e9c-9bfc-546d59d35a68"
+              "uid": "023e074c-461d-4abd-8ee1-9c9604da49c6"
             },
             "spec": {
               "metaInfo": {
@@ -1009,11 +1570,28 @@ import { ApiOperation } from '@site/src/components/commonBlocks/ApiOperation'
       "hosts": [
         {
           "metadata": {
-            "uid": "f315d9db-691e-4e9c-9bfc-546d59d35a68",
+            "uid": "023e074c-461d-4abd-8ee1-9c9604da49c6",
             "name": "node-01",
-            "namespace": "production"
+            "namespace": "production",
+            "labels": {
+              "role": "worker"
+            },
+            "annotations": {},
+            "creationTimestamp": "2026-04-25T21:12:33.030954Z",
+            "resourceVersion": "206"
           },
           "spec": {
+            "displayName": "Node 01",
+            "comment": "Рабочий узел",
+            "description": "Первый рабочий узел кластера",
+            "IPs": {
+              "IPv4": [
+                "127.0.0.1"
+              ],
+              "IPv6": [
+                "::1"
+              ]
+            },
             "metaInfo": {
               "hostName": "node-01.example.com",
               "os": "linux",

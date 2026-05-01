@@ -1,0 +1,365 @@
+---
+id: networks
+sidebar_position: 4
+title: Networks
+---
+
+import { TYPES } from '@site/src/constants/types'
+import { ApiOperation } from '@site/src/components/commonBlocks/ApiOperation'
+import { K8sCodes } from '@site/src/components/commonBlocks/K8sCodes'
+import { K8sValidation } from '@site/src/components/commonBlocks/K8sValidation'
+import { RESTRICTIONS } from '@site/src/constants/restrictions'
+import Tabs from '@theme/Tabs'
+import TabItem from '@theme/TabItem'
+import CodeBlock from '@theme/CodeBlock'
+import dedent from 'ts-dedent'
+
+# Networks
+
+`Network` — подсеть в формате CIDR. Привязывается к `AddressGroup` через `NetworkBinding` и попадает в nft-set как interval-элемент.
+
+---
+
+:::info Валидация и ошибки
+Все валидации `spec` производятся на уровне `sg-server` (gRPC-бэкенд) — k8s-сервер
+лишь проксирует запрос. Формат ошибочных ответов и таблица кодов — в
+[Обзоре API → Коды ошибок](/k8s-api/overview#коды-ошибок).
+:::
+
+
+## List
+
+<ApiOperation method="GET" endpoint="/apis/sgroups.io/v1alpha1/namespaces/{namespace}/networks">
+
+Получить список ресурсов. Доступны два scope: по namespace и по всему кластеру.
+
+<Tabs groupId="scope">
+  <TabItem value="namespace" label="В namespace" default>
+
+<CodeBlock language="bash">
+  {dedent`
+    kubectl get networks -n production
+  `}
+</CodeBlock>
+
+  </TabItem>
+  <TabItem value="cluster" label="По всему кластеру">
+
+<CodeBlock language="bash">
+  {dedent`
+    kubectl get networks -A
+  `}
+</CodeBlock>
+
+  </TabItem>
+</Tabs>
+
+#### Пример ответа
+
+<CodeBlock language="json">
+  {dedent`
+    {
+      "kind": "NetworkList",
+      "apiVersion": "sgroups.io/v1alpha1",
+      "items": [
+        {
+          "kind": "Network",
+          "metadata": {
+            "name": "corp-net-10",
+            "namespace": "production",
+            "resourceVersion": "1110"
+          },
+          "spec": {
+            "CIDR": "10.0.0.0/24",
+            "displayName": "Corporate /24"
+          },
+          "refs": []
+        }
+      ]
+    }
+    `}
+</CodeBlock>
+
+
+<K8sValidation op="list" />
+
+<K8sCodes codes={['unauthorized', 'forbidden', 'internal', 'serviceUnavailable']} />
+
+</ApiOperation>
+
+---
+
+## Create
+
+<ApiOperation method="POST" endpoint="/apis/sgroups.io/v1alpha1/namespaces/{namespace}/networks">
+
+Создать новый объект. Имя должно быть уникальным в namespace.
+
+#### Тело запроса
+
+<table>
+  <thead>
+    <tr>
+      <th>Параметр</th>
+      <th>Обязательность</th>
+      <th>Тип</th>
+      <th>Описание</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><code>metadata.name</code></td>
+      <td>да</td>
+      <td><code>{TYPES.string}</code></td>
+      <td>Имя ресурса</td>
+    </tr>
+    <tr>
+      <td><code>metadata.namespace</code></td>
+      <td>да</td>
+      <td><code>{TYPES.string}</code></td>
+      <td>Namespace (имя `Tenant`)</td>
+    </tr>
+    <tr>
+      <td><code>metadata.labels</code></td>
+      <td>нет</td>
+      <td><code>{TYPES.mapStringString}</code></td>
+      <td>Лейблы</td>
+    </tr>
+    <tr>
+      <td><code>metadata.annotations</code></td>
+      <td>нет</td>
+      <td><code>{TYPES.mapStringString}</code></td>
+      <td>Аннотации</td>
+    </tr>
+    <tr>
+      <td><code>spec.CIDR</code></td>
+      <td>да</td>
+      <td><code>{TYPES.cidr}</code></td>
+      <td>CIDR (например, `10.0.0.0/24`, `2001:db8::/32`)</td>
+    </tr>
+    <tr>
+      <td><code>spec.displayName</code></td>
+      <td>нет</td>
+      <td><code>{TYPES.string}</code></td>
+      <td>Отображаемое имя</td>
+    </tr>
+    <tr>
+      <td><code>spec.comment</code></td>
+      <td>нет</td>
+      <td><code>{TYPES.string}</code></td>
+      <td>Комментарий</td>
+    </tr>
+    <tr>
+      <td><code>spec.description</code></td>
+      <td>нет</td>
+      <td><code>{TYPES.string}</code></td>
+      <td>Описание</td>
+    </tr>
+    <tr>
+      <td><code>refs[]</code></td>
+      <td>read-only</td>
+      <td><code>{TYPES.resourceRef}</code></td>
+      <td>Обратные ссылки на `NetworkBinding`</td>
+    </tr>
+  </tbody>
+</table>
+
+#### Пример запроса
+
+<CodeBlock language="bash">
+  {dedent`
+    kubectl apply -f - <<EOF
+    apiVersion: sgroups.io/v1alpha1
+    kind: Network
+    metadata:
+      name: corp-net-10
+      namespace: production
+    spec:
+      CIDR: 10.0.0.0/24
+      displayName: Corporate /24
+    EOF
+  `}
+</CodeBlock>
+
+#### Пример ответа
+
+<CodeBlock language="json">
+  {dedent`
+    {
+      "kind": "Network",
+      "apiVersion": "sgroups.io/v1alpha1",
+      "metadata": {
+        "name": "corp-net-10",
+        "namespace": "production",
+        "resourceVersion": "1111"
+      },
+      "spec": {
+        "CIDR": "10.0.0.0/24",
+        "displayName": "Corporate /24"
+      }
+    }
+    `}
+</CodeBlock>
+
+
+<K8sValidation op="create" serverItems={[
+  { label: 'metadata / spec', rules: RESTRICTIONS.metadataRequired },
+  { label: 'metadata.name', rules: RESTRICTIONS.name },
+  { label: 'metadata.namespace', rules: RESTRICTIONS.namespace },
+  { label: 'spec.CIDR', rules: RESTRICTIONS.cidr },
+  { label: 'spec.displayName', rules: RESTRICTIONS.displayName },
+  { label: 'spec.comment', rules: RESTRICTIONS.comment },
+  { label: 'spec.description', rules: RESTRICTIONS.description },
+]} />
+
+<K8sCodes codes={['badRequest', 'unauthorized', 'forbidden', 'alreadyExists', 'invalid', 'internal']} />
+
+</ApiOperation>
+
+---
+
+## Get
+
+<ApiOperation method="GET" endpoint="/apis/sgroups.io/v1alpha1/namespaces/{namespace}/networks/{name}">
+
+Получить один объект по имени.
+
+#### Пример запроса
+
+<CodeBlock language="bash">
+  {dedent`
+    kubectl get network corp-net-10 -n production -o yaml
+  `}
+</CodeBlock>
+
+#### Пример ответа
+
+<CodeBlock language="json">
+  {dedent`
+    {
+      "kind": "Network",
+      "apiVersion": "sgroups.io/v1alpha1",
+      "metadata": {
+        "name": "corp-net-10",
+        "namespace": "production",
+        "resourceVersion": "1111"
+      },
+      "spec": {
+        "CIDR": "10.0.0.0/24",
+        "displayName": "Corporate /24"
+      }
+    }
+    `}
+</CodeBlock>
+
+
+<K8sValidation op="get" />
+
+<K8sCodes codes={['unauthorized', 'forbidden', 'notFound', 'internal']} />
+
+</ApiOperation>
+
+---
+
+## Update (PUT)
+
+<ApiOperation method="PUT" endpoint="/apis/sgroups.io/v1alpha1/namespaces/{namespace}/networks/{name}">
+
+Полная замена объекта. Поле `metadata.resourceVersion` обязательно — оно защищает от race-condition (optimistic concurrency).
+
+#### Пример запроса
+
+<CodeBlock language="bash">
+  {dedent`
+    # kubectl edit делает GET → правки → PUT под капотом
+    kubectl edit network corp-net-10 -n production
+  `}
+</CodeBlock>
+
+
+<K8sValidation op="put" serverItems={[
+  { label: 'metadata / spec', rules: RESTRICTIONS.metadataRequired },
+  { label: 'metadata.name', rules: RESTRICTIONS.name },
+  { label: 'metadata.namespace', rules: RESTRICTIONS.namespace },
+  { label: 'spec.CIDR', rules: RESTRICTIONS.cidr },
+  { label: 'spec.displayName', rules: RESTRICTIONS.displayName },
+  { label: 'spec.comment', rules: RESTRICTIONS.comment },
+  { label: 'spec.description', rules: RESTRICTIONS.description },
+]} />
+
+<K8sCodes codes={['badRequest', 'unauthorized', 'forbidden', 'notFound', 'conflict', 'invalid', 'internal']} />
+
+</ApiOperation>
+
+---
+
+## Patch
+
+<ApiOperation method="PATCH" endpoint="/apis/sgroups.io/v1alpha1/namespaces/{namespace}/networks/{name}">
+
+Частичное обновление. Поддерживаемые `Content-Type`:
+
+- `application/strategic-merge-patch+json` — стандартный k8s-патч
+- `application/merge-patch+json` — RFC 7396
+- `application/json-patch+json` — RFC 6902
+
+#### Пример запроса
+
+<CodeBlock language="bash">
+  {dedent`
+    kubectl patch network corp-net-10 -n production --type=merge \\
+      -p '{"spec":{"CIDR":"10.0.0.0/16"}}'
+  `}
+</CodeBlock>
+
+
+<K8sValidation op="patch" serverItems={[
+  { label: 'metadata / spec', rules: RESTRICTIONS.metadataRequired },
+  { label: 'metadata.name', rules: RESTRICTIONS.name },
+  { label: 'metadata.namespace', rules: RESTRICTIONS.namespace },
+  { label: 'spec.CIDR', rules: RESTRICTIONS.cidr },
+  { label: 'spec.displayName', rules: RESTRICTIONS.displayName },
+  { label: 'spec.comment', rules: RESTRICTIONS.comment },
+  { label: 'spec.description', rules: RESTRICTIONS.description },
+]} />
+
+<K8sCodes codes={['badRequest', 'unauthorized', 'forbidden', 'notFound', 'invalid', 'internal']} />
+
+</ApiOperation>
+
+---
+
+## Delete
+
+<ApiOperation method="DELETE" endpoint="/apis/sgroups.io/v1alpha1/namespaces/{namespace}/networks/{name}">
+
+Удалить объект по имени. Стандартные опции `--cascade`, `--grace-period`, `--timeout` поддерживаются как query-параметры.
+
+#### Пример запроса
+
+<CodeBlock language="bash">
+  {dedent`
+    kubectl delete network corp-net-10 -n production
+  `}
+</CodeBlock>
+
+#### Пример ответа
+
+<CodeBlock language="json">
+  {dedent`
+    {
+      "kind": "Status",
+      "apiVersion": "v1",
+      "status": "Success"
+    }
+    `}
+</CodeBlock>
+
+
+<K8sValidation op="delete" />
+
+<K8sCodes codes={['unauthorized', 'forbidden', 'notFound', 'conflict', 'internal']} />
+
+</ApiOperation>
+
+---

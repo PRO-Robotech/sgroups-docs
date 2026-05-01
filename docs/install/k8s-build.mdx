@@ -1,0 +1,108 @@
+---
+id: k8s-build
+sidebar_position: 1
+title: Сборка
+---
+
+import CodeBlock from '@theme/CodeBlock'
+import dedent from 'ts-dedent'
+
+# Сборка sgroups-k8s-api
+
+`sgroups-k8s-api` — Kubernetes Aggregated API Server, предоставляющий ресурсы
+SGroups как нативные объекты Kubernetes (`Tenant`, `AddressGroup`, `Rule` и т.д.).
+
+В составе репозитория два бинарника:
+
+- **`sgroups-k8s-apiserver`** — сам API-сервер
+- **`sgroups-mock-backend`** — mock gRPC-бэкенд для разработки без реального `sg-server`
+
+## Требования
+
+| Требование | Минимальная версия | Назначение |
+|---|---|---|
+| Go | 1.25 | Сборка из исходников |
+| Make, Bash | — | Сборка через Makefile |
+| Docker | 24+ | Сборка образов (multi-stage с distroless runtime) |
+| Доступ | — | Репозитории `sgroups-k8s-api` и `sgroups-proto` (рядом, для контекста сборки образа) |
+
+## Бинарники через `make`
+
+`Makefile` собирает все cmd-приложения как стандартные Go-цели. По умолчанию
+компилируется под текущую платформу.
+
+<CodeBlock language="bash">
+  {dedent`
+    git clone https://github.com/PRO-Robotech/sgroups-k8s-api.git
+    cd sgroups-k8s-api
+
+    # все бинарники → ./bin/
+    make build
+
+    # либо явно один бинарник
+    make sgroups-k8s-apiserver
+    make sgroups-mock-backend
+
+    # очистить
+    make clean
+  `}
+</CodeBlock>
+
+## Docker-образы
+
+`Dockerfile`-ы — `apiserver.Dockerfile` и `mock.Dockerfile`. Builder — `golang:1.25`,
+runtime — `gcr.io/distroless/static:nonroot`. Контекст сборки — **родительская
+директория**, чтобы рядом был `sgroups-proto` как сосед-репозиторий.
+
+<CodeBlock language="bash">
+  {dedent`
+    # рядом должны лежать оба репозитория
+    git clone https://github.com/PRO-Robotech/sgroups-k8s-api.git
+    git clone https://github.com/PRO-Robotech/sgroups-proto.git
+
+    cd sgroups-k8s-api
+
+    # оба образа сразу
+    make docker-build
+
+    # либо по отдельности
+    make docker-build-apiserver IMAGE_APISERVER=sgroups-k8s-apiserver:0.1.0-rc.1
+    make docker-build-mock      IMAGE_MOCK=sgroups-mock-backend:0.1.0-rc.1
+  `}
+</CodeBlock>
+
+Что внутри `apiserver.Dockerfile`:
+
+<CodeBlock language="dockerfile">
+  {dedent`
+    FROM golang:1.25 AS builder
+    WORKDIR /workspace
+    COPY --from=sgroups-proto /. /workspace/sgroups-proto/
+    COPY . sgroups-k8s-api/
+    WORKDIR /workspace/sgroups-k8s-api
+    RUN CGO_ENABLED=0 go build -o /sgroups-k8s-apiserver ./cmd/sgroups-k8s-apiserver
+
+    FROM gcr.io/distroless/static:nonroot
+    COPY --from=builder /sgroups-k8s-apiserver /sgroups-k8s-apiserver
+    USER 65534:65534
+    ENTRYPOINT ["/sgroups-k8s-apiserver"]
+  `}
+</CodeBlock>
+
+:::info
+Образ runtime — `distroless/static:nonroot`. Нет shell, нет пакетного менеджера,
+запуск под UID `65534` (`nobody`). Поэтому отладка внутри контейнера невозможна —
+используйте `kubectl logs` и метрики на эндпоинте `/metrics`.
+:::
+
+## Дополнительные `make`-цели
+
+| Команда | Назначение |
+|---|---|
+| `make lint` | Запуск `golangci-lint` |
+| `make lint-fix` | То же с авто-исправлением |
+| `make fmt` | `gofmt + goimports` через golangci-lint |
+| `make test` | Юнит-тесты с `-race` |
+| `make verify` | `lint + fmt + test + verify-openapi-spec` |
+| `make openapi-spec` | Сгенерировать `api/openapi-spec/swagger.json` |
+| `make generate` | Все кодогенераторы (`hack/update-all.sh`) — deepcopy / openapi / clientset |

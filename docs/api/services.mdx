@@ -105,13 +105,13 @@ import { ApiOperation } from '@site/src/components/commonBlocks/ApiOperation'
     <tr>
       <td><code>protocol</code></td>
       <td>да</td>
-      <td><code>{TYPES.enumIpv}</code></td>
+      <td><code>{TYPES.enumProtocol}</code></td>
       <td>{DICTIONARY.protocol.short}</td>
     </tr>
     <tr>
-      <td><code>ipv</code></td>
+      <td><code>IPv</code></td>
       <td>да</td>
-      <td><code>{TYPES.enumProtocol}</code></td>
+      <td><code>{TYPES.enumIpv}</code></td>
       <td>{DICTIONARY.ipv.short}</td>
     </tr>
     <tr>
@@ -198,16 +198,6 @@ import { ApiOperation } from '@site/src/components/commonBlocks/ApiOperation'
                       "ports": "443"
                     }
                   ]
-                },
-                {
-                  "protocol": "TCP",
-                  "IPv": "IPV4",
-                  "entries": [
-                    {
-                      "description": "Приложение",
-                      "ports": "8080-8090"
-                    }
-                  ]
                 }
               ]
             }
@@ -225,19 +215,20 @@ import { ApiOperation } from '@site/src/components/commonBlocks/ApiOperation'
       "services": [
         {
           "metadata": {
-            "uid": "e5f6a7b8-c9d0-1234-efab-345678901234",
+            "uid": "25791b2e-3d2f-4650-bbe0-b38279f3b13a",
             "name": "web-service",
             "namespace": "production",
             "labels": {
               "app": "nginx"
             },
-            "creationTimestamp": "2025-01-15T10:20:00Z",
-            "resourceVersion": "1"
+            "annotations": {},
+            "creationTimestamp": "2026-04-25T21:12:33.050764Z",
+            "resourceVersion": "185"
           },
           "spec": {
             "displayName": "Web Service",
-            "comment": "HTTP и HTTPS сервис",
-            "description": "Веб-сервис для фронтенд-приложений",
+            "comment": "Основной веб-сервис",
+            "description": "Сервис фронтенда",
             "transports": [
               {
                 "protocol": "TCP",
@@ -245,23 +236,15 @@ import { ApiOperation } from '@site/src/components/commonBlocks/ApiOperation'
                 "entries": [
                   {
                     "description": "HTTP",
-                    "comment": "Стандартный HTTP порт",
-                    "ports": "80"
+                    "comment": "",
+                    "ports": "80",
+                    "types": []
                   },
                   {
                     "description": "HTTPS",
-                    "comment": "Стандартный HTTPS порт",
-                    "ports": "443"
-                  }
-                ]
-              },
-              {
-                "protocol": "TCP",
-                "IPv": "IPV4",
-                "entries": [
-                  {
-                    "description": "Приложение",
-                    "ports": "8080-8090"
+                    "comment": "",
+                    "ports": "443",
+                    "types": []
                   }
                 ]
               }
@@ -332,7 +315,10 @@ import { ApiOperation } from '@site/src/components/commonBlocks/ApiOperation'
 
 > *Необходимо указать `uid` **или** комбинацию `name` + `namespace`.
 
-#### Пример запроса
+#### Примеры запроса
+
+<Tabs groupId="svc-delete">
+  <TabItem value="uid" label="uid" default>
 
 <CodeBlock language="bash">
   {dedent`
@@ -342,7 +328,26 @@ import { ApiOperation } from '@site/src/components/commonBlocks/ApiOperation'
         "services": [
           {
             "metadata": {
-              "name": "web-service",
+              "uid": "765983a9-4dae-49d8-8e3d-454a017f8601"
+            }
+          }
+        ]
+      }'
+  `}
+</CodeBlock>
+
+  </TabItem>
+  <TabItem value="name" label="name + namespace">
+
+<CodeBlock language="bash">
+  {dedent`
+    curl -X POST http://localhost:9006/v1/services/delete \\
+      -H 'Content-Type: application/json' \\
+      -d '{
+        "services": [
+          {
+            "metadata": {
+              "name": "docs-del-svc-name-152112",
               "namespace": "production"
             }
           }
@@ -351,13 +356,31 @@ import { ApiOperation } from '@site/src/components/commonBlocks/ApiOperation'
   `}
 </CodeBlock>
 
-#### Пример ответа
+  </TabItem>
+</Tabs>
+
+#### Примеры ответа
+
+<Tabs groupId="svc-delete">
+  <TabItem value="uid" label="uid" default>
 
 <CodeBlock language="json">
   {dedent`
     {}
   `}
 </CodeBlock>
+
+  </TabItem>
+  <TabItem value="name" label="name + namespace">
+
+<CodeBlock language="json">
+  {dedent`
+    {}
+  `}
+</CodeBlock>
+
+  </TabItem>
+</Tabs>
 
 <Restrictions items={[
   { label: 'delete', rules: RESTRICTIONS.deleteWithNamespace },
@@ -575,28 +598,32 @@ import { ApiOperation } from '@site/src/components/commonBlocks/ApiOperation'
   </tbody>
 </table>
 
-#### Пример ответа
+#### Примеры ответа
+
+<Tabs groupId="svc-list">
+  <TabItem value="name" label="name" default>
 
 <CodeBlock language="json">
   {dedent`
     {
-      "resourceVersion": "42",
+      "resourceVersion": "199",
       "services": [
         {
           "metadata": {
-            "uid": "e5f6a7b8-c9d0-1234-efab-345678901234",
+            "uid": "25791b2e-3d2f-4650-bbe0-b38279f3b13a",
             "name": "web-service",
             "namespace": "production",
             "labels": {
               "app": "nginx"
             },
-            "creationTimestamp": "2025-01-15T10:20:00Z",
-            "resourceVersion": "1"
+            "annotations": {},
+            "creationTimestamp": "2026-04-25T21:12:33.050764Z",
+            "resourceVersion": "185"
           },
           "spec": {
             "displayName": "Web Service",
-            "comment": "HTTP и HTTPS сервис",
-            "description": "Веб-сервис для фронтенд-приложений",
+            "comment": "Основной веб-сервис",
+            "description": "Сервис фронтенда",
             "transports": [
               {
                 "protocol": "TCP",
@@ -604,11 +631,15 @@ import { ApiOperation } from '@site/src/components/commonBlocks/ApiOperation'
                 "entries": [
                   {
                     "description": "HTTP",
-                    "ports": "80"
+                    "comment": "",
+                    "ports": "80",
+                    "types": []
                   },
                   {
                     "description": "HTTPS",
-                    "ports": "443"
+                    "comment": "",
+                    "ports": "443",
+                    "types": []
                   }
                 ]
               }
@@ -626,6 +657,285 @@ import { ApiOperation } from '@site/src/components/commonBlocks/ApiOperation'
     }
   `}
 </CodeBlock>
+
+  </TabItem>
+  <TabItem value="refs" label="refs">
+
+<CodeBlock language="json">
+  {dedent`
+    {
+      "resourceVersion": "199",
+      "services": [
+        {
+          "metadata": {
+            "uid": "25791b2e-3d2f-4650-bbe0-b38279f3b13a",
+            "name": "web-service",
+            "namespace": "production",
+            "labels": {
+              "app": "nginx"
+            },
+            "annotations": {},
+            "creationTimestamp": "2026-04-25T21:12:33.050764Z",
+            "resourceVersion": "185"
+          },
+          "spec": {
+            "displayName": "Web Service",
+            "comment": "Основной веб-сервис",
+            "description": "Сервис фронтенда",
+            "transports": [
+              {
+                "protocol": "TCP",
+                "IPv": "IPV4",
+                "entries": [
+                  {
+                    "description": "HTTP",
+                    "comment": "",
+                    "ports": "80",
+                    "types": []
+                  },
+                  {
+                    "description": "HTTPS",
+                    "comment": "",
+                    "ports": "443",
+                    "types": []
+                  }
+                ]
+              }
+            ]
+          },
+          "refs": [
+            {
+              "name": "web-servers",
+              "namespace": "production",
+              "resType": "AddressGroup"
+            }
+          ]
+        }
+      ]
+    }
+  `}
+</CodeBlock>
+
+  </TabItem>
+  <TabItem value="labels" label="labels">
+
+<CodeBlock language="json">
+  {dedent`
+    {
+      "resourceVersion": "199",
+      "services": [
+        {
+          "metadata": {
+            "uid": "25791b2e-3d2f-4650-bbe0-b38279f3b13a",
+            "name": "web-service",
+            "namespace": "production",
+            "labels": {
+              "app": "nginx"
+            },
+            "annotations": {},
+            "creationTimestamp": "2026-04-25T21:12:33.050764Z",
+            "resourceVersion": "185"
+          },
+          "spec": {
+            "displayName": "Web Service",
+            "comment": "Основной веб-сервис",
+            "description": "Сервис фронтенда",
+            "transports": [
+              {
+                "protocol": "TCP",
+                "IPv": "IPV4",
+                "entries": [
+                  {
+                    "description": "HTTP",
+                    "comment": "",
+                    "ports": "80",
+                    "types": []
+                  },
+                  {
+                    "description": "HTTPS",
+                    "comment": "",
+                    "ports": "443",
+                    "types": []
+                  }
+                ]
+              }
+            ]
+          },
+          "refs": [
+            {
+              "name": "web-servers",
+              "namespace": "production",
+              "resType": "AddressGroup"
+            }
+          ]
+        }
+      ]
+    }
+  `}
+</CodeBlock>
+
+  </TabItem>
+  <TabItem value="and" label="AND">
+
+<CodeBlock language="json">
+  {dedent`
+    {
+      "resourceVersion": "199",
+      "services": [
+        {
+          "metadata": {
+            "uid": "25791b2e-3d2f-4650-bbe0-b38279f3b13a",
+            "name": "web-service",
+            "namespace": "production",
+            "labels": {
+              "app": "nginx"
+            },
+            "annotations": {},
+            "creationTimestamp": "2026-04-25T21:12:33.050764Z",
+            "resourceVersion": "185"
+          },
+          "spec": {
+            "displayName": "Web Service",
+            "comment": "Основной веб-сервис",
+            "description": "Сервис фронтенда",
+            "transports": [
+              {
+                "protocol": "TCP",
+                "IPv": "IPV4",
+                "entries": [
+                  {
+                    "description": "HTTP",
+                    "comment": "",
+                    "ports": "80",
+                    "types": []
+                  },
+                  {
+                    "description": "HTTPS",
+                    "comment": "",
+                    "ports": "443",
+                    "types": []
+                  }
+                ]
+              }
+            ]
+          },
+          "refs": [
+            {
+              "name": "web-servers",
+              "namespace": "production",
+              "resType": "AddressGroup"
+            }
+          ]
+        }
+      ]
+    }
+  `}
+</CodeBlock>
+
+  </TabItem>
+  <TabItem value="or" label="OR">
+
+<CodeBlock language="json">
+  {dedent`
+    {
+      "resourceVersion": "199",
+      "services": [
+        {
+          "metadata": {
+            "uid": "337ac5a1-1a34-4c5b-bc48-d5dcac578049",
+            "name": "api-service",
+            "namespace": "production",
+            "labels": {
+              "app": "api"
+            },
+            "annotations": {},
+            "creationTimestamp": "2026-04-25T21:12:33.050764Z",
+            "resourceVersion": "109"
+          },
+          "spec": {
+            "displayName": "API Service",
+            "comment": "",
+            "description": "",
+            "transports": [
+              {
+                "protocol": "TCP",
+                "IPv": "IPV4",
+                "entries": [
+                  {
+                    "description": "",
+                    "comment": "",
+                    "ports": "8080",
+                    "types": []
+                  }
+                ]
+              }
+            ]
+          },
+          "refs": [
+            {
+              "name": "api-servers",
+              "namespace": "production",
+              "resType": "AddressGroup"
+            },
+            {
+              "name": "allow-api-to-cache",
+              "namespace": "production",
+              "resType": "Svc2SvcRule"
+            }
+          ]
+        },
+        {
+          "metadata": {
+            "uid": "25791b2e-3d2f-4650-bbe0-b38279f3b13a",
+            "name": "web-service",
+            "namespace": "production",
+            "labels": {
+              "app": "nginx"
+            },
+            "annotations": {},
+            "creationTimestamp": "2026-04-25T21:12:33.050764Z",
+            "resourceVersion": "185"
+          },
+          "spec": {
+            "displayName": "Web Service",
+            "comment": "Основной веб-сервис",
+            "description": "Сервис фронтенда",
+            "transports": [
+              {
+                "protocol": "TCP",
+                "IPv": "IPV4",
+                "entries": [
+                  {
+                    "description": "HTTP",
+                    "comment": "",
+                    "ports": "80",
+                    "types": []
+                  },
+                  {
+                    "description": "HTTPS",
+                    "comment": "",
+                    "ports": "443",
+                    "types": []
+                  }
+                ]
+              }
+            ]
+          },
+          "refs": [
+            {
+              "name": "web-servers",
+              "namespace": "production",
+              "resType": "AddressGroup"
+            }
+          ]
+        }
+      ]
+    }
+  `}
+</CodeBlock>
+
+  </TabItem>
+</Tabs>
 
 <Restrictions items={[
   { label: 'selectors', rules: RESTRICTIONS.selectors },
@@ -706,7 +1016,7 @@ import { ApiOperation } from '@site/src/components/commonBlocks/ApiOperation'
             }
           }
         ],
-        "resourceVersion": "0"
+        "resourceVersion": "199"
       }'
   `}
 </CodeBlock>
@@ -734,7 +1044,7 @@ import { ApiOperation } from '@site/src/components/commonBlocks/ApiOperation'
             }
           }
         ],
-        "resourceVersion": "0"
+        "resourceVersion": "199"
       }'
   `}
 </CodeBlock>
@@ -754,7 +1064,7 @@ import { ApiOperation } from '@site/src/components/commonBlocks/ApiOperation'
             }
           }
         ],
-        "resourceVersion": "0"
+        "resourceVersion": "199"
       }'
   `}
 </CodeBlock>
@@ -784,7 +1094,7 @@ import { ApiOperation } from '@site/src/components/commonBlocks/ApiOperation'
             }
           }
         ],
-        "resourceVersion": "0"
+        "resourceVersion": "199"
       }'
   `}
 </CodeBlock>
@@ -809,7 +1119,7 @@ import { ApiOperation } from '@site/src/components/commonBlocks/ApiOperation'
             }
           }
         ],
-        "resourceVersion": "0"
+        "resourceVersion": "199"
       }'
   `}
 </CodeBlock>
@@ -836,57 +1146,310 @@ import { ApiOperation } from '@site/src/components/commonBlocks/ApiOperation'
   </tbody>
 </table>
 
-#### Пример ответа
+#### Примеры ответа
+
+<Tabs groupId="svc-watch">
+  <TabItem value="name" label="name" default>
 
 <CodeBlock language="json">
   {dedent`
     {
-      "type": "MODIFIED",
-      "services": [
-        {
-          "metadata": {
-            "uid": "e5f6a7b8-c9d0-1234-efab-345678901234",
-            "name": "web-service",
-            "namespace": "production",
-            "resourceVersion": "2"
-          },
-          "spec": {
-            "displayName": "Web Service",
-            "comment": "HTTP и HTTPS сервис (обновлено)",
-            "description": "Веб-сервис для фронтенд-приложений",
-            "transports": [
+      "result": {
+        "type": "MODIFIED",
+        "services": [
+          {
+            "metadata": {
+              "uid": "25791b2e-3d2f-4650-bbe0-b38279f3b13a",
+              "name": "web-service",
+              "namespace": "production",
+              "labels": {
+                "app": "nginx"
+              },
+              "annotations": {},
+              "creationTimestamp": "2026-04-25T21:12:33.050764Z",
+              "resourceVersion": "200"
+            },
+            "spec": {
+              "displayName": "Web Service",
+              "comment": "Основной веб-сервис",
+              "description": "Сервис фронтенда",
+              "transports": [
+                {
+                  "protocol": "TCP",
+                  "IPv": "IPV4",
+                  "entries": [
+                    {
+                      "description": "HTTP",
+                      "comment": "",
+                      "ports": "80",
+                      "types": []
+                    },
+                    {
+                      "description": "HTTPS",
+                      "comment": "",
+                      "ports": "443",
+                      "types": []
+                    }
+                  ]
+                }
+              ]
+            },
+            "refs": [
               {
-                "protocol": "TCP",
-                "IPv": "IPV4",
-                "entries": [
-                  {
-                    "description": "HTTP",
-                    "ports": "80"
-                  },
-                  {
-                    "description": "HTTPS",
-                    "ports": "443"
-                  },
-                  {
-                    "description": "HTTP/2",
-                    "ports": "8443"
-                  }
-                ]
+                "name": "web-servers",
+                "namespace": "production",
+                "resType": "AddressGroup"
               }
             ]
-          },
-          "refs": [
-            {
-              "name": "web-servers",
-              "namespace": "production",
-              "resType": "AddressGroup"
-            }
-          ]
-        }
-      ]
+          }
+        ]
+      }
     }
   `}
 </CodeBlock>
+
+  </TabItem>
+  <TabItem value="refs" label="refs">
+
+<CodeBlock language="json">
+  {dedent`
+    {
+      "result": {
+        "type": "MODIFIED",
+        "services": [
+          {
+            "metadata": {
+              "uid": "25791b2e-3d2f-4650-bbe0-b38279f3b13a",
+              "name": "web-service",
+              "namespace": "production",
+              "labels": {
+                "app": "nginx"
+              },
+              "annotations": {},
+              "creationTimestamp": "2026-04-25T21:12:33.050764Z",
+              "resourceVersion": "200"
+            },
+            "spec": {
+              "displayName": "Web Service",
+              "comment": "Основной веб-сервис",
+              "description": "Сервис фронтенда",
+              "transports": [
+                {
+                  "protocol": "TCP",
+                  "IPv": "IPV4",
+                  "entries": [
+                    {
+                      "description": "HTTP",
+                      "comment": "",
+                      "ports": "80",
+                      "types": []
+                    },
+                    {
+                      "description": "HTTPS",
+                      "comment": "",
+                      "ports": "443",
+                      "types": []
+                    }
+                  ]
+                }
+              ]
+            },
+            "refs": [
+              {
+                "name": "web-servers",
+                "namespace": "production",
+                "resType": "AddressGroup"
+              }
+            ]
+          }
+        ]
+      }
+    }
+  `}
+</CodeBlock>
+
+  </TabItem>
+  <TabItem value="labels" label="labels">
+
+<CodeBlock language="json">
+  {dedent`
+    {
+      "result": {
+        "type": "MODIFIED",
+        "services": [
+          {
+            "metadata": {
+              "uid": "25791b2e-3d2f-4650-bbe0-b38279f3b13a",
+              "name": "web-service",
+              "namespace": "production",
+              "labels": {
+                "app": "nginx"
+              },
+              "annotations": {},
+              "creationTimestamp": "2026-04-25T21:12:33.050764Z",
+              "resourceVersion": "200"
+            },
+            "spec": {
+              "displayName": "Web Service",
+              "comment": "Основной веб-сервис",
+              "description": "Сервис фронтенда",
+              "transports": [
+                {
+                  "protocol": "TCP",
+                  "IPv": "IPV4",
+                  "entries": [
+                    {
+                      "description": "HTTP",
+                      "comment": "",
+                      "ports": "80",
+                      "types": []
+                    },
+                    {
+                      "description": "HTTPS",
+                      "comment": "",
+                      "ports": "443",
+                      "types": []
+                    }
+                  ]
+                }
+              ]
+            },
+            "refs": [
+              {
+                "name": "web-servers",
+                "namespace": "production",
+                "resType": "AddressGroup"
+              }
+            ]
+          }
+        ]
+      }
+    }
+  `}
+</CodeBlock>
+
+  </TabItem>
+  <TabItem value="and" label="AND">
+
+<CodeBlock language="json">
+  {dedent`
+    {
+      "result": {
+        "type": "MODIFIED",
+        "services": [
+          {
+            "metadata": {
+              "uid": "25791b2e-3d2f-4650-bbe0-b38279f3b13a",
+              "name": "web-service",
+              "namespace": "production",
+              "labels": {
+                "app": "nginx"
+              },
+              "annotations": {},
+              "creationTimestamp": "2026-04-25T21:12:33.050764Z",
+              "resourceVersion": "200"
+            },
+            "spec": {
+              "displayName": "Web Service",
+              "comment": "Основной веб-сервис",
+              "description": "Сервис фронтенда",
+              "transports": [
+                {
+                  "protocol": "TCP",
+                  "IPv": "IPV4",
+                  "entries": [
+                    {
+                      "description": "HTTP",
+                      "comment": "",
+                      "ports": "80",
+                      "types": []
+                    },
+                    {
+                      "description": "HTTPS",
+                      "comment": "",
+                      "ports": "443",
+                      "types": []
+                    }
+                  ]
+                }
+              ]
+            },
+            "refs": [
+              {
+                "name": "web-servers",
+                "namespace": "production",
+                "resType": "AddressGroup"
+              }
+            ]
+          }
+        ]
+      }
+    }
+  `}
+</CodeBlock>
+
+  </TabItem>
+  <TabItem value="or" label="OR">
+
+<CodeBlock language="json">
+  {dedent`
+    {
+      "result": {
+        "type": "MODIFIED",
+        "services": [
+          {
+            "metadata": {
+              "uid": "25791b2e-3d2f-4650-bbe0-b38279f3b13a",
+              "name": "web-service",
+              "namespace": "production",
+              "labels": {
+                "app": "nginx"
+              },
+              "annotations": {},
+              "creationTimestamp": "2026-04-25T21:12:33.050764Z",
+              "resourceVersion": "200"
+            },
+            "spec": {
+              "displayName": "Web Service",
+              "comment": "Основной веб-сервис",
+              "description": "Сервис фронтенда",
+              "transports": [
+                {
+                  "protocol": "TCP",
+                  "IPv": "IPV4",
+                  "entries": [
+                    {
+                      "description": "HTTP",
+                      "comment": "",
+                      "ports": "80",
+                      "types": []
+                    },
+                    {
+                      "description": "HTTPS",
+                      "comment": "",
+                      "ports": "443",
+                      "types": []
+                    }
+                  ]
+                }
+              ]
+            },
+            "refs": [
+              {
+                "name": "web-servers",
+                "namespace": "production",
+                "resType": "AddressGroup"
+              }
+            ]
+          }
+        ]
+      }
+    }
+  `}
+</CodeBlock>
+
+  </TabItem>
+</Tabs>
 
 <Restrictions items={[
   { label: 'selectors', rules: RESTRICTIONS.selectors },

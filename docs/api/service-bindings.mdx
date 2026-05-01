@@ -95,8 +95,14 @@ import { ApiOperation } from '@site/src/components/commonBlocks/ApiOperation'
               }
             },
             "spec": {
-              "addressGroup": "web-servers",
-              "service": "web-service"
+              "addressGroup": {
+                "name": "web-servers",
+                "namespace": "production"
+              },
+              "service": {
+                "name": "web-service",
+                "namespace": "production"
+              }
             }
           }
         ]
@@ -112,18 +118,28 @@ import { ApiOperation } from '@site/src/components/commonBlocks/ApiOperation'
       "serviceBindings": [
         {
           "metadata": {
-            "uid": "b8c9d0e1-f2a3-4567-bcde-678901234567",
+            "uid": "ed0e6003-14bd-4c0d-9df2-4d3cb0427615",
             "name": "web-servers-web-service",
             "namespace": "production",
             "labels": {
               "binding-type": "service"
             },
-            "creationTimestamp": "2025-01-15T10:35:00Z",
-            "resourceVersion": "1"
+            "annotations": {},
+            "creationTimestamp": "2026-04-25T21:12:33.115333Z",
+            "resourceVersion": "188"
           },
           "spec": {
-            "addressGroup": "web-servers",
-            "service": "web-service"
+            "displayName": "",
+            "comment": "",
+            "description": "",
+            "addressGroup": {
+              "name": "web-servers",
+              "namespace": "production"
+            },
+            "service": {
+              "name": "web-service",
+              "namespace": "production"
+            }
           }
         }
       ]
@@ -190,7 +206,10 @@ import { ApiOperation } from '@site/src/components/commonBlocks/ApiOperation'
 
 > *Необходимо указать `uid` **или** комбинацию `name` + `namespace`.
 
-#### Пример запроса
+#### Примеры запроса
+
+<Tabs groupId="sb-delete">
+  <TabItem value="uid" label="uid" default>
 
 <CodeBlock language="bash">
   {dedent`
@@ -200,7 +219,26 @@ import { ApiOperation } from '@site/src/components/commonBlocks/ApiOperation'
         "serviceBindings": [
           {
             "metadata": {
-              "name": "web-servers-web-service",
+              "uid": "b8cb5207-8cb3-40fb-9780-5cfcdad6074f"
+            }
+          }
+        ]
+      }'
+  `}
+</CodeBlock>
+
+  </TabItem>
+  <TabItem value="name" label="name + namespace">
+
+<CodeBlock language="bash">
+  {dedent`
+    curl -X POST http://localhost:9006/v1/service-bindings/delete \\
+      -H 'Content-Type: application/json' \\
+      -d '{
+        "serviceBindings": [
+          {
+            "metadata": {
+              "name": "docs-del-service-binding-name-152135",
               "namespace": "production"
             }
           }
@@ -209,13 +247,31 @@ import { ApiOperation } from '@site/src/components/commonBlocks/ApiOperation'
   `}
 </CodeBlock>
 
-#### Пример ответа
+  </TabItem>
+</Tabs>
+
+#### Примеры ответа
+
+<Tabs groupId="sb-delete">
+  <TabItem value="uid" label="uid" default>
 
 <CodeBlock language="json">
   {dedent`
     {}
   `}
 </CodeBlock>
+
+  </TabItem>
+  <TabItem value="name" label="name + namespace">
+
+<CodeBlock language="json">
+  {dedent`
+    {}
+  `}
+</CodeBlock>
+
+  </TabItem>
+</Tabs>
 
 <Restrictions items={[
   { label: 'delete', rules: RESTRICTIONS.deleteWithNamespace },
@@ -437,33 +493,204 @@ import { ApiOperation } from '@site/src/components/commonBlocks/ApiOperation'
   </tbody>
 </table>
 
-#### Пример ответа
+#### Примеры ответа
+
+<Tabs groupId="sb-list">
+  <TabItem value="name" label="name" default>
 
 <CodeBlock language="json">
   {dedent`
     {
-      "resourceVersion": "42",
+      "resourceVersion": "202",
       "serviceBindings": [
         {
           "metadata": {
-            "uid": "b8c9d0e1-f2a3-4567-bcde-678901234567",
+            "uid": "ed0e6003-14bd-4c0d-9df2-4d3cb0427615",
             "name": "web-servers-web-service",
             "namespace": "production",
             "labels": {
               "binding-type": "service"
             },
-            "creationTimestamp": "2025-01-15T10:35:00Z",
-            "resourceVersion": "1"
+            "annotations": {},
+            "creationTimestamp": "2026-04-25T21:12:33.115333Z",
+            "resourceVersion": "188"
           },
           "spec": {
-            "addressGroup": "web-servers",
-            "service": "web-service"
+            "displayName": "",
+            "comment": "",
+            "description": "",
+            "addressGroup": {
+              "name": "web-servers",
+              "namespace": "production"
+            },
+            "service": {
+              "name": "web-service",
+              "namespace": "production"
+            }
           }
         }
       ]
     }
   `}
 </CodeBlock>
+
+  </TabItem>
+  <TabItem value="refs" label="refs">
+
+<CodeBlock language="json">
+  {dedent`
+    {
+      "resourceVersion": "202",
+      "serviceBindings": [
+        {
+          "metadata": {
+            "uid": "ed0e6003-14bd-4c0d-9df2-4d3cb0427615",
+            "name": "web-servers-web-service",
+            "namespace": "production",
+            "labels": {
+              "binding-type": "service"
+            },
+            "annotations": {},
+            "creationTimestamp": "2026-04-25T21:12:33.115333Z",
+            "resourceVersion": "188"
+          },
+          "spec": {
+            "displayName": "",
+            "comment": "",
+            "description": "",
+            "addressGroup": {
+              "name": "web-servers",
+              "namespace": "production"
+            },
+            "service": {
+              "name": "web-service",
+              "namespace": "production"
+            }
+          }
+        }
+      ]
+    }
+  `}
+</CodeBlock>
+
+  </TabItem>
+  <TabItem value="labels" label="labels">
+
+<CodeBlock language="json">
+  {dedent`
+    {
+      "resourceVersion": "202",
+      "serviceBindings": []
+    }
+  `}
+</CodeBlock>
+
+  </TabItem>
+  <TabItem value="and" label="AND">
+
+<CodeBlock language="json">
+  {dedent`
+    {
+      "resourceVersion": "202",
+      "serviceBindings": [
+        {
+          "metadata": {
+            "uid": "ed0e6003-14bd-4c0d-9df2-4d3cb0427615",
+            "name": "web-servers-web-service",
+            "namespace": "production",
+            "labels": {
+              "binding-type": "service"
+            },
+            "annotations": {},
+            "creationTimestamp": "2026-04-25T21:12:33.115333Z",
+            "resourceVersion": "188"
+          },
+          "spec": {
+            "displayName": "",
+            "comment": "",
+            "description": "",
+            "addressGroup": {
+              "name": "web-servers",
+              "namespace": "production"
+            },
+            "service": {
+              "name": "web-service",
+              "namespace": "production"
+            }
+          }
+        }
+      ]
+    }
+  `}
+</CodeBlock>
+
+  </TabItem>
+  <TabItem value="or" label="OR">
+
+<CodeBlock language="json">
+  {dedent`
+    {
+      "resourceVersion": "202",
+      "serviceBindings": [
+        {
+          "metadata": {
+            "uid": "bce9e767-17a3-4a30-8909-d5ea798eac83",
+            "name": "api-servers-api-service",
+            "namespace": "production",
+            "labels": {
+              "binding-type": "service"
+            },
+            "annotations": {},
+            "creationTimestamp": "2026-04-25T21:12:33.115333Z",
+            "resourceVersion": "98"
+          },
+          "spec": {
+            "displayName": "API Servers - API Service",
+            "comment": "",
+            "description": "",
+            "addressGroup": {
+              "name": "api-servers",
+              "namespace": "production"
+            },
+            "service": {
+              "name": "api-service",
+              "namespace": "production"
+            }
+          }
+        },
+        {
+          "metadata": {
+            "uid": "ed0e6003-14bd-4c0d-9df2-4d3cb0427615",
+            "name": "web-servers-web-service",
+            "namespace": "production",
+            "labels": {
+              "binding-type": "service"
+            },
+            "annotations": {},
+            "creationTimestamp": "2026-04-25T21:12:33.115333Z",
+            "resourceVersion": "188"
+          },
+          "spec": {
+            "displayName": "",
+            "comment": "",
+            "description": "",
+            "addressGroup": {
+              "name": "web-servers",
+              "namespace": "production"
+            },
+            "service": {
+              "name": "web-service",
+              "namespace": "production"
+            }
+          }
+        }
+      ]
+    }
+  `}
+</CodeBlock>
+
+  </TabItem>
+</Tabs>
 
 <Restrictions items={[
   { label: 'selectors', rules: RESTRICTIONS.selectors },
@@ -562,7 +789,7 @@ import { ApiOperation } from '@site/src/components/commonBlocks/ApiOperation'
             }
           }
         ],
-        "resourceVersion": "0"
+        "resourceVersion": "202"
       }'
   `}
 </CodeBlock>
@@ -591,7 +818,7 @@ import { ApiOperation } from '@site/src/components/commonBlocks/ApiOperation'
             }
           }
         ],
-        "resourceVersion": "0"
+        "resourceVersion": "202"
       }'
   `}
 </CodeBlock>
@@ -611,7 +838,7 @@ import { ApiOperation } from '@site/src/components/commonBlocks/ApiOperation'
             }
           }
         ],
-        "resourceVersion": "0"
+        "resourceVersion": "202"
       }'
   `}
 </CodeBlock>
@@ -637,7 +864,7 @@ import { ApiOperation } from '@site/src/components/commonBlocks/ApiOperation'
             }
           }
         ],
-        "resourceVersion": "0"
+        "resourceVersion": "202"
       }'
   `}
 </CodeBlock>
@@ -668,7 +895,7 @@ import { ApiOperation } from '@site/src/components/commonBlocks/ApiOperation'
             }
           }
         ],
-        "resourceVersion": "0"
+        "resourceVersion": "202"
       }'
   `}
 </CodeBlock>
@@ -676,29 +903,215 @@ import { ApiOperation } from '@site/src/components/commonBlocks/ApiOperation'
   </TabItem>
 </Tabs>
 
-#### Пример ответа
+#### Примеры ответа
+
+<Tabs groupId="sb-watch">
+  <TabItem value="name" label="name" default>
 
 <CodeBlock language="json">
   {dedent`
     {
-      "type": "MODIFIED",
-      "serviceBindings": [
-        {
-          "metadata": {
-            "uid": "b8c9d0e1-f2a3-4567-bcde-678901234567",
-            "name": "web-servers-web-service",
-            "namespace": "production",
-            "resourceVersion": "2"
-          },
-          "spec": {
-            "addressGroup": "web-servers",
-            "service": "monitoring-service"
+      "result": {
+        "type": "MODIFIED",
+        "serviceBindings": [
+          {
+            "metadata": {
+              "uid": "ed0e6003-14bd-4c0d-9df2-4d3cb0427615",
+              "name": "web-servers-web-service",
+              "namespace": "production",
+              "labels": {
+                "binding-type": "service"
+              },
+              "annotations": {},
+              "creationTimestamp": "2026-04-25T21:12:33.115333Z",
+              "resourceVersion": "203"
+            },
+            "spec": {
+              "displayName": "",
+              "comment": "",
+              "description": "",
+              "addressGroup": {
+                "name": "web-servers",
+                "namespace": "production"
+              },
+              "service": {
+                "name": "web-service",
+                "namespace": "production"
+              }
+            }
           }
-        }
-      ]
+        ]
+      }
     }
   `}
 </CodeBlock>
+
+  </TabItem>
+  <TabItem value="refs" label="refs">
+
+<CodeBlock language="json">
+  {dedent`
+    {
+      "result": {
+        "type": "MODIFIED",
+        "serviceBindings": [
+          {
+            "metadata": {
+              "uid": "ed0e6003-14bd-4c0d-9df2-4d3cb0427615",
+              "name": "web-servers-web-service",
+              "namespace": "production",
+              "labels": {
+                "binding-type": "service"
+              },
+              "annotations": {},
+              "creationTimestamp": "2026-04-25T21:12:33.115333Z",
+              "resourceVersion": "203"
+            },
+            "spec": {
+              "displayName": "",
+              "comment": "",
+              "description": "",
+              "addressGroup": {
+                "name": "web-servers",
+                "namespace": "production"
+              },
+              "service": {
+                "name": "web-service",
+                "namespace": "production"
+              }
+            }
+          }
+        ]
+      }
+    }
+  `}
+</CodeBlock>
+
+  </TabItem>
+  <TabItem value="labels" label="labels">
+
+<CodeBlock language="json">
+  {dedent`
+    {
+      "result": {
+        "type": "MODIFIED",
+        "serviceBindings": [
+          {
+            "metadata": {
+              "uid": "ed0e6003-14bd-4c0d-9df2-4d3cb0427615",
+              "name": "web-servers-web-service",
+              "namespace": "production",
+              "labels": {
+                "binding-type": "service"
+              },
+              "annotations": {},
+              "creationTimestamp": "2026-04-25T21:12:33.115333Z",
+              "resourceVersion": "203"
+            },
+            "spec": {
+              "displayName": "",
+              "comment": "",
+              "description": "",
+              "addressGroup": {
+                "name": "web-servers",
+                "namespace": "production"
+              },
+              "service": {
+                "name": "web-service",
+                "namespace": "production"
+              }
+            }
+          }
+        ]
+      }
+    }
+  `}
+</CodeBlock>
+
+  </TabItem>
+  <TabItem value="and" label="AND">
+
+<CodeBlock language="json">
+  {dedent`
+    {
+      "result": {
+        "type": "MODIFIED",
+        "serviceBindings": [
+          {
+            "metadata": {
+              "uid": "ed0e6003-14bd-4c0d-9df2-4d3cb0427615",
+              "name": "web-servers-web-service",
+              "namespace": "production",
+              "labels": {
+                "binding-type": "service"
+              },
+              "annotations": {},
+              "creationTimestamp": "2026-04-25T21:12:33.115333Z",
+              "resourceVersion": "203"
+            },
+            "spec": {
+              "displayName": "",
+              "comment": "",
+              "description": "",
+              "addressGroup": {
+                "name": "web-servers",
+                "namespace": "production"
+              },
+              "service": {
+                "name": "web-service",
+                "namespace": "production"
+              }
+            }
+          }
+        ]
+      }
+    }
+  `}
+</CodeBlock>
+
+  </TabItem>
+  <TabItem value="or" label="OR">
+
+<CodeBlock language="json">
+  {dedent`
+    {
+      "result": {
+        "type": "MODIFIED",
+        "serviceBindings": [
+          {
+            "metadata": {
+              "uid": "ed0e6003-14bd-4c0d-9df2-4d3cb0427615",
+              "name": "web-servers-web-service",
+              "namespace": "production",
+              "labels": {
+                "binding-type": "service"
+              },
+              "annotations": {},
+              "creationTimestamp": "2026-04-25T21:12:33.115333Z",
+              "resourceVersion": "203"
+            },
+            "spec": {
+              "displayName": "",
+              "comment": "",
+              "description": "",
+              "addressGroup": {
+                "name": "web-servers",
+                "namespace": "production"
+              },
+              "service": {
+                "name": "web-service",
+                "namespace": "production"
+              }
+            }
+          }
+        ]
+      }
+    }
+  `}
+</CodeBlock>
+
+  </TabItem>
+</Tabs>
 
 <Restrictions items={[
   { label: 'selectors', rules: RESTRICTIONS.selectors },

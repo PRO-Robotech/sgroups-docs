@@ -1,0 +1,224 @@
+---
+id: server-tls
+sidebar_position: 4
+title: Настройка TLS
+---
+
+import CodeBlock from '@theme/CodeBlock'
+import dedent from 'ts-dedent'
+
+# Настройка TLS
+
+`sg-server` поддерживает TLS-шифрование gRPC + REST на единственном
+эндпоинте — как односторонний серверный TLS, так и взаимную аутентификацию
+(mTLS) с `sg-agent`'ами. В production рекомендуется корпоративный CA либо
+`cert-manager` (Kubernetes).
+
+Все TLS-параметры живут в секции `authn` (см. также
+[Конфигурация → authn](/install/server-config#параметры-authn)).
+
+## Параметры authn
+
+<table>
+  <thead>
+    <tr>
+      <th>Ключ YAML</th>
+      <th>Env</th>
+      <th>Default</th>
+      <th>Описание</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><code>authn/type</code></td>
+      <td><code>SG_AUTHN_TYPE</code></td>
+      <td><code>none</code></td>
+      <td><code>none</code> или <code>tls</code></td>
+    </tr>
+    <tr>
+      <td><code>authn/tls/cert-file</code></td>
+      <td><code>SG_AUTHN_TLS_CERT_FILE</code></td>
+      <td>—</td>
+      <td>Путь к серверному сертификату</td>
+    </tr>
+    <tr>
+      <td><code>authn/tls/key-file</code></td>
+      <td><code>SG_AUTHN_TLS_KEY_FILE</code></td>
+      <td>—</td>
+      <td>Путь к приватному ключу</td>
+    </tr>
+    <tr>
+      <td><code>authn/tls/client/verify</code></td>
+      <td><code>SG_AUTHN_TLS_CLIENT_VERIFY</code></td>
+      <td><code>skip</code></td>
+      <td><code>skip</code> / <code>certs-required</code> / <code>verify</code></td>
+    </tr>
+    <tr>
+      <td><code>authn/tls/client/ca-files</code></td>
+      <td><code>SG_AUTHN_TLS_CLIENT_CA_FILES</code></td>
+      <td>—</td>
+      <td>Список CA-файлов для проверки клиентских сертификатов</td>
+    </tr>
+  </tbody>
+</table>
+
+Поведение `authn/tls/client/verify`:
+
+- `skip` — клиентские сертификаты не требуются и не проверяются (серверный TLS только)
+- `certs-required` — клиент **обязан** предъявить сертификат, но цепочка не проверяется
+- `verify` — полноценный mTLS: цепочка клиентского сертификата проверяется по `ca-files`
+
+## Генерация сертификатов
+
+### CA
+
+<CodeBlock language="bash">
+  {dedent`
+    # Приватный ключ CA
+    openssl genrsa -out ca.key 4096
+
+    # Самоподписанный сертификат CA (10 лет)
+    openssl req -x509 -new -nodes \\
+      -key ca.key \\
+      -sha256 -days 3650 \\
+      -subj "/CN=SGroups CA" \\
+      -out ca.crt
+  `}
+</CodeBlock>
+
+### Сертификат сервера
+
+<CodeBlock language="bash">
+  {dedent`
+    openssl genrsa -out server.key 2048
+
+    openssl req -new \\
+      -key server.key \\
+      -subj "/CN=sg-server" \\
+      -addext "subjectAltName=DNS:sg-server,DNS:localhost,IP:127.0.0.1" \\
+      -out server.csr
+
+    openssl x509 -req \\
+      -in server.csr \\
+      -CA ca.crt -CAkey ca.key -CAcreateserial \\
+      -days 365 -sha256 \\
+      -copy_extensions copyall \\
+      -out server.crt
+  `}
+</CodeBlock>
+
+### Клиентский сертификат (для mTLS)
+
+<CodeBlock language="bash">
+  {dedent`
+    openssl genrsa -out agent.key 2048
+
+    openssl req -new \\
+      -key agent.key \\
+      -subj "/CN=sg-agent" \\
+      -out agent.csr
+
+    openssl x509 -req \\
+      -in agent.csr \\
+      -CA ca.crt -CAkey ca.key -CAcreateserial \\
+      -days 365 -sha256 \\
+      -out agent.crt
+  `}
+</CodeBlock>
+
+## Конфигурация sg-server
+
+### Серверный TLS (без проверки клиентов)
+
+<CodeBlock language="yaml">
+  {dedent`
+    authn:
+      type: tls
+      tls:
+        cert-file: /etc/sg-server/tls/server.crt
+        key-file: /etc/sg-server/tls/server.key
+        client:
+          verify: skip
+  `}
+</CodeBlock>
+
+То же через переменные окружения:
+
+<CodeBlock language="bash">
+  {dedent`
+    export SG_AUTHN_TYPE=tls
+    export SG_AUTHN_TLS_CERT_FILE=/etc/sg-server/tls/server.crt
+    export SG_AUTHN_TLS_KEY_FILE=/etc/sg-server/tls/server.key
+    export SG_AUTHN_TLS_CLIENT_VERIFY=skip
+  `}
+</CodeBlock>
+
+### mTLS (взаимная аутентификация)
+
+<CodeBlock language="yaml">
+  {dedent`
+    authn:
+      type: tls
+      tls:
+        cert-file: /etc/sg-server/tls/server.crt
+        key-file: /etc/sg-server/tls/server.key
+        client:
+          verify: verify
+          ca-files:
+            - /etc/sg-server/tls/ca.crt
+  `}
+</CodeBlock>
+
+## Запуск через Docker с TLS
+
+<CodeBlock language="bash">
+  {dedent`
+    docker run -d \\
+      --name sg-server \\
+      -p 9006:9006 \\
+      -v /path/to/tls:/etc/sg-server/tls:ro \\
+      -e SG_SERVER_ENDPOINT="tcp://0.0.0.0:9006" \\
+      -e SG_STORAGE_POSTGRES_URL="postgres://sgroups:secret@db:5432/sgroups?sslmode=disable" \\
+      -e SG_AUTHN_TYPE=tls \\
+      -e SG_AUTHN_TLS_CERT_FILE=/etc/sg-server/tls/server.crt \\
+      -e SG_AUTHN_TLS_KEY_FILE=/etc/sg-server/tls/server.key \\
+      -e SG_AUTHN_TLS_CLIENT_VERIFY=verify \\
+      -e SG_AUTHN_TLS_CLIENT_CA_FILES=/etc/sg-server/tls/ca.crt \\
+      sgroups/sg-server:0.1.0-rc.1
+  `}
+</CodeBlock>
+
+## Проверка TLS-соединения
+
+<CodeBlock language="bash">
+  {dedent`
+    # Просмотр серверного сертификата
+    openssl s_client -connect localhost:9006 -CAfile ca.crt
+
+    # gRPC с TLS (только серверный)
+    grpcurl -cacert ca.crt localhost:9006 list
+
+    # gRPC с mTLS (клиентский сертификат)
+    grpcurl \\
+      -cacert ca.crt \\
+      -cert agent.crt \\
+      -key agent.key \\
+      localhost:9006 list
+  `}
+</CodeBlock>
+
+## Ротация сертификатов
+
+:::caution
+`sg-server` загружает сертификаты **при старте**. После замены файлов
+на диске сервер нужно перезапустить — горячая перезагрузка не поддерживается.
+:::
+
+Рекомендуемый подход:
+
+1. Обновить файлы на диске (или в Secret Kubernetes).
+2. Выполнить graceful restart `sg-server`.
+3. Убедиться, что новый экземпляр поднялся (метрики `/metrics`, healthcheck).
+
+В Kubernetes используется `cert-manager` с автоматической ротацией Secret и
+перезапуском Pod через аннотацию-чексумму в Deployment.

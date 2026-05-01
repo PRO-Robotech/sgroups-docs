@@ -7,10 +7,13 @@ import TabItem from '@theme/TabItem'
 import CodeBlock from '@theme/CodeBlock'
 import dedent from 'ts-dedent'
 
-Обе стороны — сервисы (`SERVICE`). Транспортная конфигурация берется из ресурсов Service обеих сторон — блок `transport` **не указывается**.
+Обе стороны — сервисы (`SERVICE`). Правило создаётся в таблице `tbl_svc2svc_rule`.
+Транспортная конфигурация берётся из ресурсов Service обеих сторон, поэтому блок
+`spec.transport` **не указывается**.
 
 :::warning Transport
-Блок `spec.transport` **не указывается** при любом направлении трафика. Протоколы, порты и ICMP-типы определяются полем `transports` ресурсов Service, на которые ссылаются `local` и `remote`.
+Живой API возвращает `invalidArgument`, если для `SERVICE → SERVICE` передать
+`spec.transport`: `transport must not be set for svc-to-svc rules`.
 :::
 
 <table>
@@ -129,13 +132,18 @@ import dedent from 'ts-dedent'
       "rules": [
         {
           "metadata": {
-            "uid": "e5f6a7b8-c9d0-1234-ef01-23456789abcd",
+            "uid": "ed642c97-4308-488b-ad2f-90c9bd6fc714",
             "name": "allow-api-to-cache",
             "namespace": "production",
-            "creationTimestamp": "2025-01-15T11:20:00Z",
-            "resourceVersion": "1"
+            "labels": {},
+            "annotations": {},
+            "creationTimestamp": "2026-04-25T21:13:10.596589Z",
+            "resourceVersion": "193"
           },
           "spec": {
+            "displayName": "",
+            "comment": "",
+            "description": "",
             "action": "ALLOW",
             "session": {
               "traffic": "BOTH"
@@ -144,14 +152,22 @@ import dedent from 'ts-dedent'
               "local": {
                 "name": "api-service",
                 "namespace": "production",
-                "type": "SERVICE"
+                "type": "SERVICE",
+                "labels": {
+                  "app": "api"
+                }
               },
               "remote": {
                 "name": "cache-service",
                 "namespace": "production",
-                "type": "SERVICE"
+                "type": "SERVICE",
+                "value": "",
+                "labels": {
+                  "app": "cache"
+                }
               }
-            }
+            },
+            "transport": null
           }
         }
       ]

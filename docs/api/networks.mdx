@@ -126,14 +126,15 @@ import { ApiOperation } from '@site/src/components/commonBlocks/ApiOperation'
       "networks": [
         {
           "metadata": {
-            "uid": "d4e5f6a7-b8c9-0123-defa-234567890123",
+            "uid": "aabf9391-d6b7-4183-952f-9abe1f1adf46",
             "name": "internal-net",
             "namespace": "production",
             "labels": {
               "zone": "internal"
             },
-            "creationTimestamp": "2025-01-15T10:15:00Z",
-            "resourceVersion": "1"
+            "annotations": {},
+            "creationTimestamp": "2026-04-25T21:12:33.041333Z",
+            "resourceVersion": "184"
           },
           "spec": {
             "displayName": "Internal Network",
@@ -205,7 +206,10 @@ import { ApiOperation } from '@site/src/components/commonBlocks/ApiOperation'
 
 > *Необходимо указать `uid` **или** комбинацию `name` + `namespace`.
 
-#### Пример запроса
+#### Примеры запроса
+
+<Tabs groupId="net-delete">
+  <TabItem value="uid" label="uid" default>
 
 <CodeBlock language="bash">
   {dedent`
@@ -215,7 +219,26 @@ import { ApiOperation } from '@site/src/components/commonBlocks/ApiOperation'
         "networks": [
           {
             "metadata": {
-              "name": "internal-net",
+              "uid": "8dc78a15-580e-45cd-8c69-713e87bdb3eb"
+            }
+          }
+        ]
+      }'
+  `}
+</CodeBlock>
+
+  </TabItem>
+  <TabItem value="name" label="name + namespace">
+
+<CodeBlock language="bash">
+  {dedent`
+    curl -X POST http://localhost:9006/v1/networks/delete \\
+      -H 'Content-Type: application/json' \\
+      -d '{
+        "networks": [
+          {
+            "metadata": {
+              "name": "docs-del-net-name-152112",
               "namespace": "production"
             }
           }
@@ -224,13 +247,31 @@ import { ApiOperation } from '@site/src/components/commonBlocks/ApiOperation'
   `}
 </CodeBlock>
 
-#### Пример ответа
+  </TabItem>
+</Tabs>
+
+#### Примеры ответа
+
+<Tabs groupId="net-delete">
+  <TabItem value="uid" label="uid" default>
 
 <CodeBlock language="json">
   {dedent`
     {}
   `}
 </CodeBlock>
+
+  </TabItem>
+  <TabItem value="name" label="name + namespace">
+
+<CodeBlock language="json">
+  {dedent`
+    {}
+  `}
+</CodeBlock>
+
+  </TabItem>
+</Tabs>
 
 <Restrictions items={[
   { label: 'delete', rules: RESTRICTIONS.deleteWithNamespace },
@@ -441,23 +482,27 @@ import { ApiOperation } from '@site/src/components/commonBlocks/ApiOperation'
   </tbody>
 </table>
 
-#### Пример ответа
+#### Примеры ответа
+
+<Tabs groupId="net-list">
+  <TabItem value="name" label="name" default>
 
 <CodeBlock language="json">
   {dedent`
     {
-      "resourceVersion": "42",
+      "resourceVersion": "198",
       "networks": [
         {
           "metadata": {
-            "uid": "d4e5f6a7-b8c9-0123-defa-234567890123",
+            "uid": "aabf9391-d6b7-4183-952f-9abe1f1adf46",
             "name": "internal-net",
             "namespace": "production",
             "labels": {
               "zone": "internal"
             },
-            "creationTimestamp": "2025-01-15T10:15:00Z",
-            "resourceVersion": "1"
+            "annotations": {},
+            "creationTimestamp": "2026-04-25T21:12:33.041333Z",
+            "resourceVersion": "184"
           },
           "spec": {
             "displayName": "Internal Network",
@@ -477,6 +522,165 @@ import { ApiOperation } from '@site/src/components/commonBlocks/ApiOperation'
     }
   `}
 </CodeBlock>
+
+  </TabItem>
+  <TabItem value="refs" label="refs">
+
+<CodeBlock language="json">
+  {dedent`
+    {
+      "resourceVersion": "198",
+      "networks": [
+        {
+          "metadata": {
+            "uid": "aabf9391-d6b7-4183-952f-9abe1f1adf46",
+            "name": "internal-net",
+            "namespace": "production",
+            "labels": {
+              "zone": "internal"
+            },
+            "annotations": {},
+            "creationTimestamp": "2026-04-25T21:12:33.041333Z",
+            "resourceVersion": "184"
+          },
+          "spec": {
+            "displayName": "Internal Network",
+            "comment": "Внутренняя сеть",
+            "description": "Внутренняя сеть продуктивного окружения",
+            "CIDR": "10.0.0.0/24"
+          },
+          "refs": [
+            {
+              "name": "web-servers",
+              "namespace": "production",
+              "resType": "AddressGroup"
+            }
+          ]
+        }
+      ]
+    }
+  `}
+</CodeBlock>
+
+  </TabItem>
+  <TabItem value="labels" label="labels">
+
+<CodeBlock language="json">
+  {dedent`
+    {
+      "resourceVersion": "198",
+      "networks": [
+        {
+          "metadata": {
+            "uid": "aabf9391-d6b7-4183-952f-9abe1f1adf46",
+            "name": "internal-net",
+            "namespace": "production",
+            "labels": {
+              "zone": "internal"
+            },
+            "annotations": {},
+            "creationTimestamp": "2026-04-25T21:12:33.041333Z",
+            "resourceVersion": "184"
+          },
+          "spec": {
+            "displayName": "Internal Network",
+            "comment": "Внутренняя сеть",
+            "description": "Внутренняя сеть продуктивного окружения",
+            "CIDR": "10.0.0.0/24"
+          },
+          "refs": [
+            {
+              "name": "web-servers",
+              "namespace": "production",
+              "resType": "AddressGroup"
+            }
+          ]
+        }
+      ]
+    }
+  `}
+</CodeBlock>
+
+  </TabItem>
+  <TabItem value="and" label="AND">
+
+<CodeBlock language="json">
+  {dedent`
+    {
+      "resourceVersion": "198",
+      "networks": [
+        {
+          "metadata": {
+            "uid": "aabf9391-d6b7-4183-952f-9abe1f1adf46",
+            "name": "internal-net",
+            "namespace": "production",
+            "labels": {
+              "zone": "internal"
+            },
+            "annotations": {},
+            "creationTimestamp": "2026-04-25T21:12:33.041333Z",
+            "resourceVersion": "184"
+          },
+          "spec": {
+            "displayName": "Internal Network",
+            "comment": "Внутренняя сеть",
+            "description": "Внутренняя сеть продуктивного окружения",
+            "CIDR": "10.0.0.0/24"
+          },
+          "refs": [
+            {
+              "name": "web-servers",
+              "namespace": "production",
+              "resType": "AddressGroup"
+            }
+          ]
+        }
+      ]
+    }
+  `}
+</CodeBlock>
+
+  </TabItem>
+  <TabItem value="or" label="OR">
+
+<CodeBlock language="json">
+  {dedent`
+    {
+      "resourceVersion": "198",
+      "networks": [
+        {
+          "metadata": {
+            "uid": "aabf9391-d6b7-4183-952f-9abe1f1adf46",
+            "name": "internal-net",
+            "namespace": "production",
+            "labels": {
+              "zone": "internal"
+            },
+            "annotations": {},
+            "creationTimestamp": "2026-04-25T21:12:33.041333Z",
+            "resourceVersion": "184"
+          },
+          "spec": {
+            "displayName": "Internal Network",
+            "comment": "Внутренняя сеть",
+            "description": "Внутренняя сеть продуктивного окружения",
+            "CIDR": "10.0.0.0/24"
+          },
+          "refs": [
+            {
+              "name": "web-servers",
+              "namespace": "production",
+              "resType": "AddressGroup"
+            }
+          ]
+        }
+      ]
+    }
+  `}
+</CodeBlock>
+
+  </TabItem>
+</Tabs>
 
 <Restrictions items={[
   { label: 'selectors', rules: RESTRICTIONS.selectors },
@@ -557,7 +761,7 @@ import { ApiOperation } from '@site/src/components/commonBlocks/ApiOperation'
             }
           }
         ],
-        "resourceVersion": "0"
+        "resourceVersion": "198"
       }'
   `}
 </CodeBlock>
@@ -585,7 +789,7 @@ import { ApiOperation } from '@site/src/components/commonBlocks/ApiOperation'
             }
           }
         ],
-        "resourceVersion": "0"
+        "resourceVersion": "198"
       }'
   `}
 </CodeBlock>
@@ -605,7 +809,7 @@ import { ApiOperation } from '@site/src/components/commonBlocks/ApiOperation'
             }
           }
         ],
-        "resourceVersion": "0"
+        "resourceVersion": "198"
       }'
   `}
 </CodeBlock>
@@ -635,7 +839,7 @@ import { ApiOperation } from '@site/src/components/commonBlocks/ApiOperation'
             }
           }
         ],
-        "resourceVersion": "0"
+        "resourceVersion": "198"
       }'
   `}
 </CodeBlock>
@@ -666,7 +870,7 @@ import { ApiOperation } from '@site/src/components/commonBlocks/ApiOperation'
             }
           }
         ],
-        "resourceVersion": "0"
+        "resourceVersion": "198"
       }'
   `}
 </CodeBlock>
@@ -693,38 +897,215 @@ import { ApiOperation } from '@site/src/components/commonBlocks/ApiOperation'
   </tbody>
 </table>
 
-#### Пример ответа
+#### Примеры ответа
+
+<Tabs groupId="net-watch">
+  <TabItem value="name" label="name" default>
 
 <CodeBlock language="json">
   {dedent`
     {
-      "type": "MODIFIED",
-      "networks": [
-        {
-          "metadata": {
-            "uid": "d4e5f6a7-b8c9-0123-defa-234567890123",
-            "name": "internal-net",
-            "namespace": "production",
-            "resourceVersion": "2"
-          },
-          "spec": {
-            "displayName": "Internal Network",
-            "comment": "Внутренняя сеть (обновлено)",
-            "description": "Внутренняя сеть продуктивного окружения",
-            "CIDR": "10.0.0.0/16"
-          },
-          "refs": [
-            {
-              "name": "web-servers",
+      "result": {
+        "type": "MODIFIED",
+        "networks": [
+          {
+            "metadata": {
+              "uid": "aabf9391-d6b7-4183-952f-9abe1f1adf46",
+              "name": "internal-net",
               "namespace": "production",
-              "resType": "AddressGroup"
-            }
-          ]
-        }
-      ]
+              "labels": {
+                "zone": "internal"
+              },
+              "annotations": {},
+              "creationTimestamp": "2026-04-25T21:12:33.041333Z",
+              "resourceVersion": "199"
+            },
+            "spec": {
+              "displayName": "Internal Network",
+              "comment": "Внутренняя сеть",
+              "description": "Внутренняя сеть продуктивного окружения",
+              "CIDR": "10.0.0.0/24"
+            },
+            "refs": [
+              {
+                "name": "web-servers",
+                "namespace": "production",
+                "resType": "AddressGroup"
+              }
+            ]
+          }
+        ]
+      }
     }
   `}
 </CodeBlock>
+
+  </TabItem>
+  <TabItem value="refs" label="refs">
+
+<CodeBlock language="json">
+  {dedent`
+    {
+      "result": {
+        "type": "MODIFIED",
+        "networks": [
+          {
+            "metadata": {
+              "uid": "aabf9391-d6b7-4183-952f-9abe1f1adf46",
+              "name": "internal-net",
+              "namespace": "production",
+              "labels": {
+                "zone": "internal"
+              },
+              "annotations": {},
+              "creationTimestamp": "2026-04-25T21:12:33.041333Z",
+              "resourceVersion": "199"
+            },
+            "spec": {
+              "displayName": "Internal Network",
+              "comment": "Внутренняя сеть",
+              "description": "Внутренняя сеть продуктивного окружения",
+              "CIDR": "10.0.0.0/24"
+            },
+            "refs": [
+              {
+                "name": "web-servers",
+                "namespace": "production",
+                "resType": "AddressGroup"
+              }
+            ]
+          }
+        ]
+      }
+    }
+  `}
+</CodeBlock>
+
+  </TabItem>
+  <TabItem value="labels" label="labels">
+
+<CodeBlock language="json">
+  {dedent`
+    {
+      "result": {
+        "type": "MODIFIED",
+        "networks": [
+          {
+            "metadata": {
+              "uid": "aabf9391-d6b7-4183-952f-9abe1f1adf46",
+              "name": "internal-net",
+              "namespace": "production",
+              "labels": {
+                "zone": "internal"
+              },
+              "annotations": {},
+              "creationTimestamp": "2026-04-25T21:12:33.041333Z",
+              "resourceVersion": "199"
+            },
+            "spec": {
+              "displayName": "Internal Network",
+              "comment": "Внутренняя сеть",
+              "description": "Внутренняя сеть продуктивного окружения",
+              "CIDR": "10.0.0.0/24"
+            },
+            "refs": [
+              {
+                "name": "web-servers",
+                "namespace": "production",
+                "resType": "AddressGroup"
+              }
+            ]
+          }
+        ]
+      }
+    }
+  `}
+</CodeBlock>
+
+  </TabItem>
+  <TabItem value="and" label="AND">
+
+<CodeBlock language="json">
+  {dedent`
+    {
+      "result": {
+        "type": "MODIFIED",
+        "networks": [
+          {
+            "metadata": {
+              "uid": "aabf9391-d6b7-4183-952f-9abe1f1adf46",
+              "name": "internal-net",
+              "namespace": "production",
+              "labels": {
+                "zone": "internal"
+              },
+              "annotations": {},
+              "creationTimestamp": "2026-04-25T21:12:33.041333Z",
+              "resourceVersion": "199"
+            },
+            "spec": {
+              "displayName": "Internal Network",
+              "comment": "Внутренняя сеть",
+              "description": "Внутренняя сеть продуктивного окружения",
+              "CIDR": "10.0.0.0/24"
+            },
+            "refs": [
+              {
+                "name": "web-servers",
+                "namespace": "production",
+                "resType": "AddressGroup"
+              }
+            ]
+          }
+        ]
+      }
+    }
+  `}
+</CodeBlock>
+
+  </TabItem>
+  <TabItem value="or" label="OR">
+
+<CodeBlock language="json">
+  {dedent`
+    {
+      "result": {
+        "type": "MODIFIED",
+        "networks": [
+          {
+            "metadata": {
+              "uid": "aabf9391-d6b7-4183-952f-9abe1f1adf46",
+              "name": "internal-net",
+              "namespace": "production",
+              "labels": {
+                "zone": "internal"
+              },
+              "annotations": {},
+              "creationTimestamp": "2026-04-25T21:12:33.041333Z",
+              "resourceVersion": "199"
+            },
+            "spec": {
+              "displayName": "Internal Network",
+              "comment": "Внутренняя сеть",
+              "description": "Внутренняя сеть продуктивного окружения",
+              "CIDR": "10.0.0.0/24"
+            },
+            "refs": [
+              {
+                "name": "web-servers",
+                "namespace": "production",
+                "resType": "AddressGroup"
+              }
+            ]
+          }
+        ]
+      }
+    }
+  `}
+</CodeBlock>
+
+  </TabItem>
+</Tabs>
 
 <Restrictions items={[
   { label: 'selectors', rules: RESTRICTIONS.selectors },
