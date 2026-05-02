@@ -797,6 +797,79 @@ html[data-theme='dark'] .arch-svg__group-title {
   fill: #e0e0e0;
 }
 
+/* ============================================================================
+   ArchGraph — force-directed
+   ============================================================================ */
+
+.arch-graph-wrap {
+  user-select: none;
+}
+
+.arch-graph .arch-graph__edge {
+  fill: none;
+  stroke: var(--ifm-color-emphasis-600);
+  stroke-width: 1.6;
+  color: var(--ifm-color-emphasis-700);
+}
+
+.arch-graph .arch-graph__edge--dashed {
+  stroke-dasharray: 5 4;
+  stroke: #d9480f;
+  color: #d9480f;
+}
+
+.arch-graph .arch-graph__edge-label {
+  font-size: 11px;
+  font-weight: 600;
+  font-family: var(--ifm-font-family-monospace);
+  fill: var(--ifm-color-emphasis-900);
+  dominant-baseline: middle;
+  paint-order: stroke;
+  stroke: var(--ifm-color-emphasis-100);
+  stroke-width: 4;
+  stroke-linejoin: round;
+  pointer-events: none;
+}
+
+html[data-theme='dark'] .arch-graph .arch-graph__edge-label {
+  fill: #f1f3f5;
+  stroke: #20262e;
+}
+
+.arch-graph .arch-graph__edge-label--alt {
+  fill: #d9480f;
+}
+
+html[data-theme='dark'] .arch-graph .arch-graph__edge-label--alt {
+  fill: #ffb066;
+}
+
+.arch-graph .arch-graph__title {
+  font-family: var(--ifm-font-family-monospace);
+  font-size: 13px;
+  font-weight: 700;
+  fill: var(--ifm-color-emphasis-900);
+  pointer-events: none;
+}
+
+.arch-graph .arch-graph__sub {
+  font-size: 10px;
+  fill: var(--ifm-color-emphasis-700);
+  pointer-events: none;
+}
+
+html[data-theme='dark'] .arch-graph .arch-graph__title {
+  fill: #1b1b1d;
+}
+
+html[data-theme='dark'] .arch-graph .arch-graph__sub {
+  fill: #495057;
+}
+
+.arch-graph__node:active {
+  cursor: grabbing !important;
+}
+
 /* Легенда */
 .arch-legend {
   display: flex;

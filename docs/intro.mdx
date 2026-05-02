@@ -6,6 +6,7 @@ slug: /
 ---
 
 import { ArchSvg } from '@site/src/components/commonBlocks/ArchSvg'
+import { ArchGraph } from '@site/src/components/commonBlocks/ArchGraph'
 
 # Введение в SGroups
 
@@ -208,39 +209,44 @@ SGroups использует **9 типов ресурсов**, организо
 
 ### Связи ресурсов
 
-<ArchSvg
-  cols={5}
-  rows={4}
-  cellWidth={170}
-  cellHeight={70}
-  hGap={70}
-  vGap={80}
-  paddingX={30}
-  paddingY={50}
+<ArchGraph
+  width={960}
+  height={600}
+  linkDistance={170}
+  charge={9000}
+  collideRadius={130}
   ariaLabel="Связи ресурсов SGroups"
   nodes={[
-    { id: 'ns',   col: 2, row: 0, kind: 'store',  title: 'Namespace',    subtitle: 'область имён' },
-    { id: 'host', col: 0, row: 1, kind: 'client', title: 'Host' },
-    { id: 'hb',   col: 1, row: 1, kind: 'cp',     title: 'HostBinding' },
-    { id: 'ag',   col: 2, row: 1, kind: 'cp',     title: 'AddressGroup' },
-    { id: 'sb',   col: 3, row: 1, kind: 'cp',     title: 'ServiceBinding' },
-    { id: 'svc',  col: 4, row: 1, kind: 'client', title: 'Service' },
-    { id: 'net',  col: 0, row: 2, kind: 'client', title: 'Network' },
-    { id: 'nb',   col: 1, row: 2, kind: 'cp',     title: 'NetworkBinding' },
-    { id: 'rule', col: 2, row: 3, kind: 'agent',  title: 'Rule' },
+    { id: 'ns',   kind: 'store',  title: 'Namespace',     subtitle: 'область имён' },
+    { id: 'ag',   kind: 'cp',     title: 'AddressGroup',  subtitle: 'центральная сущность' },
+    { id: 'host', kind: 'client', title: 'Host' },
+    { id: 'net',  kind: 'client', title: 'Network' },
+    { id: 'svc',  kind: 'client', title: 'Service' },
+    { id: 'hb',   kind: 'cp',     title: 'HostBinding' },
+    { id: 'nb',   kind: 'cp',     title: 'NetworkBinding' },
+    { id: 'sb',   kind: 'cp',     title: 'ServiceBinding' },
+    { id: 'rule', kind: 'agent',  title: 'Rule',           subtitle: 'политика' },
   ]}
   edges={[
-    { from: 'ns',   to: 'ag',   label: 'содержит ресурсы' },
-    { from: 'host', to: 'hb',   label: '1:N', bidir: true },
+    { from: 'ns', to: 'ag',   label: 'содержит' },
+    { from: 'ns', to: 'host', label: 'содержит' },
+    { from: 'ns', to: 'net',  label: 'содержит' },
+    { from: 'ns', to: 'svc',  label: 'содержит' },
+    { from: 'ns', to: 'rule', label: 'содержит' },
+    { from: 'host', to: 'hb', bidir: true },
+    { from: 'net',  to: 'nb', bidir: true },
+    { from: 'svc',  to: 'sb', bidir: true },
     { from: 'hb',   to: 'ag' },
-    { from: 'ag',   to: 'sb' },
-    { from: 'sb',   to: 'svc',  label: '1:N', bidir: true },
-    { from: 'net',  to: 'nb',   label: '1:N', bidir: true },
-    { from: 'nb',   to: 'ag',                       routing: 'h-v' },
-    { from: 'rule', to: 'ag',   label: 'endpoint',  lane: -1 },
-    { from: 'rule', to: 'svc',  label: 'endpoint',  routing: 'v-h', lane: 2 },
+    { from: 'nb',   to: 'ag' },
+    { from: 'sb',   to: 'ag' },
+    { from: 'rule', to: 'ag',  label: 'endpoint' },
+    { from: 'rule', to: 'svc', label: 'endpoint', kind: 'dashed' },
   ]}
 />
+
+:::tip
+Узлы можно перетаскивать мышью — раскладка сама перебалансируется.
+:::
 
 ## API-операции
 
