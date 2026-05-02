@@ -214,7 +214,7 @@ SGroups использует **9 типов ресурсов**, организо
   cellWidth={170}
   cellHeight={70}
   hGap={70}
-  vGap={70}
+  vGap={80}
   paddingX={30}
   paddingY={50}
   ariaLabel="Связи ресурсов SGroups"
@@ -236,14 +236,14 @@ SGroups использует **9 типов ресурсов**, организо
     { id: 'rule', col: 2, row: 2, kind: 'agent',  title: 'Rule' },
   ]}
   edges={[
-    { from: 'host', to: 'hb',   label: '1 : N', bidir: true },
-    { from: 'hb',   to: 'ag',   label: '↔' },
-    { from: 'ag',   to: 'sb',   label: '↔' },
-    { from: 'sb',   to: 'svc',  label: '1 : N', bidir: true },
-    { from: 'net',  to: 'nb',   label: '1 : N', bidir: true },
-    { from: 'nb',   to: 'ag',   label: '↔', routing: 'h-v' },
-    { from: 'rule', to: 'ag',   label: 'local / remote endpoint', routing: 'v-h' },
-    { from: 'rule', to: 'svc',  label: 'local / remote endpoint', routing: 'v-h', lane: 1 },
+    { from: 'host', to: 'hb',   label: '1:N', bidir: true },
+    { from: 'hb',   to: 'ag',   label: 'AG' },
+    { from: 'ag',   to: 'sb',   label: 'AG' },
+    { from: 'sb',   to: 'svc',  label: '1:N', bidir: true },
+    { from: 'net',  to: 'nb',   label: '1:N', bidir: true },
+    { from: 'nb',   to: 'ag',   label: 'AG',                 routing: 'h-v' },
+    { from: 'rule', to: 'ag',   label: 'local endpoint',     lane: -1 },
+    { from: 'rule', to: 'svc',  label: 'remote endpoint',    routing: 'v-h', lane: 2 },
   ]}
 />
 
