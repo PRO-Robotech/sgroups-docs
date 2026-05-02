@@ -21,11 +21,16 @@ SGroups (`AddressGroup`, `Service`, `Host`, `*Binding`, `UniRule`) в работ
   cols={3}
   rows={2}
   cellWidth={230}
-  cellHeight={75}
-  hGap={120}
-  vGap={45}
-  layerTitles={['sg-server', '', 'Узел Linux']}
+  cellHeight={80}
+  hGap={140}
+  vGap={70}
+  paddingX={30}
+  paddingY={50}
   ariaLabel="Агент и его связи"
+  groups={[
+    { id: 'g-srv',  title: 'sg-server',         nodeIds: ['api', 'pg'] },
+    { id: 'g-node', title: 'Узел Linux',         nodeIds: ['agt', 'nft'] },
+  ]}
   nodes={[
     { id: 'api', col: 0, row: 0, kind: 'cp',    title: 'gRPC + REST API', subtitle: ':9100 / :9006' },
     { id: 'pg',  col: 0, row: 1, kind: 'store', title: 'PostgreSQL',      subtitle: 'конфигурация · outbox' },
