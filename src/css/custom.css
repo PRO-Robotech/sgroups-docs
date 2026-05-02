@@ -957,6 +957,14 @@ html[data-theme='dark'] .arch-graph__node rect {
 
 /* Легенда */
 .arch-legend {
+  --arch-legend-client-bg: #d0ebff;
+  --arch-legend-client-border: #1971c2;
+  --arch-legend-cp-bg: #c3fae8;
+  --arch-legend-cp-border: #0ca678;
+  --arch-legend-store-bg: #e5dbff;
+  --arch-legend-store-border: #6f42c1;
+  --arch-legend-agent-bg: #ffe8cc;
+  --arch-legend-agent-border: #d9480f;
   display: flex;
   flex-wrap: wrap;
   gap: 1rem;
@@ -964,6 +972,18 @@ html[data-theme='dark'] .arch-graph__node rect {
   padding: 0.5rem 1rem;
   font-size: 0.82rem;
   color: var(--ifm-color-emphasis-700);
+}
+
+html[data-theme='dark'] .arch-legend {
+  --arch-legend-client-bg: #10283f;
+  --arch-legend-client-border: #74c0fc;
+  --arch-legend-cp-bg: #0f332c;
+  --arch-legend-cp-border: #63e6be;
+  --arch-legend-store-bg: #271f40;
+  --arch-legend-store-border: #b197fc;
+  --arch-legend-agent-bg: #3a2216;
+  --arch-legend-agent-border: #ffb86b;
+  color: #cbd5e1;
 }
 
 .arch-legend__dot {
@@ -977,21 +997,21 @@ html[data-theme='dark'] .arch-graph__node rect {
 }
 
 .arch-legend__dot--client {
-  background: #d0ebff;
-  border-color: #1971c2;
+  background: var(--arch-legend-client-bg);
+  border-color: var(--arch-legend-client-border);
 }
 
 .arch-legend__dot--cp {
-  background: #c3fae8;
-  border-color: #0ca678;
+  background: var(--arch-legend-cp-bg);
+  border-color: var(--arch-legend-cp-border);
 }
 
 .arch-legend__dot--store {
-  background: #e5dbff;
-  border-color: #6f42c1;
+  background: var(--arch-legend-store-bg);
+  border-color: var(--arch-legend-store-border);
 }
 
 .arch-legend__dot--agent {
-  background: #ffe8cc;
-  border-color: #d9480f;
+  background: var(--arch-legend-agent-bg);
+  border-color: var(--arch-legend-agent-border);
 }
