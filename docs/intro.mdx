@@ -208,25 +208,44 @@ SGroups использует **9 типов ресурсов**, организо
 
 ### Связи ресурсов
 
-```mermaid
-erDiagram
-    Namespace ||--o{ AddressGroup : "содержит"
-    Namespace ||--o{ Network : "содержит"
-    Namespace ||--o{ Host : "содержит"
-    Namespace ||--o{ Service : "содержит"
-    Namespace ||--o{ Rule : "содержит"
-
-    AddressGroup ||--o{ HostBinding : "привязка"
-    AddressGroup ||--o{ NetworkBinding : "привязка"
-    AddressGroup ||--o{ ServiceBinding : "привязка"
-
-    Host ||--o{ HostBinding : "привязан"
-    Network ||--o{ NetworkBinding : "привязана"
-    Service ||--o{ ServiceBinding : "привязан"
-
-    Rule }o--|| AddressGroup : "local/remote endpoint"
-    Rule }o--o| Service : "local/remote endpoint"
-```
+<ArchSvg
+  cols={5}
+  rows={3}
+  cellWidth={170}
+  cellHeight={70}
+  hGap={70}
+  vGap={70}
+  paddingX={30}
+  paddingY={50}
+  ariaLabel="Связи ресурсов SGroups"
+  groups={[
+    {
+      id: 'g-ns',
+      title: 'Namespace',
+      nodeIds: ['host', 'hb', 'ag', 'sb', 'svc', 'net', 'nb', 'rule'],
+    },
+  ]}
+  nodes={[
+    { id: 'host', col: 0, row: 0, kind: 'client', title: 'Host' },
+    { id: 'hb',   col: 1, row: 0, kind: 'cp',     title: 'HostBinding' },
+    { id: 'ag',   col: 2, row: 0, kind: 'cp',     title: 'AddressGroup' },
+    { id: 'sb',   col: 3, row: 0, kind: 'cp',     title: 'ServiceBinding' },
+    { id: 'svc',  col: 4, row: 0, kind: 'client', title: 'Service' },
+    { id: 'net',  col: 0, row: 1, kind: 'client', title: 'Network' },
+    { id: 'nb',   col: 1, row: 1, kind: 'cp',     title: 'NetworkBinding' },
+    { id: 'rule', col: 2, row: 2, kind: 'agent',  title: 'Rule' },
+  ]}
+  edges={[
+    { from: 'host', to: 'hb',   label: '1 : N', bidir: true },
+    { from: 'hb',   to: 'ag',   label: '↔' },
+    { from: 'ag',   to: 'sb',   label: '↔' },
+    { from: 'sb',   to: 'svc',  label: '1 : N', bidir: true },
+    { from: 'net',  to: 'nb',   label: '1 : N', bidir: true },
+    { from: 'nb',   to: 'ag',   label: '↔', routing: 'h-v' },
+    { from: 'rule', to: 'ag',   label: 'local / remote endpoint', routing: 'v-h' },
+    { from: 'rule', to: 'svc',  label: 'local / remote endpoint', routing: 'v-h', lane: 1 },
+  ]}
+/>
 
 ## API-операции
 
