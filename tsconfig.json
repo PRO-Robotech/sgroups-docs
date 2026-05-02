@@ -5,27 +5,3 @@
   },
   "include": ["src", "./sidebars.ts"]
 }
-
-
-chain INGRESS-MAIN {
-    type filter hook prerouting priority -130; policy drop;
-    ct state established,related accept
-    ip saddr @NetIPv4-addressGroup-${addressGroupNamespace}/${addressGroupName} jump INGRESS-ag-${addressGroupNamespace}/${addressGroupName}
-}
-chain EGRESS-MAIN {
-    type filter hook postrouting priority 300; policy drop;
-    ct state established,related accept
-    ip daddr @NetIPv4-addressGroup-${addressGroupNamespace}/${addressGroupName} jump EGRESS-ag-${addressGroupNamespace}/${addressGroupName}
-}
-
-
-chain INGRESS-ag-${addressGroupNamespace}/${addressGroupName} {
-  ip [saddr <left-expr>] <protocol> <port-or-type> [meta nftrace set 1] [log level debug] <accept|drop>
-  
-}
-
-chain EGRESS-ag-${addressGroupNamespace}/${addressGroupName} {
-  ip [daddr <right-expr>] <protocol> <port-or-type> [meta nftrace set 1] [log level debug] <accept|drop>
-  
-}
-

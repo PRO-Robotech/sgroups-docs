@@ -64,13 +64,25 @@ import { ApiOperation } from '@site/src/components/commonBlocks/ApiOperation'
       <td>{DICTIONARY.annotations.short}</td>
     </tr>
     <tr>
-      <td><code>spec.addressGroup</code></td>
+      <td><code>spec.addressGroup.name</code></td>
       <td><strong>да</strong></td>
       <td><code>{TYPES.string}</code></td>
       <td>{DICTIONARY.addressGroup.short}</td>
     </tr>
     <tr>
-      <td><code>spec.network</code></td>
+      <td><code>spec.addressGroup.namespace</code></td>
+      <td><strong>да</strong></td>
+      <td><code>{TYPES.string}</code></td>
+      <td>{DICTIONARY.namespace.short}</td>
+    </tr>
+    <tr>
+      <td><code>spec.network.name</code></td>
+      <td><strong>да</strong></td>
+      <td><code>{TYPES.string}</code></td>
+      <td>{DICTIONARY.network.short}</td>
+    </tr>
+    <tr>
+      <td><code>spec.network.namespace</code></td>
       <td><strong>да</strong></td>
       <td><code>{TYPES.string}</code></td>
       <td>{DICTIONARY.network.short}</td>
@@ -95,6 +107,9 @@ import { ApiOperation } from '@site/src/components/commonBlocks/ApiOperation'
               }
             },
             "spec": {
+              "displayName": "Web Service",
+              "comment": "HTTP и HTTPS сервис",
+              "description": "Веб-сервис для фронтенд-приложений",
               "addressGroup": {
                 "name": "web-servers",
                 "namespace": "production"
@@ -102,7 +117,6 @@ import { ApiOperation } from '@site/src/components/commonBlocks/ApiOperation'
               "network": {
                 "name": "internal-net",
                 "namespace": "production"
-              }
             }
           }
         ]
@@ -118,20 +132,19 @@ import { ApiOperation } from '@site/src/components/commonBlocks/ApiOperation'
       "networkBindings": [
         {
           "metadata": {
-            "uid": "076c022d-e1cd-44b8-be79-34c236ca607a",
+            "uid": "a7b8c9d0-e1f2-3456-abcd-567890123456",
             "name": "web-servers-internal-net",
             "namespace": "production",
             "labels": {
               "binding-type": "network"
             },
-            "annotations": {},
-            "creationTimestamp": "2026-04-25T21:12:33.095523Z",
-            "resourceVersion": "187"
+            "creationTimestamp": "2025-01-15T10:30:00Z",
+            "resourceVersion": "1"
           },
           "spec": {
-            "displayName": "",
-            "comment": "",
-            "description": "",
+            "displayName": "Web Service",
+            "comment": "HTTP и HTTPS сервис",
+            "description": "Веб-сервис для фронтенд-приложений",
             "addressGroup": {
               "name": "web-servers",
               "namespace": "production"
@@ -206,10 +219,7 @@ import { ApiOperation } from '@site/src/components/commonBlocks/ApiOperation'
 
 > *Необходимо указать `uid` **или** комбинацию `name` + `namespace`.
 
-#### Примеры запроса
-
-<Tabs groupId="nb-delete">
-  <TabItem value="uid" label="uid" default>
+#### Пример запроса
 
 <CodeBlock language="bash">
   {dedent`
@@ -219,26 +229,7 @@ import { ApiOperation } from '@site/src/components/commonBlocks/ApiOperation'
         "networkBindings": [
           {
             "metadata": {
-              "uid": "284cdfad-75ee-4a80-b86d-b69f678aabfe"
-            }
-          }
-        ]
-      }'
-  `}
-</CodeBlock>
-
-  </TabItem>
-  <TabItem value="name" label="name + namespace">
-
-<CodeBlock language="bash">
-  {dedent`
-    curl -X POST http://localhost:9006/v1/network-bindings/delete \\
-      -H 'Content-Type: application/json' \\
-      -d '{
-        "networkBindings": [
-          {
-            "metadata": {
-              "name": "docs-del-network-binding-name-152135",
+              "name": "web-servers-internal-net",
               "namespace": "production"
             }
           }
@@ -247,31 +238,13 @@ import { ApiOperation } from '@site/src/components/commonBlocks/ApiOperation'
   `}
 </CodeBlock>
 
-  </TabItem>
-</Tabs>
-
-#### Примеры ответа
-
-<Tabs groupId="nb-delete">
-  <TabItem value="uid" label="uid" default>
+#### Пример ответа
 
 <CodeBlock language="json">
   {dedent`
     {}
   `}
 </CodeBlock>
-
-  </TabItem>
-  <TabItem value="name" label="name + namespace">
-
-<CodeBlock language="json">
-  {dedent`
-    {}
-  `}
-</CodeBlock>
-
-  </TabItem>
-</Tabs>
 
 <Restrictions items={[
   { label: 'delete', rules: RESTRICTIONS.deleteWithNamespace },
@@ -498,32 +471,28 @@ import { ApiOperation } from '@site/src/components/commonBlocks/ApiOperation'
   </tbody>
 </table>
 
-#### Примеры ответа
-
-<Tabs groupId="nb-list">
-  <TabItem value="name" label="name" default>
+#### Пример ответа
 
 <CodeBlock language="json">
   {dedent`
     {
-      "resourceVersion": "201",
+      "resourceVersion": "42",
       "networkBindings": [
         {
           "metadata": {
-            "uid": "076c022d-e1cd-44b8-be79-34c236ca607a",
+            "uid": "a7b8c9d0-e1f2-3456-abcd-567890123456",
             "name": "web-servers-internal-net",
             "namespace": "production",
             "labels": {
               "binding-type": "network"
             },
-            "annotations": {},
-            "creationTimestamp": "2026-04-25T21:12:33.095523Z",
-            "resourceVersion": "187"
+            "creationTimestamp": "2025-01-15T10:30:00Z",
+            "resourceVersion": "1"
           },
           "spec": {
-            "displayName": "",
-            "comment": "",
-            "description": "",
+            "displayName": "Web Service",
+            "comment": "HTTP и HTTPS сервис",
+            "description": "Веб-сервис для фронтенд-приложений",
             "addressGroup": {
               "name": "web-servers",
               "namespace": "production"
@@ -538,191 +507,6 @@ import { ApiOperation } from '@site/src/components/commonBlocks/ApiOperation'
     }
   `}
 </CodeBlock>
-
-  </TabItem>
-  <TabItem value="refs" label="refs">
-
-<CodeBlock language="json">
-  {dedent`
-    {
-      "resourceVersion": "201",
-      "networkBindings": [
-        {
-          "metadata": {
-            "uid": "076c022d-e1cd-44b8-be79-34c236ca607a",
-            "name": "web-servers-internal-net",
-            "namespace": "production",
-            "labels": {
-              "binding-type": "network"
-            },
-            "annotations": {},
-            "creationTimestamp": "2026-04-25T21:12:33.095523Z",
-            "resourceVersion": "187"
-          },
-          "spec": {
-            "displayName": "",
-            "comment": "",
-            "description": "",
-            "addressGroup": {
-              "name": "web-servers",
-              "namespace": "production"
-            },
-            "network": {
-              "name": "internal-net",
-              "namespace": "production"
-            }
-          }
-        }
-      ]
-    }
-  `}
-</CodeBlock>
-
-  </TabItem>
-  <TabItem value="labels" label="labels">
-
-<CodeBlock language="json">
-  {dedent`
-    {
-      "resourceVersion": "201",
-      "networkBindings": [
-        {
-          "metadata": {
-            "uid": "94fa73f2-440a-48f7-9cb5-a68cc17fc7f1",
-            "name": "api-servers-external-net",
-            "namespace": "production",
-            "labels": {
-              "binding-type": "network"
-            },
-            "annotations": {},
-            "creationTimestamp": "2026-04-25T21:12:33.095523Z",
-            "resourceVersion": "92"
-          },
-          "spec": {
-            "displayName": "API Servers - External Net",
-            "comment": "",
-            "description": "",
-            "addressGroup": {
-              "name": "api-servers",
-              "namespace": "production"
-            },
-            "network": {
-              "name": "external-net",
-              "namespace": "production"
-            }
-          }
-        },
-        {
-          "metadata": {
-            "uid": "076c022d-e1cd-44b8-be79-34c236ca607a",
-            "name": "web-servers-internal-net",
-            "namespace": "production",
-            "labels": {
-              "binding-type": "network"
-            },
-            "annotations": {},
-            "creationTimestamp": "2026-04-25T21:12:33.095523Z",
-            "resourceVersion": "187"
-          },
-          "spec": {
-            "displayName": "",
-            "comment": "",
-            "description": "",
-            "addressGroup": {
-              "name": "web-servers",
-              "namespace": "production"
-            },
-            "network": {
-              "name": "internal-net",
-              "namespace": "production"
-            }
-          }
-        }
-      ]
-    }
-  `}
-</CodeBlock>
-
-  </TabItem>
-  <TabItem value="and" label="AND">
-
-<CodeBlock language="json">
-  {dedent`
-    {
-      "resourceVersion": "201",
-      "networkBindings": [
-        {
-          "metadata": {
-            "uid": "076c022d-e1cd-44b8-be79-34c236ca607a",
-            "name": "web-servers-internal-net",
-            "namespace": "production",
-            "labels": {
-              "binding-type": "network"
-            },
-            "annotations": {},
-            "creationTimestamp": "2026-04-25T21:12:33.095523Z",
-            "resourceVersion": "187"
-          },
-          "spec": {
-            "displayName": "",
-            "comment": "",
-            "description": "",
-            "addressGroup": {
-              "name": "web-servers",
-              "namespace": "production"
-            },
-            "network": {
-              "name": "internal-net",
-              "namespace": "production"
-            }
-          }
-        }
-      ]
-    }
-  `}
-</CodeBlock>
-
-  </TabItem>
-  <TabItem value="or" label="OR">
-
-<CodeBlock language="json">
-  {dedent`
-    {
-      "resourceVersion": "201",
-      "networkBindings": [
-        {
-          "metadata": {
-            "uid": "076c022d-e1cd-44b8-be79-34c236ca607a",
-            "name": "web-servers-internal-net",
-            "namespace": "production",
-            "labels": {
-              "binding-type": "network"
-            },
-            "annotations": {},
-            "creationTimestamp": "2026-04-25T21:12:33.095523Z",
-            "resourceVersion": "187"
-          },
-          "spec": {
-            "displayName": "",
-            "comment": "",
-            "description": "",
-            "addressGroup": {
-              "name": "web-servers",
-              "namespace": "production"
-            },
-            "network": {
-              "name": "internal-net",
-              "namespace": "production"
-            }
-          }
-        }
-      ]
-    }
-  `}
-</CodeBlock>
-
-  </TabItem>
-</Tabs>
 
 <Restrictions items={[
   { label: 'selectors', rules: RESTRICTIONS.selectors },
@@ -821,7 +605,7 @@ import { ApiOperation } from '@site/src/components/commonBlocks/ApiOperation'
             }
           }
         ],
-        "resourceVersion": "201"
+        "resourceVersion": "0"
       }'
   `}
 </CodeBlock>
@@ -850,7 +634,7 @@ import { ApiOperation } from '@site/src/components/commonBlocks/ApiOperation'
             }
           }
         ],
-        "resourceVersion": "201"
+        "resourceVersion": "0"
       }'
   `}
 </CodeBlock>
@@ -870,7 +654,7 @@ import { ApiOperation } from '@site/src/components/commonBlocks/ApiOperation'
             }
           }
         ],
-        "resourceVersion": "201"
+        "resourceVersion": "0"
       }'
   `}
 </CodeBlock>
@@ -896,7 +680,7 @@ import { ApiOperation } from '@site/src/components/commonBlocks/ApiOperation'
             }
           }
         ],
-        "resourceVersion": "201"
+        "resourceVersion": "0"
       }'
   `}
 </CodeBlock>
@@ -927,7 +711,7 @@ import { ApiOperation } from '@site/src/components/commonBlocks/ApiOperation'
             }
           }
         ],
-        "resourceVersion": "201"
+        "resourceVersion": "0"
       }'
   `}
 </CodeBlock>
@@ -935,215 +719,29 @@ import { ApiOperation } from '@site/src/components/commonBlocks/ApiOperation'
   </TabItem>
 </Tabs>
 
-#### Примеры ответа
-
-<Tabs groupId="nb-watch">
-  <TabItem value="name" label="name" default>
+#### Пример ответа
 
 <CodeBlock language="json">
   {dedent`
     {
-      "result": {
-        "type": "MODIFIED",
-        "networkBindings": [
-          {
-            "metadata": {
-              "uid": "076c022d-e1cd-44b8-be79-34c236ca607a",
-              "name": "web-servers-internal-net",
-              "namespace": "production",
-              "labels": {
-                "binding-type": "network"
-              },
-              "annotations": {},
-              "creationTimestamp": "2026-04-25T21:12:33.095523Z",
-              "resourceVersion": "202"
-            },
-            "spec": {
-              "displayName": "",
-              "comment": "",
-              "description": "",
-              "addressGroup": {
-                "name": "web-servers",
-                "namespace": "production"
-              },
-              "network": {
-                "name": "internal-net",
-                "namespace": "production"
-              }
-            }
+      "type": "MODIFIED",
+      "networkBindings": [
+        {
+          "metadata": {
+            "uid": "a7b8c9d0-e1f2-3456-abcd-567890123456",
+            "name": "web-servers-internal-net",
+            "namespace": "production",
+            "resourceVersion": "2"
+          },
+          "spec": {
+            "addressGroup": "web-servers",
+            "network": "dmz-net"
           }
-        ]
-      }
+        }
+      ]
     }
   `}
 </CodeBlock>
-
-  </TabItem>
-  <TabItem value="refs" label="refs">
-
-<CodeBlock language="json">
-  {dedent`
-    {
-      "result": {
-        "type": "MODIFIED",
-        "networkBindings": [
-          {
-            "metadata": {
-              "uid": "076c022d-e1cd-44b8-be79-34c236ca607a",
-              "name": "web-servers-internal-net",
-              "namespace": "production",
-              "labels": {
-                "binding-type": "network"
-              },
-              "annotations": {},
-              "creationTimestamp": "2026-04-25T21:12:33.095523Z",
-              "resourceVersion": "202"
-            },
-            "spec": {
-              "displayName": "",
-              "comment": "",
-              "description": "",
-              "addressGroup": {
-                "name": "web-servers",
-                "namespace": "production"
-              },
-              "network": {
-                "name": "internal-net",
-                "namespace": "production"
-              }
-            }
-          }
-        ]
-      }
-    }
-  `}
-</CodeBlock>
-
-  </TabItem>
-  <TabItem value="labels" label="labels">
-
-<CodeBlock language="json">
-  {dedent`
-    {
-      "result": {
-        "type": "MODIFIED",
-        "networkBindings": [
-          {
-            "metadata": {
-              "uid": "076c022d-e1cd-44b8-be79-34c236ca607a",
-              "name": "web-servers-internal-net",
-              "namespace": "production",
-              "labels": {
-                "binding-type": "network"
-              },
-              "annotations": {},
-              "creationTimestamp": "2026-04-25T21:12:33.095523Z",
-              "resourceVersion": "202"
-            },
-            "spec": {
-              "displayName": "",
-              "comment": "",
-              "description": "",
-              "addressGroup": {
-                "name": "web-servers",
-                "namespace": "production"
-              },
-              "network": {
-                "name": "internal-net",
-                "namespace": "production"
-              }
-            }
-          }
-        ]
-      }
-    }
-  `}
-</CodeBlock>
-
-  </TabItem>
-  <TabItem value="and" label="AND">
-
-<CodeBlock language="json">
-  {dedent`
-    {
-      "result": {
-        "type": "MODIFIED",
-        "networkBindings": [
-          {
-            "metadata": {
-              "uid": "076c022d-e1cd-44b8-be79-34c236ca607a",
-              "name": "web-servers-internal-net",
-              "namespace": "production",
-              "labels": {
-                "binding-type": "network"
-              },
-              "annotations": {},
-              "creationTimestamp": "2026-04-25T21:12:33.095523Z",
-              "resourceVersion": "202"
-            },
-            "spec": {
-              "displayName": "",
-              "comment": "",
-              "description": "",
-              "addressGroup": {
-                "name": "web-servers",
-                "namespace": "production"
-              },
-              "network": {
-                "name": "internal-net",
-                "namespace": "production"
-              }
-            }
-          }
-        ]
-      }
-    }
-  `}
-</CodeBlock>
-
-  </TabItem>
-  <TabItem value="or" label="OR">
-
-<CodeBlock language="json">
-  {dedent`
-    {
-      "result": {
-        "type": "MODIFIED",
-        "networkBindings": [
-          {
-            "metadata": {
-              "uid": "076c022d-e1cd-44b8-be79-34c236ca607a",
-              "name": "web-servers-internal-net",
-              "namespace": "production",
-              "labels": {
-                "binding-type": "network"
-              },
-              "annotations": {},
-              "creationTimestamp": "2026-04-25T21:12:33.095523Z",
-              "resourceVersion": "202"
-            },
-            "spec": {
-              "displayName": "",
-              "comment": "",
-              "description": "",
-              "addressGroup": {
-                "name": "web-servers",
-                "namespace": "production"
-              },
-              "network": {
-                "name": "internal-net",
-                "namespace": "production"
-              }
-            }
-          }
-        ]
-      }
-    }
-  `}
-</CodeBlock>
-
-  </TabItem>
-</Tabs>
 
 <Restrictions items={[
   { label: 'selectors', rules: RESTRICTIONS.selectors },

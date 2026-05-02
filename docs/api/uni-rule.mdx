@@ -262,8 +262,22 @@ import Matrix from './_uni-rule-tabs/_matrix.mdx'
         "selectors": [
           {
             "fieldSelector": {
+              "endpoints": {
+                "local": {
+                  "name": "web-servers",
+                  "namespace": "production",
+                  "type": "ADDRESS_GROUP"
+                },
+                "remote": {
+                  "name": "db-servers",
+                  "namespace": "production",
+                  "type": "ADDRESS_GROUP"
+                }
+              }
               "name": "allow-web-to-db",
               "namespace": "production"
+              "protocol": "TCP",
+              "traffic": "BOTH"
             }
           }
         ]
@@ -441,6 +455,8 @@ import Matrix from './_uni-rule-tabs/_matrix.mdx'
             "comment": "Разрешить трафик от веб-серверов к БД",
             "description": "",
             "action": "ALLOW",
+            "comment": "Разрешить трафик от веб-серверов",
+            "description": "Разрешить трафик от веб-серверов",
             "session": {
               "traffic": "EGRESS"
             },
@@ -1265,6 +1281,18 @@ import Matrix from './_uni-rule-tabs/_matrix.mdx'
         "selectors": [
           {
             "fieldSelector": {
+              "endpoints": {
+                "local": {
+                  "name": "web-servers",
+                  "namespace": "production",
+                  "type": "ADDRESS_GROUP"
+                },
+                "remote": {
+                  "name": "db-servers",
+                  "namespace": "production",
+                  "type": "ADDRESS_GROUP"
+                }
+              }
               "name": "allow-web-to-db",
               "namespace": "production"
             }
