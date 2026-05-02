@@ -663,7 +663,22 @@ html[data-theme='dark'] .arch-svg-wrap {
 
 .arch-svg__inline {
   background: var(--ifm-background-color);
+  color: var(--ifm-color-emphasis-700);
   padding: 1.5rem;
+  border-radius: 12px;
+  border: 1px solid var(--ifm-color-emphasis-300);
+}
+
+html[data-theme='dark'] .arch-svg__inline {
+  background: #20262e;
+  border-color: #3a4048;
+}
+
+/* Fancybox по умолчанию красит content белым — подменяем на тему */
+.fancybox__content:has(.arch-svg__inline) {
+  background: transparent !important;
+  padding: 0 !important;
+  box-shadow: none !important;
 }
 
 .arch-svg--zoomed {
