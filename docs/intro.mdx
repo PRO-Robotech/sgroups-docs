@@ -210,35 +210,34 @@ SGroups использует **9 типов ресурсов**, организо
 ### Связи ресурсов
 
 <ArchGraph
-  width={960}
-  height={600}
-  linkDistance={170}
-  charge={9000}
-  collideRadius={130}
+  width={1080}
+  height={720}
+  linkDistance={150}
+  charge={14000}
   ariaLabel="Связи ресурсов SGroups"
   nodes={[
-    { id: 'ns',   kind: 'store',  title: 'Namespace',     subtitle: 'область имён' },
-    { id: 'ag',   kind: 'cp',     title: 'AddressGroup',  subtitle: 'центральная сущность' },
-    { id: 'host', kind: 'client', title: 'Host' },
-    { id: 'net',  kind: 'client', title: 'Network' },
-    { id: 'svc',  kind: 'client', title: 'Service' },
-    { id: 'hb',   kind: 'cp',     title: 'HostBinding' },
-    { id: 'nb',   kind: 'cp',     title: 'NetworkBinding' },
-    { id: 'sb',   kind: 'cp',     title: 'ServiceBinding' },
-    { id: 'rule', kind: 'agent',  title: 'Rule',           subtitle: 'политика' },
+    { id: 'ns',   kind: 'store',  title: 'Namespace',     subtitle: 'область имён', x: 540, y: 70,  fixed: true },
+    { id: 'ag',   kind: 'cp',     title: 'AddressGroup',  subtitle: 'центральная сущность', x: 540, y: 360, fixed: true },
+    { id: 'host', kind: 'client', title: 'Host',          x: 110, y: 360 },
+    { id: 'hb',   kind: 'cp',     title: 'HostBinding',   x: 320, y: 360 },
+    { id: 'sb',   kind: 'cp',     title: 'ServiceBinding', x: 760, y: 360 },
+    { id: 'svc',  kind: 'client', title: 'Service',       x: 970, y: 360 },
+    { id: 'nb',   kind: 'cp',     title: 'NetworkBinding', x: 540, y: 540 },
+    { id: 'net',  kind: 'client', title: 'Network',        x: 540, y: 660 },
+    { id: 'rule', kind: 'agent',  title: 'Rule',           subtitle: 'политика', x: 200, y: 600 },
   ]}
   edges={[
     { from: 'ns', to: 'ag',   label: 'содержит' },
-    { from: 'ns', to: 'host', label: 'содержит' },
-    { from: 'ns', to: 'net',  label: 'содержит' },
-    { from: 'ns', to: 'svc',  label: 'содержит' },
-    { from: 'ns', to: 'rule', label: 'содержит' },
-    { from: 'host', to: 'hb', bidir: true },
-    { from: 'net',  to: 'nb', bidir: true },
-    { from: 'svc',  to: 'sb', bidir: true },
+    { from: 'ns', to: 'host', label: 'scoped' },
+    { from: 'ns', to: 'svc',  label: 'scoped' },
+    { from: 'ns', to: 'net',  label: 'scoped' },
+    { from: 'ns', to: 'rule', label: 'scoped' },
+    { from: 'host', to: 'hb', bidir: true, label: '1:N' },
+    { from: 'svc',  to: 'sb', bidir: true, label: '1:N' },
+    { from: 'net',  to: 'nb', bidir: true, label: '1:N' },
     { from: 'hb',   to: 'ag' },
-    { from: 'nb',   to: 'ag' },
     { from: 'sb',   to: 'ag' },
+    { from: 'nb',   to: 'ag' },
     { from: 'rule', to: 'ag',  label: 'endpoint' },
     { from: 'rule', to: 'svc', label: 'endpoint', kind: 'dashed' },
   ]}

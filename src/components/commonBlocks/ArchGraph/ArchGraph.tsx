@@ -135,10 +135,8 @@ export const ArchGraph: React.FC<ArchGraphProps> = ({
   // Запуск физической симуляции (только в браузере)
   useEffect(() => {
     if (typeof window === 'undefined') return
-    const ITER = 400
-    const damping = 0.85
-    const cx = width / 2
-    const cy = height / 2
+    const ITER = 1200
+    const damping = 0.82
 
     const work: SimNode[] = initialNodes.map(n => ({ ...n }))
     const map = new Map<string, SimNode>()
@@ -151,7 +149,18 @@ export const ArchGraph: React.FC<ArchGraphProps> = ({
       })
       .filter((x): x is { s: SimNode; t: SimNode } => x !== null)
 
+    // Минимальное расстояние между узлами с учётом размера (rect-based)
+    const minDistFor = (a: SimNode, b: SimNode): number => {
+      const dx = Math.abs(b.x - a.x)
+      const dy = Math.abs(b.y - a.y)
+      const overlapX = NODE_W + 30 - dx
+      const overlapY = NODE_H + 30 - dy
+      return overlapX > 0 && overlapY > 0 ? Math.max(overlapX, overlapY) : 0
+    }
+
     for (let step = 0; step < ITER; step++) {
+      const t = step / ITER
+      const cooling = 1 - t * 0.7
       // отталкивание (charge)
       for (let i = 0; i < work.length; i++) {
         for (let j = i + 1; j < work.length; j++) {
@@ -159,9 +168,9 @@ export const ArchGraph: React.FC<ArchGraphProps> = ({
           const b = work[j]
           const dx = b.x - a.x
           const dy = b.y - a.y
-          const distSq = Math.max(dx * dx + dy * dy, 100)
+          const distSq = Math.max(dx * dx + dy * dy, 200)
           const dist = Math.sqrt(distSq)
-          const f = charge / distSq
+          const f = (charge / distSq) * cooling
           const fx = (dx / dist) * f
           const fy = (dy / dist) * f
           if (!a.fixed) {
@@ -175,36 +184,35 @@ export const ArchGraph: React.FC<ArchGraphProps> = ({
         }
       }
       // пружины (links)
-      for (const { s, t } of links) {
-        const dx = t.x - s.x
-        const dy = t.y - s.y
+      for (const { s, t: tn } of links) {
+        const dx = tn.x - s.x
+        const dy = tn.y - s.y
         const dist = Math.sqrt(dx * dx + dy * dy) || 1
         const diff = dist - linkDistance
-        const k = 0.04
+        const k = 0.06
         const fx = (dx / dist) * diff * k
         const fy = (dy / dist) * diff * k
         if (!s.fixed) {
           s.vx += fx
           s.vy += fy
         }
-        if (!t.fixed) {
-          t.vx -= fx
-          t.vy -= fy
+        if (!tn.fixed) {
+          tn.vx -= fx
+          tn.vy -= fy
         }
       }
-      // коллизии
+      // коллизии (прямоугольные, "толщина" узлов)
       for (let i = 0; i < work.length; i++) {
         for (let j = i + 1; j < work.length; j++) {
           const a = work[i]
           const b = work[j]
-          const dx = b.x - a.x
-          const dy = b.y - a.y
-          const dist = Math.sqrt(dx * dx + dy * dy) || 1
-          const minDist = collideRadius
-          if (dist < minDist) {
-            const overlap = (minDist - dist) / 2
-            const ox = (dx / dist) * overlap
-            const oy = (dy / dist) * overlap
+          const overlap = minDistFor(a, b)
+          if (overlap > 0) {
+            const dx = b.x - a.x
+            const dy = b.y - a.y
+            const dist = Math.sqrt(dx * dx + dy * dy) || 1
+            const ox = (dx / dist) * overlap * 0.5
+            const oy = (dy / dist) * overlap * 0.5
             if (!a.fixed) {
               a.x -= ox
               a.y -= oy
@@ -216,18 +224,15 @@ export const ArchGraph: React.FC<ArchGraphProps> = ({
           }
         }
       }
-      // центрирующая
+      // обновление позиций
       for (const n of work) {
         if (n.fixed) continue
-        n.vx += (cx - n.x) * 0.005
-        n.vy += (cy - n.y) * 0.005
         n.vx *= damping
         n.vy *= damping
         n.x += n.vx
         n.y += n.vy
-        // удержать в области
-        n.x = Math.max(NODE_W / 2 + 8, Math.min(width - NODE_W / 2 - 8, n.x))
-        n.y = Math.max(NODE_H / 2 + 8, Math.min(height - NODE_H / 2 - 8, n.y))
+        n.x = Math.max(NODE_W / 2 + 12, Math.min(width - NODE_W / 2 - 12, n.x))
+        n.y = Math.max(NODE_H / 2 + 12, Math.min(height - NODE_H / 2 - 12, n.y))
       }
     }
     setSimNodes(work)
