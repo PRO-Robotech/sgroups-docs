@@ -6,6 +6,7 @@ title: Обзор
 
 import CodeBlock from '@theme/CodeBlock'
 import dedent from 'ts-dedent'
+import { ArchSvg } from '@site/src/components/commonBlocks/ArchSvg'
 
 # sg-agent: обзор
 
@@ -16,30 +17,34 @@ SGroups (`AddressGroup`, `Service`, `Host`, `*Binding`, `UniRule`) в работ
 
 ## Где работает агент
 
-```mermaid
-flowchart LR
-    subgraph "sg-server"
-        DB[(PostgreSQL)]
-        API["gRPC + REST<br/>:9100 / :9006"]
-        DB <--> API
-    end
+<ArchSvg
+  cols={3}
+  rows={2}
+  cellWidth={230}
+  cellHeight={75}
+  hGap={120}
+  vGap={45}
+  layerTitles={['sg-server', '', 'Узел Linux']}
+  ariaLabel="Агент и его связи"
+  nodes={[
+    { id: 'api', col: 0, row: 0, kind: 'cp',    title: 'gRPC + REST API', subtitle: ':9100 / :9006' },
+    { id: 'pg',  col: 0, row: 1, kind: 'store', title: 'PostgreSQL',      subtitle: 'конфигурация · outbox' },
+    { id: 'agt', col: 2, row: 0, kind: 'agent', title: 'sg-agent',        subtitle: 'user-space, Go-процесс' },
+    { id: 'nft', col: 2, row: 1, kind: 'agent', title: 'nftables',        subtitle: 'table inet main-${ts}' },
+  ]}
+  edges={[
+    { from: 'api', to: 'pg',  label: 'SQL · pgx', bidir: true },
+    { from: 'api', to: 'agt', label: 'gRPC stream · push конфигурации' },
+    { from: 'agt', to: 'api', label: 'sync-status', kind: 'dashed', lane: 1 },
+    { from: 'agt', to: 'nft', label: 'netlink' },
+  ]}
+/>
 
-    subgraph "Узел Linux"
-        AGENT[sg-agent]
-        NFT["nftables<br/>table inet main-${timestamp}"]
-        AGENT -->|netlink| NFT
-    end
-
-    API <-->|gRPC stream| AGENT
-    AGENT -->|sync-statuses| API
-```
-
-На каждом узле работает один экземпляр `sg-agent`. Свою таблицу nftables агент создает
-с динамическим именем `inet main-${timestamp}` — подробнее в разделе
-[«Структура nftables»](./nft-layout).
-
-Полный перечень поддерживаемых типов `UniRule`, ограничения и то, во что они превращаются, —
-в разделе [«Соответствие правил nft»](./rule-mapping#поддерживаемые-типы-unirule).
+<div className="arch-legend">
+  <span><span className="arch-legend__dot arch-legend__dot--cp"></span>контрольная плоскость</span>
+  <span><span className="arch-legend__dot arch-legend__dot--store"></span>хранилище</span>
+  <span><span className="arch-legend__dot arch-legend__dot--agent"></span>узел и nftables</span>
+</div>
 
 ## Что дальше
 

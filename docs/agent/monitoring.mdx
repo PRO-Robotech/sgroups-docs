@@ -159,27 +159,33 @@ metrics:
 
 Для оценки работоспособности агента рекомендуется отслеживать следующие сигналы:
 
-```mermaid
-flowchart TB
-    subgraph "Здоров (Healthy)"
-        H1["grpc_connected = 1"]
-        H2["sync_errors_total не растет"]
-        H3["sync_last_success < 2 × interval"]
-        H4["nft_apply_errors = 0"]
-    end
-
-    subgraph "Деградация (Degraded)"
-        D1["sync_errors_total растет"]
-        D2["dns_errors_total растет"]
-        D3["sync_last_success > 2 × interval"]
-    end
-
-    subgraph "Неработоспособен (Unhealthy)"
-        U1["grpc_connected = 0"]
-        U2["sync_last_success > 5 × interval"]
-        U3["nft_apply_errors растет"]
-    end
-```
+<div className="health-grid">
+  <div className="health-card health-card--healthy">
+    <div className="health-card__title">Здоров (Healthy)</div>
+    <ul className="health-card__list">
+      <li>grpc_connected = 1</li>
+      <li>sync_errors_total не растет</li>
+      <li>sync_last_success &lt; 2 × interval</li>
+      <li>nft_apply_errors = 0</li>
+    </ul>
+  </div>
+  <div className="health-card health-card--degraded">
+    <div className="health-card__title">Деградация (Degraded)</div>
+    <ul className="health-card__list">
+      <li>sync_errors_total растет</li>
+      <li>dns_errors_total растет</li>
+      <li>sync_last_success &gt; 2 × interval</li>
+    </ul>
+  </div>
+  <div className="health-card health-card--unhealthy">
+    <div className="health-card__title">Неработоспособен (Unhealthy)</div>
+    <ul className="health-card__list">
+      <li>grpc_connected = 0</li>
+      <li>sync_last_success &gt; 5 × interval</li>
+      <li>nft_apply_errors растет</li>
+    </ul>
+  </div>
+</div>
 
 ## Пример алертов для Prometheus
 
