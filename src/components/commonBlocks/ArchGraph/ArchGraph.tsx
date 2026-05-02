@@ -95,7 +95,6 @@ export const ArchGraph: React.FC<ArchGraphProps> = ({
   collideRadius = 110,
 }) => {
   const id = useId().replace(/[:]/g, '_')
-  const inlineId = `arch-graph-${id}`
   const svgRef = useRef<SVGSVGElement>(null)
 
   const initialNodes = useMemo<SimNode[]>(() => {
@@ -248,16 +247,12 @@ export const ArchGraph: React.FC<ArchGraphProps> = ({
   }
 
   const handlePointerMove = (e: React.PointerEvent) => {
-    if (!dragRef.current || !svgRef.current) return
+    const drag = dragRef.current
+    if (!drag || !svgRef.current) return
     const pt = clientToSvg(svgRef.current, e.clientX, e.clientY)
-    const id = dragRef.current.id
-    setSimNodes(prev =>
-      prev.map(n =>
-        n.id === id
-          ? { ...n, x: pt.x - dragRef.current!.offsetX, y: pt.y - dragRef.current!.offsetY }
-          : n,
-      ),
-    )
+    const newX = pt.x - drag.offsetX
+    const newY = pt.y - drag.offsetY
+    setSimNodes(prev => prev.map(n => (n.id === drag.id ? { ...n, x: newX, y: newY } : n)))
   }
 
   const handlePointerUp = (e: React.PointerEvent) => {
@@ -372,36 +367,7 @@ export const ArchGraph: React.FC<ArchGraphProps> = ({
 
   return (
     <div className="arch-svg-wrap arch-graph-wrap">
-      <a
-        href={`#${inlineId}`}
-        data-fancybox=""
-        data-src={`#${inlineId}`}
-        data-type="inline"
-        className="arch-svg__zoom"
-        aria-label="Развернуть граф"
-        onClick={e => {
-          // не открывать модалку при перетаскивании
-          if (dragRef.current) e.preventDefault()
-        }}
-      >
-        {renderSvg('arch-svg arch-graph', true)}
-        <span className="arch-svg__zoom-hint" aria-hidden="true">
-          <svg viewBox="0 0 24 24" width="16" height="16">
-            <path
-              d="M21 21l-4.35-4.35M11 19a8 8 0 1 1 0-16 8 8 0 0 1 0 16zm-3-8h6m-3-3v6"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            />
-          </svg>
-          увеличить · потяните узел
-        </span>
-      </a>
-      <div id={inlineId} className="arch-svg__inline" style={{ display: 'none' }}>
-        {renderSvg('arch-svg arch-svg--zoomed arch-graph', false)}
-      </div>
+      {renderSvg('arch-svg arch-graph', true)}
     </div>
   )
 }
