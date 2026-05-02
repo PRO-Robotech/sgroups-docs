@@ -9,13 +9,13 @@ import dedent from 'ts-dedent'
 
 # Конфигурация sg-agent
 
-`sg-agent` использует `corlib/plain-config`. Источники с приоритетом:
+`sg-agent` использует `corlib/plain-config`. Источники конфигурации в порядке приоритета:
 
-1. **Аргументы командной строки** — `--config <path>` указывает YAML-файл
-2. **Переменные окружения** с префиксом `NFT_` (см. ниже)
-3. **YAML-файл**
+1. **Аргументы командной строки** — `--config <path>` указывает YAML-файл.
+2. **Переменные окружения** с префиксом `NFT_` (см. ниже).
+3. **YAML-файл**.
 
-Дефис `-` и слеш `/` в ключах превращаются в `_` для env-переменных:
+В переменных окружения дефис `-` и слеш `/` в ключах заменяются на `_`:
 ключ `extapi/svc/sgroups/sync-status/interval` →
 `NFT_EXTAPI_SVC_SGROUPS_SYNC_STATUS_INTERVAL`.
 
@@ -53,7 +53,7 @@ import dedent from 'ts-dedent'
 
     extapi:
       svc:
-        def-daial-duration: 10s
+        def-dial-duration: 10s
         sgroups:
           address: tcp://sg-server:9006
           dial-duration: 3s
@@ -85,7 +85,7 @@ import dedent from 'ts-dedent'
 ## Параметры: hostinfo
 
 Идентификатор узла, по которому агент находит свой ресурс `Host` на сервере.
-**Обязательные** параметры — без них агент не найдёт себя в реестре.
+**Обязательные** параметры — без них агент не найдет себя в реестре.
 
 <table>
   <thead>
@@ -275,7 +275,7 @@ import dedent from 'ts-dedent'
       <td><code>netns</code></td>
       <td><code>NFT_NETNS</code></td>
       <td>—</td>
-      <td>Имя network namespace, в котором работать (пусто = host)</td>
+      <td>Имя network namespace, в котором работать (пусто означает host)</td>
     </tr>
     <tr>
       <td><code>def-policy-accept</code></td>
@@ -293,13 +293,13 @@ import dedent from 'ts-dedent'
       <td><code>fqdn-rules/strategy</code></td>
       <td><code>NFT_FQDN_RULES_STRATEGY</code></td>
       <td><code>dns</code></td>
-      <td>Способ резолва FQDN (поддерживается только <code>dns</code>)</td>
+      <td>Способ разрешения FQDN (поддерживается только <code>dns</code>)</td>
     </tr>
     <tr>
       <td><code>continue-on-failure</code></td>
       <td><code>NFT_CONTINUE_ON_FAILURE</code></td>
       <td><code>true</code></td>
-      <td>При фатальной ошибке перезапускать контуры (см. <a href="/agent/lifecycle">Жизненный цикл</a>)</td>
+      <td>При фатальной ошибке перезапускать внутренние контуры (см. <a href="/agent/lifecycle">Жизненный цикл</a>)</td>
     </tr>
     <tr>
       <td><code>continue-after-timeout</code></td>
@@ -311,13 +311,13 @@ import dedent from 'ts-dedent'
       <td><code>exit-on-success</code></td>
       <td><code>NFT_EXIT_ON_SUCCESS</code></td>
       <td><code>false</code></td>
-      <td>Выйти после первого успешного цикла (для тестов/CI)</td>
+      <td>Завершиться после первого успешного цикла (для тестов и CI)</td>
     </tr>
     <tr>
       <td><code>graceful-shutdown</code></td>
       <td><code>NFT_GRACEFUL_SHUTDOWN</code></td>
       <td><code>10s</code></td>
-      <td>Период graceful-завершения</td>
+      <td>Время на корректное завершение (graceful shutdown)</td>
     </tr>
     <tr>
       <td><code>logger/level</code></td>
@@ -375,7 +375,7 @@ import dedent from 'ts-dedent'
 
 ## Переменные окружения
 
-Все ключи доступны через env с префиксом `NFT_`:
+Все ключи доступны через переменные окружения с префиксом `NFT_`:
 
 <CodeBlock language="bash">
   {dedent`
@@ -387,7 +387,7 @@ import dedent from 'ts-dedent'
 </CodeBlock>
 
 :::tip
-Минимальный набор для production — `hostinfo/{name,namespace}` +
+Минимальный набор для production — `hostinfo/{name,namespace}` и
 `extapi/svc/sgroups/address`. Остальное в большинстве сценариев работает на
-дефолтах.
+значениях по умолчанию.
 :::

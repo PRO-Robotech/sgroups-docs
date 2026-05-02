@@ -11,12 +11,12 @@ import dedent from 'ts-dedent'
 
 ## Шаг 1. Миграции БД
 
-Перед первым запуском обязательно прогнать миграции на пустой PostgreSQL.
+Перед первым запуском обязательно прогоните миграции на пустом PostgreSQL.
 Есть два способа.
 
 ### Через `make`
 
-Цель Makefile сама скачает goose (если его ещё нет) и применит миграции:
+Цель Makefile сама загрузит `goose` (если его еще нет) и применит миграции:
 
 <CodeBlock language="bash">
   {dedent`
@@ -27,9 +27,9 @@ import dedent from 'ts-dedent'
 
 Внутри:
 
-1. `make .install-goose` — скачивает бинарь, если нужно
-2. `gen-migration.sh` — собирает init-миграцию из подкаталогов
-3. `goose -table=sg_db_ver -dir=<migrations> -v postgres "<PG_URI>" up`
+1. `make .install-goose` — загружает бинарный файл, если его нет;
+2. `gen-migration.sh` — собирает init-миграцию из подкаталогов;
+3. `goose -table=sg_db_ver -dir=<migrations> -v postgres "<PG_URI>" up`.
 
 ### Через Docker-образ `goose`
 
@@ -46,7 +46,7 @@ import dedent from 'ts-dedent'
 
 Все миграции лежат в `/app` внутри образа, аргументы передаются как есть.
 
-## Шаг 2. Запуск бинарника
+## Шаг 2. Запуск исполняемого файла
 
 <CodeBlock language="bash">
   {dedent`
@@ -55,8 +55,8 @@ import dedent from 'ts-dedent'
   `}
 </CodeBlock>
 
-Бинарник принимает только `--config <path>`; остальные параметры — из YAML
-или env.
+Программа принимает только параметр `--config <path>`; остальные параметры
+задаются в YAML-файле или через переменные окружения.
 
 ## Шаг 3. Запуск через Docker
 
@@ -73,10 +73,9 @@ import dedent from 'ts-dedent'
 </CodeBlock>
 
 :::caution
-В образе по умолчанию `server/endpoint = 127.0.0.1:9000` — это значит, что
-без переопределения сервер слушает только `localhost` контейнера и недоступен
-снаружи. Перекройте через `SG_SERVER_ENDPOINT="tcp://0.0.0.0:<port>"` либо
-смонтируйте свой YAML.
+В образе по умолчанию `server/endpoint = 127.0.0.1:9000`. Без переопределения сервер
+слушает только `localhost` контейнера и недоступен снаружи. Переопределите значение через
+`SG_SERVER_ENDPOINT="tcp://0.0.0.0:<port>"` либо смонтируйте свой YAML-файл.
 :::
 
 ## Запуск через Docker Compose
@@ -133,8 +132,8 @@ import dedent from 'ts-dedent'
   `}
 </CodeBlock>
 
-Compose поднимет PostgreSQL, дождётся его готовности, прогонит миграции
-(`goose ... up`), затем запустит сервер.
+Compose поднимет PostgreSQL, дождется его готовности, прогонит миграции
+(`goose ... up`), а затем запустит сервер.
 
 ## Проверка работоспособности
 

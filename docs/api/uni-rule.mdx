@@ -35,8 +35,8 @@ import Matrix from './_uni-rule-tabs/_matrix.mdx'
 <ApiOperation method="POST" endpoint="/v1/rules/upsert">
 
 Создает новое правило или обновляет существующее. Тип правила определяется комбинацией `endpoints.local.type`,
-`endpoints.remote.type` и `transport.protocol` (oneOf). Поддерживаются только комбинации, которые имеют
-физическую rule-таблицу в БД: `ADDRESS_GROUP → ADDRESS_GROUP`, `ADDRESS_GROUP → FQDN`, `ADDRESS_GROUP → CIDR`,
+`endpoints.remote.type` и `transport.protocol` (oneOf). Поддерживаются только комбинации, у которых есть
+отдельная rule-таблица в БД: `ADDRESS_GROUP → ADDRESS_GROUP`, `ADDRESS_GROUP → FQDN`, `ADDRESS_GROUP → CIDR`,
 локальное `ADDRESS_GROUP → ICMP`, `SERVICE → SERVICE`, `SERVICE → FQDN`, `SERVICE → CIDR`.
 
 <Matrix />

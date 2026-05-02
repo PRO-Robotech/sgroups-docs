@@ -7,12 +7,12 @@ import TabItem from '@theme/TabItem'
 import CodeBlock from '@theme/CodeBlock'
 import dedent from 'ts-dedent'
 
-Локальная сторона — сервис (`SERVICE`), удалённая — IP-подсеть (`CIDR`).
-Поле `remote.value` **обязательно**. Блок `spec.transport` задаётся явно и нужен
+Локальная сторона — сервис (`SERVICE`), удаленная — IP-подсеть (`CIDR`).
+Поле `remote.value` **обязательно**. Блок `spec.transport` задается явно и нужен
 как для `EGRESS`, так и для `INGRESS`.
 
 
-Service отправляет трафик к CIDR. Транспорт задаётся явно в правиле.
+Service отправляет трафик к CIDR. Транспорт задается явно в правиле.
 
 <table>
   <thead>

@@ -12,12 +12,12 @@ import dedent from 'ts-dedent'
 `sgroups-k8s-api` — это **Kubernetes Aggregated API Server**, который проксирует
 ресурсы SGroups в нативный API Kubernetes. После регистрации `APIService` все
 ресурсы доступны через `kubectl`, любые контроллеры и операторы — как обычные
-объекты `metadata` + `spec`.
+объекты с разделами `metadata` и `spec`.
 
 ## API-группа и версия
 
-- **Группа:** `sgroups.io`
-- **Версия:** `v1alpha1`
+- **Группа:** `sgroups.io`;
+- **Версия:** `v1alpha1`.
 
 Базовый префикс всех URL:
 
@@ -53,7 +53,7 @@ import dedent from 'ts-dedent'
 | Patch | PATCH | `/apis/sgroups.io/v1alpha1/namespaces/{ns}/{plural}/{name}` |
 | Delete | DELETE | `/apis/sgroups.io/v1alpha1/namespaces/{ns}/{plural}/{name}` |
 
-`Tenant` — cluster-scoped, поэтому без `/namespaces/{ns}` сегмента в URL.
+`Tenant` — cluster-scoped, поэтому в URL нет сегмента `/namespaces/{ns}`.
 
 ## Работа через kubectl
 
@@ -102,16 +102,16 @@ import dedent from 'ts-dedent'
 
 В ответе сервера дополнительно появляются:
 
-- `metadata.uid` — уникальный ID объекта
-- `metadata.resourceVersion` — версия для optimistic concurrency
-- `metadata.creationTimestamp` — время создания
-- для AddressGroup / Network / Host / Service — `refs[]` (read-only обратные
-  ссылки на привязанные объекты)
-- для Host — `ips`, `metaInfo` (read-only — заполняются агентом)
+- `metadata.uid` — уникальный идентификатор объекта;
+- `metadata.resourceVersion` — версия для optimistic concurrency;
+- `metadata.creationTimestamp` — время создания;
+- для AddressGroup / Network / Host / Service — `refs[]` (только для чтения, обратные
+  ссылки на привязанные объекты);
+- для Host — `ips`, `metaInfo` (только для чтения — заполняются агентом).
 
 ## Watch
 
-`Aggregated API Server` поддерживает стандартный k8s-механизм подписки на
+Aggregated API Server поддерживает стандартный механизм Kubernetes для подписки на
 изменения:
 
 <CodeBlock language="bash">
@@ -137,37 +137,37 @@ import dedent from 'ts-dedent'
 
 ## Аутентификация и авторизация
 
-Используется штатная k8s-аутентификация через kubeconfig:
+Используется штатная аутентификация Kubernetes через kubeconfig:
 
-- ServiceAccount-токены
-- Клиентские сертификаты (mTLS до kube-apiserver)
-- OIDC, LDAP-плагины и пр. — что настроено в кластере
+- токены ServiceAccount;
+- клиентские сертификаты (mTLS до kube-apiserver);
+- OIDC, LDAP-плагины и т. п. — то, что настроено в кластере.
 
-Авторизация — стандартный k8s RBAC (`Role`, `ClusterRole`, `RoleBinding`,
+Авторизация — стандартный RBAC Kubernetes (`Role`, `ClusterRole`, `RoleBinding`,
 `ClusterRoleBinding`) на ресурсы группы `sgroups.io`.
 
 ## Валидация {#валидация}
 
 `sgroups-k8s-api` — это **тонкая прокси-прослойка**: он принимает
-k8s-объекты, конвертирует их в gRPC-вызовы к `sg-server` и возвращает результат.
-**Валидация полей `spec` целиком делегируется бэкенду** — на уровне k8s-сервера
-проверяются только базовые требования kubernetes-схемы (наличие
-`apiVersion`/`kind`, обязательные поля `metadata.name`/`namespace`, формат имён).
+объекты Kubernetes, конвертирует их в gRPC-вызовы к `sg-server` и возвращает результат.
+**Валидация полей `spec` полностью делегируется бэкенду**; на уровне k8s-сервера
+проверяются только базовые требования схемы Kubernetes (наличие
+`apiVersion`/`kind`, обязательные поля `metadata.name`/`namespace`, формат имен).
 
 Что проверяется на уровне `sg-server`:
 
-- Корректность CIDR в `Network.spec.CIDR`
-- Уникальность имени в namespace
-- Существование ссылок (`HostBinding.spec.host` ссылается на существующий `Host` и т.д.)
-- Допустимые комбинации `endpoints.local.type` / `endpoints.remote.type` / `traffic` для `Rule`
-- Формат `transport.entries[].ports` (диапазоны, списки)
-- Поддерживаемые значения enum'ов (`Action`, `Traffic`, `Protocol`, `IPv`)
+- корректность CIDR в `Network.spec.CIDR`;
+- уникальность имени в namespace;
+- существование ссылок (`HostBinding.spec.host` ссылается на существующий `Host` и т. д.);
+- допустимые комбинации `endpoints.local.type` / `endpoints.remote.type` / `traffic` для `Rule`;
+- формат `transport.entries[].ports` (диапазоны, списки);
+- поддерживаемые значения enum (`Action`, `Traffic`, `Protocol`, `IPv`).
 
-См. подробности валидации в [API sg-server](/api/overview).
+Подробности валидации — в [API sg-server](/api/overview).
 
 ## Формат ошибок {#формат-ошибок}
 
-Ошибочные ответы возвращаются как стандартный k8s-объект `Status`:
+Ошибочные ответы возвращаются как стандартный объект Kubernetes `Status`:
 
 <CodeBlock language="json">
   {dedent`
@@ -188,15 +188,15 @@ k8s-объекты, конвертирует их в gRPC-вызовы к `sg-se
   `}
 </CodeBlock>
 
-`reason` приходит из gRPC-ошибки бэкенда и нормализуется в k8s-status, `code` —
+`reason` приходит из gRPC-ошибки бэкенда и нормализуется в `Status` Kubernetes, `code` —
 соответствующий HTTP-статус.
 
 ## Коды ошибок {#коды-ошибок}
 
 | HTTP | `reason` | gRPC (бэкенд) | Когда возвращается |
 |---|---|---|---|
-| **400** | `BadRequest` | `INVALID_ARGUMENT` | Некорректные параметры запроса (битый JSON, неподдерживаемый verb) |
-| **401** | `Unauthorized` | `UNAUTHENTICATED` | Запрос без валидного токена/сертификата |
+| **400** | `BadRequest` | `INVALID_ARGUMENT` | Некорректные параметры запроса (поврежденный JSON, неподдерживаемый verb) |
+| **401** | `Unauthorized` | `UNAUTHENTICATED` | Запрос без валидного токена или сертификата |
 | **403** | `Forbidden` | `PERMISSION_DENIED` | RBAC отвергает операцию для текущей роли |
 | **404** | `NotFound` | `NOT_FOUND` | Ресурс не существует |
 | **405** | `MethodNotAllowed` | — | Метод не поддерживается ресурсом (например, PATCH cluster-scoped с неверным path) |
@@ -204,7 +204,7 @@ k8s-объекты, конвертирует их в gRPC-вызовы к `sg-se
 | **409** | `Conflict` | `ABORTED` | Optimistic concurrency: `metadata.resourceVersion` устарел |
 | **422** | `Invalid` | `INVALID_ARGUMENT` | Валидация полей `spec` на бэкенде не прошла |
 | **500** | `InternalError` | `INTERNAL` | Внутренняя ошибка сервера или бэкенда |
-| **503** | `ServiceUnavailable` | `UNAVAILABLE` | `sg-server` недоступен (gRPC connect failed) |
+| **503** | `ServiceUnavailable` | `UNAVAILABLE` | `sg-server` недоступен (не удалось подключиться по gRPC) |
 | **504** | `Timeout` | `DEADLINE_EXCEEDED` | gRPC-вызов к бэкенду превысил `grpc.timeout` |
 
 `kubectl` сам форматирует ошибку из `Status.message` для пользователя:

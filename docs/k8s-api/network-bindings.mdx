@@ -16,13 +16,13 @@ import dedent from 'ts-dedent'
 
 # NetworkBindings
 
-`NetworkBinding` — связь `Network` ↔ `AddressGroup`. После создания CIDR подсети добавляется в nft-set соответствующей AG как interval-элемент.
+`NetworkBinding` — связь `Network` ↔ `AddressGroup`. После создания CIDR подсети добавляется в nft-набор соответствующей AG как элемент с флагом `interval`.
 
 ---
 
 :::info Валидация и ошибки
-Все валидации `spec` производятся на уровне `sg-server` (gRPC-бэкенд) — k8s-сервер
-лишь проксирует запрос. Формат ошибочных ответов и таблица кодов — в
+Все валидации `spec` выполняются на уровне `sg-server` (gRPC-бэкенд); k8s-сервер
+только проксирует запрос. Формат ошибочных ответов и таблица кодов — в
 [Обзоре API → Коды ошибок](/k8s-api/overview#коды-ошибок).
 :::
 
@@ -31,7 +31,7 @@ import dedent from 'ts-dedent'
 
 <ApiOperation method="GET" endpoint="/apis/sgroups.io/v1alpha1/namespaces/{namespace}/networkbindings">
 
-Получить список ресурсов. Доступны два scope: по namespace и по всему кластеру.
+Получить список ресурсов. Доступны две области: один namespace и весь кластер.
 
 <Tabs groupId="scope">
   <TabItem value="namespace" label="В namespace" default>
@@ -98,7 +98,7 @@ import dedent from 'ts-dedent'
 
 <ApiOperation method="POST" endpoint="/apis/sgroups.io/v1alpha1/namespaces/{namespace}/networkbindings">
 
-Создать новый объект. Имя должно быть уникальным в namespace.
+Создать новый объект. Имя должно быть уникальным в пределах namespace.
 
 #### Тело запроса
 

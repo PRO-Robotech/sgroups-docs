@@ -35,7 +35,7 @@ export const K8S_VALIDATIONS: Record<K8sOperation, ValidationGroup[]> = {
       rules: [
         <>Корректный <code>apiVersion: sgroups.io/v1alpha1</code> и <code>kind</code>.</>,
         <>Имя объекта <code>metadata.name</code> соответствует RFC 1123 (DNS-subdomain).</>,
-        <>Объект с таким именем ещё не существует в namespace — иначе <code>AlreadyExists</code> (409).</>,
+        <>Объект с таким именем еще не существует в namespace — иначе <code>AlreadyExists</code> (409).</>,
         <>Поддерживаемый <code>Content-Type</code>: <code>application/json</code> или <code>application/yaml</code>.</>,
         <>Авторизация: RBAC <code>create</code> на ресурс / namespace.</>,
       ],
@@ -46,7 +46,7 @@ export const K8S_VALIDATIONS: Record<K8sOperation, ValidationGroup[]> = {
       label: K8S_LEVEL,
       rules: [
         <>Объект существует — иначе <code>NotFound</code> (404).</>,
-        <>Свежий <code>metadata.resourceVersion</code> — устаревший приведёт к <code>Conflict</code> (409, optimistic concurrency).</>,
+        <>Свежий <code>metadata.resourceVersion</code> — устаревший приведет к <code>Conflict</code> (409, optimistic concurrency).</>,
         <>Корректный <code>apiVersion</code>, <code>kind</code>, <code>metadata.name</code> совпадает с URL.</>,
         <>Авторизация: RBAC <code>update</code>.</>,
       ],

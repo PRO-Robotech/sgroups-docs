@@ -158,7 +158,7 @@ export const DICTIONARY: TDictionary = {
 
   traffic: {
     short: 'Направление трафика',
-    full: 'Определяет, как правило открывает поток между local и remote: INGRESS — на вход к local, EGRESS — на выход от local, BOTH — EGRESS со встречным разрешением доступа с удалённой стороны.',
+    full: 'Определяет, как правило открывает поток между local и remote: INGRESS — на вход к local, EGRESS — на выход от local, BOTH — EGRESS со встречным разрешением доступа с удаленной стороны.',
   },
 
   session: {

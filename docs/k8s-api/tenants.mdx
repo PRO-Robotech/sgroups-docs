@@ -16,13 +16,13 @@ import dedent from 'ts-dedent'
 
 # Tenants
 
-`Tenant` — **cluster-scoped** ресурс, представляющий логическое пространство имён SGroups. Имя `Tenant` совпадает с именем k8s-namespace, в котором будут создаваться все namespaced-ресурсы.
+`Tenant` — **cluster-scoped**-ресурс, представляющий логическое пространство имен SGroups. Имя `Tenant` совпадает с именем namespace Kubernetes, в котором будут создаваться все namespaced-ресурсы.
 
 ---
 
 :::info Валидация и ошибки
-Все валидации `spec` производятся на уровне `sg-server` (gRPC-бэкенд) — k8s-сервер
-лишь проксирует запрос. Формат ошибочных ответов и таблица кодов — в
+Все валидации `spec` выполняются на уровне `sg-server` (gRPC-бэкенд); k8s-сервер
+только проксирует запрос. Формат ошибочных ответов и таблица кодов — в
 [Обзоре API → Коды ошибок](/k8s-api/overview#коды-ошибок).
 :::
 
@@ -31,7 +31,7 @@ import dedent from 'ts-dedent'
 
 <ApiOperation method="GET" endpoint="/apis/sgroups.io/v1alpha1/tenants">
 
-Получить список всех ресурсов в кластере.
+Получить список всех ресурсов кластера.
 
 #### Пример запроса
 
@@ -87,7 +87,7 @@ import dedent from 'ts-dedent'
 
 <ApiOperation method="POST" endpoint="/apis/sgroups.io/v1alpha1/tenants">
 
-Создать новый объект. Имя должно быть уникальным в namespace.
+Создать новый объект. Имя должно быть уникальным в пределах кластера.
 
 #### Тело запроса
 
@@ -335,7 +335,7 @@ import dedent from 'ts-dedent'
 </CodeBlock>
 
 :::caution
-Удаление тенанта каскадно удалит все namespaced-ресурсы (`AddressGroup`, `Rule`, и т.д.) в одноимённом namespace.
+Удаление тенанта каскадно удалит все namespaced-ресурсы (`AddressGroup`, `Rule`, и т.д.) в одноименном namespace.
 :::
 
 

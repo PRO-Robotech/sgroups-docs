@@ -11,7 +11,7 @@ import dedent from 'ts-dedent'
 Поведение `transport` зависит от направления трафика:
 
 :::warning Transport
-- **Egress / Both** — блок `spec.transport` **обязателен**, задаётся явно в правиле.
+- **Egress / Both** — блок `spec.transport` **обязателен**, задается явно в правиле.
 - **Ingress** — блок `spec.transport` не указывается. Транспортная конфигурация наследуется из `transports` ресурса Service (local).
 :::
 

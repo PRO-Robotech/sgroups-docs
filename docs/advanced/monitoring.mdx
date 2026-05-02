@@ -9,7 +9,7 @@ import dedent from 'ts-dedent'
 
 # Мониторинг
 
-Комплексный обзор наблюдаемости SGroups: метрики Prometheus для сервера и агента,
+Полный обзор наблюдаемости SGroups: метрики Prometheus для сервера и агента,
 распределенный трейсинг через OpenTelemetry, проверки здоровья и Grafana-дашборды.
 
 ## Метрики sg-server
@@ -216,9 +216,9 @@ import dedent from 'ts-dedent'
   `}
 </CodeBlock>
 
-## OpenTelemetry-трейсинг
+## Трейсинг OpenTelemetry
 
-sg-server поддерживает распределенный трейсинг через OpenTelemetry SDK.
+`sg-server` поддерживает распределенный трейсинг через OpenTelemetry SDK.
 
 <CodeBlock language="yaml">
   {dedent`
@@ -251,9 +251,9 @@ sg-server поддерживает распределенный трейсинг
   </tbody>
 </table>
 
-Трейсятся: все gRPC-вызовы, SQL-запросы, межсервисное взаимодействие.
+Трейсингом покрыты все gRPC-вызовы, SQL-запросы и межсервисное взаимодействие.
 
-## Проверки здоровья (Health Check)
+## Проверки здоровья (health check)
 
 <CodeBlock language="bash">
   {dedent`
@@ -408,6 +408,6 @@ sg-server поддерживает распределенный трейсинг
 </table>
 
 :::tip
-Для production рекомендуется формат логов `json` для удобства парсинга
+В production рекомендуется формат логов `json` — он удобнее для разбора
 в системах централизованного логирования (ELK, Loki).
 :::

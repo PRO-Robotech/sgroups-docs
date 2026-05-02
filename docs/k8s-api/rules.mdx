@@ -16,13 +16,13 @@ import dedent from 'ts-dedent'
 
 # Rules
 
-`Rule` — правило firewall. Эквивалент `UniRule` из REST API sg-server. Описывает разрешённый/запрещённый трафик между двумя `endpoints` (AG / Service / FQDN / CIDR).
+`Rule` — правило межсетевого экрана. Эквивалент `UniRule` из REST API `sg-server`. Описывает разрешенный или запрещенный трафик между двумя `endpoints` (AG / Service / FQDN / CIDR).
 
 ---
 
 :::info Валидация и ошибки
-Все валидации `spec` производятся на уровне `sg-server` (gRPC-бэкенд) — k8s-сервер
-лишь проксирует запрос. Формат ошибочных ответов и таблица кодов — в
+Все валидации `spec` выполняются на уровне `sg-server` (gRPC-бэкенд); k8s-сервер
+только проксирует запрос. Формат ошибочных ответов и таблица кодов — в
 [Обзоре API → Коды ошибок](/k8s-api/overview#коды-ошибок).
 :::
 
@@ -31,7 +31,7 @@ import dedent from 'ts-dedent'
 
 <ApiOperation method="GET" endpoint="/apis/sgroups.io/v1alpha1/namespaces/{namespace}/rules">
 
-Получить список ресурсов. Доступны два scope: по namespace и по всему кластеру.
+Получить список ресурсов. Доступны две области: один namespace и весь кластер.
 
 <Tabs groupId="scope">
   <TabItem value="namespace" label="В namespace" default>
@@ -119,7 +119,7 @@ import dedent from 'ts-dedent'
 
 <ApiOperation method="POST" endpoint="/apis/sgroups.io/v1alpha1/namespaces/{namespace}/rules">
 
-Создать новый объект. Имя должно быть уникальным в namespace.
+Создать новый объект. Имя должно быть уникальным в пределах namespace.
 
 #### Тело запроса
 
@@ -197,7 +197,7 @@ import dedent from 'ts-dedent'
       <td><code>spec.endpoints.remote</code></td>
       <td>нет</td>
       <td><code>{TYPES.ruleEndpoint}</code></td>
-      <td>Удалённая сторона (отсутствует для AG → ICMP)</td>
+      <td>Удаленная сторона (отсутствует для AG → ICMP)</td>
     </tr>
     <tr>
       <td><code>endpoints.*.name</code></td>
@@ -227,7 +227,7 @@ import dedent from 'ts-dedent'
       <td><code>spec.transport</code></td>
       <td>зависит от типа</td>
       <td><code>{TYPES.ruleTransport}</code></td>
-      <td>Транспорт; для `Service → Service` и `Service → CIDR / INGRESS` не передаётся</td>
+      <td>Транспорт; для `Service → Service` и `Service → CIDR / INGRESS` не передается</td>
     </tr>
   </tbody>
 </table>

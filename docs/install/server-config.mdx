@@ -9,13 +9,13 @@ import dedent from 'ts-dedent'
 
 # Конфигурация sg-server
 
-`sg-server` использует `corlib/plain-config`. Источники с приоритетом:
+`sg-server` использует `corlib/plain-config`. Источники конфигурации в порядке приоритета:
 
-1. **Аргументы командной строки** — `--config <path>` указывает YAML-файл
-2. **Переменные окружения** с префиксом `SG_` (см. ниже)
-3. **YAML-файл**
+1. **Аргументы командной строки** — `--config <path>` указывает YAML-файл.
+2. **Переменные окружения** с префиксом `SG_` (см. ниже).
+3. **YAML-файл**.
 
-Дефис `-` и слеш `/` в ключах превращаются в `_` для env-переменных:
+В переменных окружения дефис `-` и слеш `/` в ключах заменяются на `_`:
 ключ `server/graceful-shutdown` → `SG_SERVER_GRACEFUL_SHUTDOWN`.
 
 ## Полный пример YAML
@@ -64,19 +64,19 @@ import dedent from 'ts-dedent'
       <td><code>server/endpoint</code></td>
       <td><code>SG_SERVER_ENDPOINT</code></td>
       <td><code>tcp://127.0.0.1:9000</code></td>
-      <td>Слушаемый адрес. Один эндпоинт обслуживает gRPC + REST + метрики + healthcheck</td>
+      <td>Адрес для прослушивания. Один эндпоинт обслуживает gRPC, REST, метрики и healthcheck</td>
     </tr>
     <tr>
       <td><code>server/graceful-shutdown</code></td>
       <td><code>SG_SERVER_GRACEFUL_SHUTDOWN</code></td>
       <td><code>10s</code></td>
-      <td>Период graceful-завершения</td>
+      <td>Время на корректное завершение (graceful shutdown)</td>
     </tr>
     <tr>
       <td><code>server/api-path-prefix</code></td>
       <td><code>SG_SERVER_API_PATH_PREFIX</code></td>
       <td>—</td>
-      <td>Префикс для REST-роутов (опц.)</td>
+      <td>Префикс для REST-маршрутов (необязательный)</td>
     </tr>
     <tr>
       <td><code>server/additional-api-paths</code></td>
@@ -88,7 +88,7 @@ import dedent from 'ts-dedent'
       <td><code>server/use-proto-validator</code></td>
       <td><code>SG_SERVER_USE_PROTO_VALIDATOR</code></td>
       <td><code>false</code></td>
-      <td>Включить protovalidate-интерсептор для gRPC</td>
+      <td>Включить protovalidate-интерцептор для gRPC</td>
     </tr>
   </tbody>
 </table>
@@ -181,7 +181,7 @@ import dedent from 'ts-dedent'
 
 ## Переменные окружения
 
-Все ключи доступны через env с префиксом `SG_`:
+Все ключи доступны через переменные окружения с префиксом `SG_`:
 
 <CodeBlock language="bash">
   {dedent`
@@ -193,6 +193,6 @@ import dedent from 'ts-dedent'
 </CodeBlock>
 
 :::tip
-В production рекомендуется хранить YAML в репозитории и переопределять
-чувствительные параметры (`SG_STORAGE_POSTGRES_URL`, ключи authn) через env.
+В production рекомендуется хранить YAML-файл в репозитории и переопределять
+чувствительные параметры (`SG_STORAGE_POSTGRES_URL`, ключи `authn`) через переменные окружения.
 :::

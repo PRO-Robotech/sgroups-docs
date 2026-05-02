@@ -9,30 +9,30 @@ import dedent from 'ts-dedent'
 
 # Запуск sg-agent
 
-## Бинарник напрямую
+## Запуск исполняемого файла напрямую
 
 Для управления nftables нужен `CAP_NET_ADMIN` — либо запустить под `root`,
-либо повесить файловый capability на бинарник.
+либо назначить файловый capability на исполняемый файл.
 
 <CodeBlock language="bash">
   {dedent`
     # вариант 1 — sudo
     sudo ./bin/sg-agent --config /etc/sg-agent/config.yaml
 
-    # вариант 2 — file capability + запуск от обычного пользователя
+    # вариант 2 — файловый capability и запуск от обычного пользователя
     sudo setcap cap_net_admin=eip ./bin/sg-agent
     ./bin/sg-agent --config /etc/sg-agent/config.yaml
   `}
 </CodeBlock>
 
-Бинарник принимает только `--config <path>`; остальные параметры — из YAML
-или env.
+Программа принимает только параметр `--config <path>`; остальные параметры
+задаются в YAML-файле или через переменные окружения.
 
 ## systemd-сервис
 
 Стандартный способ для production-серверов.
 
-### 1. Скопировать бинарник
+### 1. Скопировать исполняемый файл
 
 <CodeBlock language="bash">
   {dedent`
@@ -92,9 +92,9 @@ import dedent from 'ts-dedent'
 В Dockerfile прописан непривилегированный `USER app`, поэтому для управления
 nftables в контейнере нужно одновременно:
 
-- запустить под root (`--user 0:0`)
-- выдать `CAP_NET_ADMIN` (`--cap-add NET_ADMIN`)
-- использовать сетевое пространство хоста (`--network host`)
+- запустить под root (`--user 0:0`);
+- выдать `CAP_NET_ADMIN` (`--cap-add NET_ADMIN`);
+- использовать сетевой namespace хоста (`--network host`).
 
 <CodeBlock language="bash">
   {dedent`
@@ -139,6 +139,6 @@ nftables в контейнере нужно одновременно:
 
 См. также:
 
-- [Жизненный цикл](/agent/lifecycle) — что делает агент после старта
-- [Структура nftables](/agent/nft-layout) — какие таблицы/цепочки/set'ы создаются
-- [Отладка](/agent/troubleshooting) — типичные расхождения и как их искать
+- [Жизненный цикл](/agent/lifecycle) — что делает агент после старта;
+- [Структура nftables](/agent/nft-layout) — какие таблицы, цепочки и наборы создаются;
+- [Отладка](/agent/troubleshooting) — типичные расхождения и как их искать.

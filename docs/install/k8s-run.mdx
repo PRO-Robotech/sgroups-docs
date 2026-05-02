@@ -12,20 +12,20 @@ import dedent from 'ts-dedent'
 ## Шаг 1. Подготовка кластера
 
 API-сервер требует cert-manager для выпуска TLS-сертификатов. Стандартный
-путь для разработки — kind-кластер с `cert-manager`. Для production — любой
+путь для разработки — kind-кластер с `cert-manager`. Для production подойдет любой
 существующий кластер с уже установленным cert-manager.
 
 ### Локально (kind + cert-manager)
 
 `make setup` выполняет три шага: создание kind-кластера, установку
-cert-manager (с ожиданием готовности всех его deployment'ов), затем `deploy`.
+cert-manager (с ожиданием готовности всех его Deployment) и затем `deploy`.
 
 <CodeBlock language="bash">
   {dedent`
     git clone https://github.com/PRO-Robotech/sgroups-k8s-api.git
     cd sgroups-k8s-api
 
-    # одной командой — kind + cert-manager + сборка + деплой
+    # одной командой: kind + cert-manager + сборка + деплой
     make setup
   `}
 </CodeBlock>
@@ -43,7 +43,7 @@ cert-manager (с ожиданием готовности всех его deploym
 
 <CodeBlock language="bash">
   {dedent`
-    # установить cert-manager (если ещё не установлен)
+    # установить cert-manager (если еще не установлен)
     kubectl apply -f https://github.com/cert-manager/cert-manager/releases/download/v1.17.2/cert-manager.yaml
     kubectl -n cert-manager wait --for=condition=Available deployment/cert-manager        --timeout=120s
     kubectl -n cert-manager wait --for=condition=Available deployment/cert-manager-webhook --timeout=120s
@@ -52,8 +52,8 @@ cert-manager (с ожиданием готовности всех его deploym
 </CodeBlock>
 
 :::warning
-Дождитесь, чтобы все 3 deployment'а cert-manager были `Available`. Сертификат
-для API-сервера выпускается **до** старта пода, иначе `kube-apiserver` не
+Дождитесь, чтобы все три Deployment cert-manager были `Available`. Сертификат
+для API-сервера должен быть выпущен **до** старта пода, иначе `kube-apiserver` не
 сможет установить TLS-соединение с Aggregated API.
 :::
 
@@ -67,10 +67,10 @@ cert-manager (с ожиданием готовности всех его deploym
     ├── kustomization.yaml      # корневой оверлей + ConfigMap из apiserver-config.yaml
     ├── namespace.yaml          # namespace sgroups-system
     ├── apiservice.yaml         # APIService v1alpha1.sgroups.io → sgroups-k8s-apiserver
-    ├── deployment.yaml         # Deployment + Service для API-сервера
-    ├── mock-backend.yaml       # mock-бэкенд (убрать в production)
-    ├── certificates.yaml       # cert-manager Certificate + Issuer
-    ├── rbac.yaml               # ServiceAccount + ClusterRole + ClusterRoleBinding
+    ├── deployment.yaml         # Deployment и Service API-сервера
+    ├── mock-backend.yaml       # mock-бэкенд (удалите в production)
+    ├── certificates.yaml       # Certificate и Issuer для cert-manager
+    ├── rbac.yaml               # ServiceAccount, ClusterRole, ClusterRoleBinding
     └── apiserver-config.yaml   # YAML-конфигурация (попадает в ConfigMap)
   `}
 </CodeBlock>
@@ -78,7 +78,7 @@ cert-manager (с ожиданием готовности всех его deploym
 ### Через `make deploy`
 
 `make deploy` выполняет: сборку обоих образов → `kind load` → `kubectl apply -k config/`
-→ rollout restart обоих deployment'ов → ожидание готовности (`rollout status`).
+→ перезапуск обоих Deployment → ожидание готовности (`rollout status`).
 
 <CodeBlock language="bash">
   {dedent`
@@ -86,7 +86,7 @@ cert-manager (с ожиданием готовности всех его deploym
   `}
 </CodeBlock>
 
-Подменить только API-сервер (быстрее для разработки):
+Обновить только API-сервер (быстрее для разработки):
 
 <CodeBlock language="bash">
   {dedent`
@@ -97,7 +97,7 @@ cert-manager (с ожиданием готовности всех его deploym
 ### Прямой kustomize (production)
 
 Перед применением в production уберите `mock-backend.yaml` из `kustomization.yaml`
-и поправьте `grpc.address` в `apiserver-config.yaml` на адрес настоящего `sg-server`:
+и измените `grpc.address` в `apiserver-config.yaml` на адрес настоящего `sg-server`:
 
 <CodeBlock language="bash">
   {dedent`
@@ -136,31 +136,31 @@ Smoke-тесты через Postman/Newman (запускают суит прот
 
 | Цель | Описание |
 |---|---|
-| `make build` | Собрать все бинарники в `bin/` |
-| `make clean` | Удалить артефакты сборки |
+| `make build` | собрать все бинарные файлы в `bin/` |
+| `make clean` | удалить артефакты сборки |
 | `make lint` / `lint-fix` / `fmt` | golangci-lint |
 | `make test` | `go test -race ./...` |
-| `make verify` | `lint + fmt + test + verify-openapi-spec` |
-| `make openapi-spec` | Сгенерировать `api/openapi-spec/swagger.json` |
-| `make generate` | Все кодогенераторы (`hack/update-all.sh`) |
-| `make docker-build-apiserver` | Образ API-сервера |
-| `make docker-build-mock` | Образ mock-бэкенда |
-| `make docker-build` | Оба образа |
-| `make kind-create` | Создать kind-кластер |
-| `make cert-manager` | Установить cert-manager в текущий кластер |
-| `make setup` | `kind-create + cert-manager + deploy` |
-| `make kind-load` | Загрузить оба образа в kind |
-| `make deploy` | `docker-build + kind-load + kubectl apply -k config/ + rollout restart` |
-| `make deploy-apiserver` | Только API-сервер (без mock'а) |
+| `make verify` | `lint` + `fmt` + `test` + `verify-openapi-spec` |
+| `make openapi-spec` | сгенерировать `api/openapi-spec/swagger.json` |
+| `make generate` | все кодогенераторы (`hack/update-all.sh`) |
+| `make docker-build-apiserver` | образ API-сервера |
+| `make docker-build-mock` | образ mock-бэкенда |
+| `make docker-build` | оба образа |
+| `make kind-create` | создать kind-кластер |
+| `make cert-manager` | установить cert-manager в текущий кластер |
+| `make setup` | `kind-create` + `cert-manager` + `deploy` |
+| `make kind-load` | загрузить оба образа в kind |
+| `make deploy` | `docker-build` + `kind-load` + `kubectl apply -k config/` + перезапуск Deployment |
+| `make deploy-apiserver` | только API-сервер (без mock-бэкенда) |
 | `make undeploy` | `kubectl delete -k config/` |
 | `make smoke-test` | Postman/Newman против `kubectl proxy` |
-| `make teardown` | `undeploy + kind delete cluster` |
+| `make teardown` | `undeploy` + `kind delete cluster` |
 
 ## Удаление
 
 <CodeBlock language="bash">
   {dedent`
-    # удалить только манифесты SGroups (cluster и cert-manager остаются)
+    # удалить только манифесты SGroups (кластер и cert-manager остаются)
     make undeploy
     # либо вручную
     kubectl delete -k config/
