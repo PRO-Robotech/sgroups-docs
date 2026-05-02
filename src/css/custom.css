@@ -734,12 +734,12 @@ html[data-theme='dark'] .arch-svg__node rect {
   font-family: var(--ifm-font-family-monospace);
   font-size: 14px;
   font-weight: 700;
-  fill: var(--ifm-color-emphasis-900);
+  fill: #1c1e21;
 }
 
 .arch-svg__sub {
   font-size: 11px;
-  fill: var(--ifm-color-emphasis-700);
+  fill: #495057;
 }
 
 html[data-theme='dark'] .arch-svg__title {
@@ -752,9 +752,9 @@ html[data-theme='dark'] .arch-svg__sub {
 
 .arch-svg__edge {
   fill: none;
-  stroke: var(--ifm-color-emphasis-600);
+  stroke: #495057;
   stroke-width: 1.6;
-  color: var(--ifm-color-emphasis-700);
+  color: #495057;
 }
 
 html[data-theme='dark'] .arch-svg__edge {
@@ -781,10 +781,10 @@ html[data-theme='dark'] .arch-svg__edge--dashed {
   font-size: 11px;
   font-weight: 600;
   font-family: var(--ifm-font-family-monospace);
-  fill: var(--ifm-color-emphasis-900);
+  fill: #1c1e21;
   dominant-baseline: middle;
   paint-order: stroke;
-  stroke: var(--ifm-color-emphasis-100);
+  stroke: #ffffff;
   stroke-width: 3;
   stroke-linejoin: round;
   stroke-linecap: round;
@@ -878,9 +878,9 @@ html[data-theme='dark'] .arch-graph {
 
 .arch-graph .arch-graph__edge {
   fill: none;
-  stroke: var(--ifm-color-emphasis-600);
+  stroke: #495057;
   stroke-width: 1.6;
-  color: var(--ifm-color-emphasis-700);
+  color: #495057;
 }
 
 html[data-theme='dark'] .arch-graph .arch-graph__edge {
@@ -903,10 +903,10 @@ html[data-theme='dark'] .arch-graph .arch-graph__edge--dashed {
   font-size: 11px;
   font-weight: 600;
   font-family: var(--ifm-font-family-monospace);
-  fill: var(--ifm-color-emphasis-900);
+  fill: #1c1e21;
   dominant-baseline: middle;
   paint-order: stroke;
-  stroke: var(--ifm-color-emphasis-100);
+  stroke: #ffffff;
   stroke-width: 4;
   stroke-linejoin: round;
   pointer-events: none;
@@ -929,13 +929,13 @@ html[data-theme='dark'] .arch-graph .arch-graph__edge-label--alt {
   font-family: var(--ifm-font-family-monospace);
   font-size: 13px;
   font-weight: 700;
-  fill: var(--ifm-color-emphasis-900);
+  fill: #1c1e21;
   pointer-events: none;
 }
 
 .arch-graph .arch-graph__sub {
   font-size: 10px;
-  fill: var(--ifm-color-emphasis-700);
+  fill: #495057;
   pointer-events: none;
 }
 
