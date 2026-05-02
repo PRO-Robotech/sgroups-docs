@@ -653,12 +653,39 @@ html[data-theme='dark'] .arch-svg-wrap {
 }
 
 .arch-svg {
+  --arch-svg-client-stop-1: #e7f5ff;
+  --arch-svg-client-stop-2: #d0ebff;
+  --arch-svg-client-stroke: #1971c2;
+  --arch-svg-cp-stop-1: #e6fcf5;
+  --arch-svg-cp-stop-2: #c3fae8;
+  --arch-svg-cp-stroke: #0ca678;
+  --arch-svg-store-stop-1: #f3f0ff;
+  --arch-svg-store-stop-2: #e5dbff;
+  --arch-svg-store-stroke: #6f42c1;
+  --arch-svg-agent-stop-1: #fff4e6;
+  --arch-svg-agent-stop-2: #ffe8cc;
+  --arch-svg-agent-stroke: #d9480f;
   display: block;
   width: 100%;
   height: auto;
   min-width: 720px;
   color: var(--ifm-color-emphasis-700);
   font-family: var(--ifm-font-family-base);
+}
+
+html[data-theme='dark'] .arch-svg {
+  --arch-svg-client-stop-1: #16324d;
+  --arch-svg-client-stop-2: #10283f;
+  --arch-svg-client-stroke: #74c0fc;
+  --arch-svg-cp-stop-1: #123d34;
+  --arch-svg-cp-stop-2: #0f332c;
+  --arch-svg-cp-stroke: #63e6be;
+  --arch-svg-store-stop-1: #30284d;
+  --arch-svg-store-stop-2: #271f40;
+  --arch-svg-store-stroke: #b197fc;
+  --arch-svg-agent-stop-1: #4a2b19;
+  --arch-svg-agent-stop-2: #3a2216;
+  --arch-svg-agent-stroke: #ffb86b;
 }
 
 .arch-svg__inline {
@@ -699,6 +726,10 @@ html[data-theme='dark'] .arch-svg__inline {
   filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.08));
 }
 
+html[data-theme='dark'] .arch-svg__node rect {
+  filter: drop-shadow(0 3px 10px rgba(0, 0, 0, 0.24));
+}
+
 .arch-svg__title {
   font-family: var(--ifm-font-family-monospace);
   font-size: 14px;
@@ -712,11 +743,11 @@ html[data-theme='dark'] .arch-svg__inline {
 }
 
 html[data-theme='dark'] .arch-svg__title {
-  fill: #1b1b1d;
+  fill: #f1f5f9;
 }
 
 html[data-theme='dark'] .arch-svg__sub {
-  fill: #495057;
+  fill: #cbd5e1;
 }
 
 .arch-svg__edge {
@@ -726,10 +757,20 @@ html[data-theme='dark'] .arch-svg__sub {
   color: var(--ifm-color-emphasis-700);
 }
 
+html[data-theme='dark'] .arch-svg__edge {
+  stroke: #9aa4b2;
+  color: #b6c2d1;
+}
+
 .arch-svg__edge--dashed {
   stroke-dasharray: 5 4;
   stroke: #d9480f;
   color: #d9480f;
+}
+
+html[data-theme='dark'] .arch-svg__edge--dashed {
+  stroke: #f08c3e;
+  color: #f08c3e;
 }
 
 .arch-svg__edge--hidden {
@@ -759,7 +800,7 @@ html[data-theme='dark'] .arch-svg__edge-label {
 }
 
 html[data-theme='dark'] .arch-svg__edge-label--alt {
-  fill: #ffb066;
+  fill: #ffc078;
 }
 
 /* Группы (subgraph) */
@@ -805,6 +846,36 @@ html[data-theme='dark'] .arch-svg__group-title {
   user-select: none;
 }
 
+.arch-graph {
+  --arch-graph-client-stop-1: #e7f5ff;
+  --arch-graph-client-stop-2: #d0ebff;
+  --arch-graph-client-stroke: #1971c2;
+  --arch-graph-cp-stop-1: #e6fcf5;
+  --arch-graph-cp-stop-2: #c3fae8;
+  --arch-graph-cp-stroke: #0ca678;
+  --arch-graph-store-stop-1: #f3f0ff;
+  --arch-graph-store-stop-2: #e5dbff;
+  --arch-graph-store-stroke: #6f42c1;
+  --arch-graph-agent-stop-1: #fff4e6;
+  --arch-graph-agent-stop-2: #ffe8cc;
+  --arch-graph-agent-stroke: #d9480f;
+}
+
+html[data-theme='dark'] .arch-graph {
+  --arch-graph-client-stop-1: #16324d;
+  --arch-graph-client-stop-2: #10283f;
+  --arch-graph-client-stroke: #74c0fc;
+  --arch-graph-cp-stop-1: #123d34;
+  --arch-graph-cp-stop-2: #0f332c;
+  --arch-graph-cp-stroke: #63e6be;
+  --arch-graph-store-stop-1: #30284d;
+  --arch-graph-store-stop-2: #271f40;
+  --arch-graph-store-stroke: #b197fc;
+  --arch-graph-agent-stop-1: #4a2b19;
+  --arch-graph-agent-stop-2: #3a2216;
+  --arch-graph-agent-stroke: #ffb86b;
+}
+
 .arch-graph .arch-graph__edge {
   fill: none;
   stroke: var(--ifm-color-emphasis-600);
@@ -812,10 +883,20 @@ html[data-theme='dark'] .arch-svg__group-title {
   color: var(--ifm-color-emphasis-700);
 }
 
+html[data-theme='dark'] .arch-graph .arch-graph__edge {
+  stroke: #9aa4b2;
+  color: #b6c2d1;
+}
+
 .arch-graph .arch-graph__edge--dashed {
   stroke-dasharray: 5 4;
   stroke: #d9480f;
   color: #d9480f;
+}
+
+html[data-theme='dark'] .arch-graph .arch-graph__edge--dashed {
+  stroke: #f08c3e;
+  color: #f08c3e;
 }
 
 .arch-graph .arch-graph__edge-label {
@@ -841,7 +922,7 @@ html[data-theme='dark'] .arch-graph .arch-graph__edge-label {
 }
 
 html[data-theme='dark'] .arch-graph .arch-graph__edge-label--alt {
-  fill: #ffb066;
+  fill: #ffc078;
 }
 
 .arch-graph .arch-graph__title {
@@ -859,11 +940,15 @@ html[data-theme='dark'] .arch-graph .arch-graph__edge-label--alt {
 }
 
 html[data-theme='dark'] .arch-graph .arch-graph__title {
-  fill: #1b1b1d;
+  fill: #f1f5f9;
 }
 
 html[data-theme='dark'] .arch-graph .arch-graph__sub {
-  fill: #495057;
+  fill: #cbd5e1;
+}
+
+html[data-theme='dark'] .arch-graph__node rect {
+  filter: drop-shadow(0 3px 10px rgba(0, 0, 0, 0.24));
 }
 
 .arch-graph__node:active {

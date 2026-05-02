@@ -45,11 +45,11 @@ const NODE_FILL: Record<ArchGraphNodeKind, string> = {
 }
 
 const NODE_STROKE: Record<ArchGraphNodeKind, string> = {
-  client: '#1971c2',
-  cp: '#0ca678',
-  store: '#6f42c1',
-  agent: '#d9480f',
-  default: '#0ca678',
+  client: 'var(--arch-graph-client-stroke)',
+  cp: 'var(--arch-graph-cp-stroke)',
+  store: 'var(--arch-graph-store-stroke)',
+  agent: 'var(--arch-graph-agent-stroke)',
+  default: 'var(--arch-graph-cp-stroke)',
 }
 
 const NODE_W = 170
@@ -103,13 +103,19 @@ export const ArchGraph: React.FC<ArchGraphProps> = ({
     const r = Math.min(width, height) * 0.32
     return nodes.map((n, i) => {
       const angle = (i / nodes.length) * Math.PI * 2
+      const pos = clampNodePosition(
+        n.x ?? cx + Math.cos(angle) * r,
+        n.y ?? cy + Math.sin(angle) * r,
+        width,
+        height,
+      )
       return {
         id: n.id,
-        x: n.x ?? cx + Math.cos(angle) * r,
-        y: n.y ?? cy + Math.sin(angle) * r,
+        x: pos.x,
+        y: pos.y,
         vx: 0,
         vy: 0,
-        fixed: !!n.fixed,
+        fixed: !!n.fixed || (typeof n.x === 'number' && typeof n.y === 'number'),
         data: n,
       }
     })
@@ -134,8 +140,14 @@ export const ArchGraph: React.FC<ArchGraphProps> = ({
   // Запуск физической симуляции (только в браузере)
   useEffect(() => {
     if (typeof window === 'undefined') return
+    if (initialNodes.every(n => n.fixed)) {
+      setSimNodes(initialNodes.map(n => ({ ...n })))
+      return
+    }
+
     const ITER = 1200
     const damping = 0.82
+    const minGap = Math.max(24, collideRadius - NODE_W / 2)
 
     const work: SimNode[] = initialNodes.map(n => ({ ...n }))
     const map = new Map<string, SimNode>()
@@ -147,15 +159,6 @@ export const ArchGraph: React.FC<ArchGraphProps> = ({
         return s && t ? { s, t } : null
       })
       .filter((x): x is { s: SimNode; t: SimNode } => x !== null)
-
-    // Минимальное расстояние между узлами с учётом размера (rect-based)
-    const minDistFor = (a: SimNode, b: SimNode): number => {
-      const dx = Math.abs(b.x - a.x)
-      const dy = Math.abs(b.y - a.y)
-      const overlapX = NODE_W + 30 - dx
-      const overlapY = NODE_H + 30 - dy
-      return overlapX > 0 && overlapY > 0 ? Math.max(overlapX, overlapY) : 0
-    }
 
     for (let step = 0; step < ITER; step++) {
       const t = step / ITER
@@ -205,22 +208,7 @@ export const ArchGraph: React.FC<ArchGraphProps> = ({
         for (let j = i + 1; j < work.length; j++) {
           const a = work[i]
           const b = work[j]
-          const overlap = minDistFor(a, b)
-          if (overlap > 0) {
-            const dx = b.x - a.x
-            const dy = b.y - a.y
-            const dist = Math.sqrt(dx * dx + dy * dy) || 1
-            const ox = (dx / dist) * overlap * 0.5
-            const oy = (dy / dist) * overlap * 0.5
-            if (!a.fixed) {
-              a.x -= ox
-              a.y -= oy
-            }
-            if (!b.fixed) {
-              b.x += ox
-              b.y += oy
-            }
-          }
+          resolveRectCollision(a, b, minGap)
         }
       }
       // обновление позиций
@@ -230,13 +218,13 @@ export const ArchGraph: React.FC<ArchGraphProps> = ({
         n.vy *= damping
         n.x += n.vx
         n.y += n.vy
-        n.x = Math.max(NODE_W / 2 + 12, Math.min(width - NODE_W / 2 - 12, n.x))
-        n.y = Math.max(NODE_H / 2 + 12, Math.min(height - NODE_H / 2 - 12, n.y))
+        const pos = clampNodePosition(n.x, n.y, width, height)
+        n.x = pos.x
+        n.y = pos.y
       }
     }
     setSimNodes(work)
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [])
+  }, [charge, collideRadius, edges, height, initialNodes, linkDistance, width])
 
   // Drag-and-drop
   const handlePointerDown = (e: React.PointerEvent, n: SimNode) => {
@@ -250,9 +238,8 @@ export const ArchGraph: React.FC<ArchGraphProps> = ({
     const drag = dragRef.current
     if (!drag || !svgRef.current) return
     const pt = clientToSvg(svgRef.current, e.clientX, e.clientY)
-    const newX = pt.x - drag.offsetX
-    const newY = pt.y - drag.offsetY
-    setSimNodes(prev => prev.map(n => (n.id === drag.id ? { ...n, x: newX, y: newY } : n)))
+    const pos = clampNodePosition(pt.x - drag.offsetX, pt.y - drag.offsetY, width, height)
+    setSimNodes(prev => prev.map(n => (n.id === drag.id ? { ...n, x: pos.x, y: pos.y } : n)))
   }
 
   const handlePointerUp = (e: React.PointerEvent) => {
@@ -284,29 +271,31 @@ export const ArchGraph: React.FC<ArchGraphProps> = ({
           <path d="M0,0 L10,5 L0,10 z" fill="currentColor" />
         </marker>
         <linearGradient id="agGradClient" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0" stopColor="#e7f5ff" />
-          <stop offset="1" stopColor="#d0ebff" />
+          <stop offset="0" stopColor="var(--arch-graph-client-stop-1)" />
+          <stop offset="1" stopColor="var(--arch-graph-client-stop-2)" />
         </linearGradient>
         <linearGradient id="agGradCp" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0" stopColor="#e6fcf5" />
-          <stop offset="1" stopColor="#c3fae8" />
+          <stop offset="0" stopColor="var(--arch-graph-cp-stop-1)" />
+          <stop offset="1" stopColor="var(--arch-graph-cp-stop-2)" />
         </linearGradient>
         <linearGradient id="agGradStore" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0" stopColor="#f3f0ff" />
-          <stop offset="1" stopColor="#e5dbff" />
+          <stop offset="0" stopColor="var(--arch-graph-store-stop-1)" />
+          <stop offset="1" stopColor="var(--arch-graph-store-stop-2)" />
         </linearGradient>
         <linearGradient id="agGradAgent" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0" stopColor="#fff4e6" />
-          <stop offset="1" stopColor="#ffe8cc" />
+          <stop offset="0" stopColor="var(--arch-graph-agent-stop-1)" />
+          <stop offset="1" stopColor="var(--arch-graph-agent-stop-2)" />
         </linearGradient>
       </defs>
 
       {simEdges.map((edge, i) => {
-        const p1 = nodeBorderPoint(edge.source, edge.target.x, edge.target.y)
-        const p2 = nodeBorderPoint(edge.target, edge.source.x, edge.source.y)
+        const sourceBorder = nodeBorderPoint(edge.source, edge.target.x, edge.target.y)
+        const targetBorder = nodeBorderPoint(edge.target, edge.source.x, edge.source.y)
+        const p1 = { x: edge.source.x, y: edge.source.y }
+        const p2 = targetBorder
         const dashed = edge.data.kind === 'dashed'
-        const midX = (p1.x + p2.x) / 2
-        const midY = (p1.y + p2.y) / 2
+        const midX = (sourceBorder.x + p2.x) / 2
+        const midY = (sourceBorder.y + p2.y) / 2
         return (
           <g key={`edge-${i}`}>
             <line
@@ -316,8 +305,17 @@ export const ArchGraph: React.FC<ArchGraphProps> = ({
               y2={p2.y}
               className={`arch-graph__edge${dashed ? ' arch-graph__edge--dashed' : ''}`}
               markerEnd={`url(#agArr-${id})`}
-              markerStart={edge.data.bidir ? `url(#agArr-${id})` : undefined}
             />
+            {edge.data.bidir && (
+              <line
+                x1={edge.target.x}
+                y1={edge.target.y}
+                x2={sourceBorder.x}
+                y2={sourceBorder.y}
+                className={`arch-graph__edge${dashed ? ' arch-graph__edge--dashed' : ''}`}
+                markerEnd={`url(#agArr-${id})`}
+              />
+            )}
             {edge.data.label && (
               <text
                 x={midX}
@@ -380,4 +378,39 @@ function clientToSvg(svg: SVGSVGElement, clientX: number, clientY: number): { x:
   pt.y = clientY
   const transformed = pt.matrixTransform(ctm.inverse())
   return { x: transformed.x, y: transformed.y }
+}
+
+function clampNodePosition(
+  x: number,
+  y: number,
+  width: number,
+  height: number,
+): { x: number; y: number } {
+  return {
+    x: Math.max(NODE_W / 2 + 12, Math.min(width - NODE_W / 2 - 12, x)),
+    y: Math.max(NODE_H / 2 + 12, Math.min(height - NODE_H / 2 - 12, y)),
+  }
+}
+
+function resolveRectCollision(a: SimNode, b: SimNode, minGap: number): void {
+  if (a.fixed && b.fixed) return
+
+  const dx = b.x - a.x || 1
+  const dy = b.y - a.y || 1
+  const overlapX = NODE_W + minGap - Math.abs(dx)
+  const overlapY = NODE_H + minGap - Math.abs(dy)
+  if (overlapX <= 0 || overlapY <= 0) return
+
+  const aShare = a.fixed ? 0 : b.fixed ? 1 : 0.5
+  const bShare = b.fixed ? 0 : a.fixed ? 1 : 0.5
+
+  if (overlapX < overlapY) {
+    const push = dx > 0 ? overlapX : -overlapX
+    a.x -= push * aShare
+    b.x += push * bShare
+  } else {
+    const push = dy > 0 ? overlapY : -overlapY
+    a.y -= push * aShare
+    b.y += push * bShare
+  }
 }

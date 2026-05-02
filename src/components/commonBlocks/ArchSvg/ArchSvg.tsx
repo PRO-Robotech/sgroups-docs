@@ -59,11 +59,11 @@ const NODE_FILL: Record<ArchNodeKind, string> = {
 }
 
 const NODE_STROKE: Record<ArchNodeKind, string> = {
-  client: '#1971c2',
-  cp: '#0ca678',
-  store: '#6f42c1',
-  agent: '#d9480f',
-  default: '#0ca678',
+  client: 'var(--arch-svg-client-stroke)',
+  cp: 'var(--arch-svg-cp-stroke)',
+  store: 'var(--arch-svg-store-stroke)',
+  agent: 'var(--arch-svg-agent-stroke)',
+  default: 'var(--arch-svg-cp-stroke)',
 }
 
 const LANE_OFFSET = 26
@@ -211,20 +211,20 @@ export const ArchSvg: React.FC<ArchSvgProps> = ({
             <path d="M0,0 L10,5 L0,10 z" fill="currentColor" />
           </marker>
           <linearGradient id="archGradClient" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0" stopColor="#e7f5ff" />
-            <stop offset="1" stopColor="#d0ebff" />
+            <stop offset="0" stopColor="var(--arch-svg-client-stop-1)" />
+            <stop offset="1" stopColor="var(--arch-svg-client-stop-2)" />
           </linearGradient>
           <linearGradient id="archGradCp" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0" stopColor="#e6fcf5" />
-            <stop offset="1" stopColor="#c3fae8" />
+            <stop offset="0" stopColor="var(--arch-svg-cp-stop-1)" />
+            <stop offset="1" stopColor="var(--arch-svg-cp-stop-2)" />
           </linearGradient>
           <linearGradient id="archGradStore" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0" stopColor="#f3f0ff" />
-            <stop offset="1" stopColor="#e5dbff" />
+            <stop offset="0" stopColor="var(--arch-svg-store-stop-1)" />
+            <stop offset="1" stopColor="var(--arch-svg-store-stop-2)" />
           </linearGradient>
           <linearGradient id="archGradAgent" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0" stopColor="#fff4e6" />
-            <stop offset="1" stopColor="#ffe8cc" />
+            <stop offset="0" stopColor="var(--arch-svg-agent-stop-1)" />
+            <stop offset="1" stopColor="var(--arch-svg-agent-stop-2)" />
           </linearGradient>
         </defs>
 
