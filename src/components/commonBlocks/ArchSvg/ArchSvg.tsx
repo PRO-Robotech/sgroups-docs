@@ -1,4 +1,4 @@
-import React from 'react'
+import React, { useId } from 'react'
 
 export type ArchNodeKind = 'client' | 'cp' | 'store' | 'agent' | 'default'
 export type ArchEdgeKind = 'solid' | 'dashed'
@@ -163,6 +163,9 @@ export const ArchSvg: React.FC<ArchSvgProps> = ({
     }
   }
 
+  const reactId = useId()
+  const inlineId = `arch-svg-${reactId.replace(/[:]/g, '_')}`
+
   const groupBoxes = (groups ?? []).map(g => {
     const padding = g.padding ?? GROUP_PADDING
     const members = g.nodeIds
@@ -176,14 +179,13 @@ export const ArchSvg: React.FC<ArchSvgProps> = ({
     return { id: g.id, title: g.title, x: minX, y: minY, w: maxX - minX, h: maxY - minY }
   })
 
-  return (
-    <div className="arch-svg-wrap">
-      <svg
-        viewBox={`0 0 ${totalWidth} ${totalHeight}`}
-        className="arch-svg"
-        role="img"
-        aria-label={ariaLabel}
-      >
+  const renderSvg = (className: string) => (
+    <svg
+      viewBox={`0 0 ${totalWidth} ${totalHeight}`}
+      className={className}
+      role="img"
+      aria-label={ariaLabel}
+    >
         <defs>
           <marker
             id="archArr"
@@ -318,7 +320,30 @@ export const ArchSvg: React.FC<ArchSvgProps> = ({
             </g>
           )
         })}
-      </svg>
+    </svg>
+  )
+
+  return (
+    <div className="arch-svg-wrap">
+      <a
+        href={`#${inlineId}`}
+        data-fancybox=""
+        data-src={`#${inlineId}`}
+        data-type="inline"
+        className="arch-svg__zoom"
+        aria-label="Развернуть архитектурную схему"
+      >
+        {renderSvg('arch-svg')}
+        <span className="arch-svg__zoom-hint" aria-hidden="true">
+          <svg viewBox="0 0 24 24" width="16" height="16">
+            <path d="M21 21l-4.35-4.35M11 19a8 8 0 1 1 0-16 8 8 0 0 1 0 16zm-3-8h6m-3-3v6" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+          </svg>
+          увеличить
+        </span>
+      </a>
+      <div id={inlineId} className="arch-svg__inline" style={{ display: 'none' }}>
+        {renderSvg('arch-svg arch-svg--zoomed')}
+      </div>
     </div>
   )
 }

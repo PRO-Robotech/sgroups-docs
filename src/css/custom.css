@@ -596,6 +596,7 @@ html[data-theme='dark'] .flow-step__title {
    ============================================================================ */
 
 .arch-svg-wrap {
+  position: relative;
   margin: 1.5rem 0 0.5rem;
   padding: 1rem;
   background: var(--ifm-color-emphasis-100);
@@ -609,6 +610,48 @@ html[data-theme='dark'] .arch-svg-wrap {
   border-color: #3a4048;
 }
 
+.arch-svg__zoom {
+  display: block;
+  position: relative;
+  cursor: zoom-in;
+  text-decoration: none;
+  transition: transform 0.2s ease;
+}
+
+.arch-svg__zoom:hover {
+  text-decoration: none;
+}
+
+.arch-svg__zoom:hover .arch-svg__zoom-hint {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.arch-svg__zoom-hint {
+  position: absolute;
+  top: 0.5rem;
+  right: 0.5rem;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.35rem 0.6rem;
+  font-size: 0.78rem;
+  font-weight: 600;
+  background: var(--ifm-background-color);
+  color: var(--ifm-color-emphasis-800);
+  border: 1px solid var(--ifm-color-emphasis-400);
+  border-radius: 6px;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
+  opacity: 0;
+  transform: translateY(-4px);
+  transition: opacity 0.15s ease, transform 0.15s ease;
+  pointer-events: none;
+}
+
+.arch-svg__zoom-hint svg {
+  flex-shrink: 0;
+}
+
 .arch-svg {
   display: block;
   width: 100%;
@@ -616,6 +659,18 @@ html[data-theme='dark'] .arch-svg-wrap {
   min-width: 720px;
   color: var(--ifm-color-emphasis-700);
   font-family: var(--ifm-font-family-base);
+}
+
+.arch-svg__inline {
+  background: var(--ifm-background-color);
+  padding: 1.5rem;
+}
+
+.arch-svg--zoomed {
+  width: min(95vw, 1600px);
+  max-width: 100%;
+  min-width: 0;
+  height: auto;
 }
 
 .arch-svg__layer {
