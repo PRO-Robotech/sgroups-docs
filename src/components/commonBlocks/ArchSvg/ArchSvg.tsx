@@ -122,23 +122,31 @@ export const ArchSvg: React.FC<ArchSvgProps> = ({
     const sameRow = a.node.row === b.node.row
 
     const labelOffset = lane > 0 ? 16 : -10
-    const labelSideShift = lane > 0 ? 16 : -16
+
+    const clampX = (x: number, box: NodeBox): number =>
+      Math.min(Math.max(x, box.x + 8), box.x + box.w - 8)
+    const clampY = (y: number, box: NodeBox): number =>
+      Math.min(Math.max(y, box.y + 8), box.y + box.h - 8)
 
     if (sameCol && !sameRow) {
       const goingDown = b.y > a.y
-      const sx = a.cx + laneShift
+      const sxRaw = a.cx + laneShift
+      const sx = clampX(sxRaw, a)
       const sy = goingDown ? a.y + a.h : a.y
-      const tx = b.cx + laneShift
+      const tx = clampX(sxRaw, b)
       const ty = goingDown ? b.y : b.y + b.h
-      return { d: `M${sx},${sy} V${ty}`, labelX: sx + (lane >= 0 ? 14 : -14), labelY: (sy + ty) / 2 }
+      const d = sx === tx ? `M${sx},${sy} V${ty}` : `M${sx},${sy} V${(sy + ty) / 2} H${tx} V${ty}`
+      return { d, labelX: sx + (lane >= 0 ? 14 : -14), labelY: (sy + ty) / 2 }
     }
     if (sameRow && !sameCol) {
       const goingRight = b.x > a.x
+      const syRaw = a.cy + laneShift
       const sx = goingRight ? a.x + a.w : a.x
-      const sy = a.cy + laneShift
+      const sy = clampY(syRaw, a)
       const tx = goingRight ? b.x : b.x + b.w
-      const ty = b.cy + laneShift
-      return { d: `M${sx},${sy} H${tx}`, labelX: (sx + tx) / 2, labelY: sy + labelOffset }
+      const ty = clampY(syRaw, b)
+      const d = sy === ty ? `M${sx},${sy} H${tx}` : `M${sx},${sy} H${(sx + tx) / 2} V${ty} H${tx}`
+      return { d, labelX: (sx + tx) / 2, labelY: sy + labelOffset }
     }
     if (sameCol && sameRow) {
       return { d: '', labelX: 0, labelY: 0 }
@@ -149,16 +157,20 @@ export const ArchSvg: React.FC<ArchSvgProps> = ({
     const goingDown = b.y > a.y
 
     if (routing === 'h-v') {
+      const syRaw = a.cy + laneShift
       const sx = goingRight ? a.x + a.w : a.x
-      const sy = a.cy + laneShift
-      const tx = b.cx + laneShift
+      const sy = clampY(syRaw, a)
+      const txRaw = b.cx + laneShift
+      const tx = clampX(txRaw, b)
       const ty = goingDown ? b.y : b.y + b.h
       return { d: `M${sx},${sy} H${tx} V${ty}`, labelX: (sx + tx) / 2, labelY: sy + labelOffset }
     } else {
-      const sx = a.cx + laneShift
+      const sxRaw = a.cx + laneShift
+      const sx = clampX(sxRaw, a)
       const sy = goingDown ? a.y + a.h : a.y
       const tx = goingRight ? b.x : b.x + b.w
-      const ty = b.cy + laneShift
+      const tyRaw = b.cy + laneShift
+      const ty = clampY(tyRaw, b)
       return { d: `M${sx},${sy} V${ty} H${tx}`, labelX: sx + (lane >= 0 ? 14 : -14), labelY: (sy + ty) / 2 }
     }
   }

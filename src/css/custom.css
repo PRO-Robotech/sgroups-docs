@@ -744,7 +744,7 @@ html[data-theme='dark'] .arch-svg__sub {
   dominant-baseline: middle;
   paint-order: stroke;
   stroke: var(--ifm-color-emphasis-100);
-  stroke-width: 6;
+  stroke-width: 3;
   stroke-linejoin: round;
   stroke-linecap: round;
 }

@@ -210,7 +210,7 @@ SGroups использует **9 типов ресурсов**, организо
 
 <ArchSvg
   cols={5}
-  rows={3}
+  rows={4}
   cellWidth={170}
   cellHeight={70}
   hGap={70}
@@ -218,32 +218,27 @@ SGroups использует **9 типов ресурсов**, организо
   paddingX={30}
   paddingY={50}
   ariaLabel="Связи ресурсов SGroups"
-  groups={[
-    {
-      id: 'g-ns',
-      title: 'Namespace',
-      nodeIds: ['host', 'hb', 'ag', 'sb', 'svc', 'net', 'nb', 'rule'],
-    },
-  ]}
   nodes={[
-    { id: 'host', col: 0, row: 0, kind: 'client', title: 'Host' },
-    { id: 'hb',   col: 1, row: 0, kind: 'cp',     title: 'HostBinding' },
-    { id: 'ag',   col: 2, row: 0, kind: 'cp',     title: 'AddressGroup' },
-    { id: 'sb',   col: 3, row: 0, kind: 'cp',     title: 'ServiceBinding' },
-    { id: 'svc',  col: 4, row: 0, kind: 'client', title: 'Service' },
-    { id: 'net',  col: 0, row: 1, kind: 'client', title: 'Network' },
-    { id: 'nb',   col: 1, row: 1, kind: 'cp',     title: 'NetworkBinding' },
-    { id: 'rule', col: 2, row: 2, kind: 'agent',  title: 'Rule' },
+    { id: 'ns',   col: 2, row: 0, kind: 'store',  title: 'Namespace',    subtitle: 'область имён' },
+    { id: 'host', col: 0, row: 1, kind: 'client', title: 'Host' },
+    { id: 'hb',   col: 1, row: 1, kind: 'cp',     title: 'HostBinding' },
+    { id: 'ag',   col: 2, row: 1, kind: 'cp',     title: 'AddressGroup' },
+    { id: 'sb',   col: 3, row: 1, kind: 'cp',     title: 'ServiceBinding' },
+    { id: 'svc',  col: 4, row: 1, kind: 'client', title: 'Service' },
+    { id: 'net',  col: 0, row: 2, kind: 'client', title: 'Network' },
+    { id: 'nb',   col: 1, row: 2, kind: 'cp',     title: 'NetworkBinding' },
+    { id: 'rule', col: 2, row: 3, kind: 'agent',  title: 'Rule' },
   ]}
   edges={[
+    { from: 'ns',   to: 'ag',   label: 'содержит ресурсы' },
     { from: 'host', to: 'hb',   label: '1:N', bidir: true },
-    { from: 'hb',   to: 'ag',   label: 'AG' },
-    { from: 'ag',   to: 'sb',   label: 'AG' },
+    { from: 'hb',   to: 'ag' },
+    { from: 'ag',   to: 'sb' },
     { from: 'sb',   to: 'svc',  label: '1:N', bidir: true },
     { from: 'net',  to: 'nb',   label: '1:N', bidir: true },
-    { from: 'nb',   to: 'ag',   label: 'AG',                 routing: 'h-v' },
-    { from: 'rule', to: 'ag',   label: 'local endpoint',     lane: -1 },
-    { from: 'rule', to: 'svc',  label: 'remote endpoint',    routing: 'v-h', lane: 2 },
+    { from: 'nb',   to: 'ag',                       routing: 'h-v' },
+    { from: 'rule', to: 'ag',   label: 'endpoint',  lane: -1 },
+    { from: 'rule', to: 'svc',  label: 'endpoint',  routing: 'v-h', lane: 2 },
   ]}
 />
 
