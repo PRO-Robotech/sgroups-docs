@@ -53,7 +53,7 @@ import dedent from 'ts-dedent'
 
     extapi:
       svc:
-        def-dial-duration: 10s
+        def-daial-duration: 10s
         sgroups:
           address: tcp://sg-server:9006
           dial-duration: 3s
@@ -78,7 +78,7 @@ import dedent from 'ts-dedent'
     logger:
       level: INFO
 
-    graceful-shutdown: 10s
+    graceful-schutdown: 10s
   `}
 </CodeBlock>
 
@@ -161,8 +161,8 @@ import dedent from 'ts-dedent'
       <td>Префикс пути при вызовах API сервера</td>
     </tr>
     <tr>
-      <td><code>extapi/svc/def-dial-duration</code></td>
-      <td><code>NFT_EXTAPI_SVC_DEF_DIAL_DURATION</code></td>
+      <td><code>extapi/svc/def-daial-duration</code></td>
+      <td><code>NFT_EXTAPI_SVC_DEF_DAIAL_DURATION</code></td>
       <td><code>10s</code></td>
       <td>Таймаут установки соединения по умолчанию для всех внешних сервисов</td>
     </tr>
@@ -338,8 +338,8 @@ import dedent from 'ts-dedent'
       <td>Завершиться после первого успешного цикла (для тестов и CI)</td>
     </tr>
     <tr>
-      <td><code>graceful-shutdown</code></td>
-      <td><code>NFT_GRACEFUL_SHUTDOWN</code></td>
+      <td><code>graceful-schutdown</code></td>
+      <td><code>NFT_GRACEFUL_SCHUTDOWN</code></td>
       <td><code>10s</code></td>
       <td>Время на корректное завершение (graceful shutdown)</td>
     </tr>
