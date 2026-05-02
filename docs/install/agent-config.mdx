@@ -154,6 +154,18 @@ import dedent from 'ts-dedent'
       <td><code>false</code></td>
       <td>JSON вместо protobuf в gRPC</td>
     </tr>
+    <tr>
+      <td><code>extapi/svc/sgroups/api-path-prefix</code></td>
+      <td><code>NFT_EXTAPI_SVC_SGROUPS_API_PATH_PREFIX</code></td>
+      <td>—</td>
+      <td>Префикс пути при вызовах API сервера</td>
+    </tr>
+    <tr>
+      <td><code>extapi/svc/def-dial-duration</code></td>
+      <td><code>NFT_EXTAPI_SVC_DEF_DIAL_DURATION</code></td>
+      <td><code>10s</code></td>
+      <td>Таймаут установки соединения по умолчанию для всех внешних сервисов</td>
+    </tr>
   </tbody>
 </table>
 
@@ -177,25 +189,31 @@ import dedent from 'ts-dedent'
     </tr>
     <tr>
       <td><code>extapi/svc/sgroups/authn/tls/cert-file</code></td>
-      <td>... <code>_CERT_FILE</code></td>
+      <td><code>NFT_EXTAPI_SVC_SGROUPS_AUTHN_TLS_CERT_FILE</code></td>
       <td>—</td>
       <td>Клиентский сертификат</td>
     </tr>
     <tr>
       <td><code>extapi/svc/sgroups/authn/tls/key-file</code></td>
-      <td>... <code>_KEY_FILE</code></td>
+      <td><code>NFT_EXTAPI_SVC_SGROUPS_AUTHN_TLS_KEY_FILE</code></td>
       <td>—</td>
       <td>Клиентский приватный ключ</td>
     </tr>
     <tr>
       <td><code>extapi/svc/sgroups/authn/tls/server/verify</code></td>
-      <td>... <code>_SERVER_VERIFY</code></td>
+      <td><code>NFT_EXTAPI_SVC_SGROUPS_AUTHN_TLS_SERVER_VERIFY</code></td>
       <td><code>false</code></td>
       <td>Проверять серверный сертификат</td>
     </tr>
     <tr>
+      <td><code>extapi/svc/sgroups/authn/tls/server/name</code></td>
+      <td><code>NFT_EXTAPI_SVC_SGROUPS_AUTHN_TLS_SERVER_NAME</code></td>
+      <td>—</td>
+      <td>Hostname сервера для проверки SAN</td>
+    </tr>
+    <tr>
       <td><code>extapi/svc/sgroups/authn/tls/server/ca-files</code></td>
-      <td>... <code>_SERVER_CA_FILES</code></td>
+      <td><code>NFT_EXTAPI_SVC_SGROUPS_AUTHN_TLS_SERVER_CA_FILES</code></td>
       <td>—</td>
       <td>CA для проверки сервера</td>
     </tr>
@@ -251,10 +269,16 @@ import dedent from 'ts-dedent'
       <td>Таймаут установки соединения</td>
     </tr>
     <tr>
-      <td><code>dns/read-duration</code> / <code>dns/write-duration</code></td>
-      <td>... <code>_READ/WRITE_DURATION</code></td>
+      <td><code>dns/read-duration</code></td>
+      <td><code>NFT_DNS_READ_DURATION</code></td>
       <td><code>5s</code></td>
-      <td>Таймауты чтения/записи</td>
+      <td>Таймаут чтения ответа от DNS-сервера</td>
+    </tr>
+    <tr>
+      <td><code>dns/write-duration</code></td>
+      <td><code>NFT_DNS_WRITE_DURATION</code></td>
+      <td><code>5s</code></td>
+      <td>Таймаут записи запроса к DNS-серверу</td>
     </tr>
   </tbody>
 </table>
@@ -369,6 +393,12 @@ import dedent from 'ts-dedent'
       <td><code>NFT_TELEMETRY_NFT_COLLECTOR_MIN_FREQUENCY</code></td>
       <td><code>10s</code></td>
       <td>Мин. период чтения nft-метрик</td>
+    </tr>
+    <tr>
+      <td><code>telemetry/useragent</code></td>
+      <td><code>NFT_TELEMETRY_USERAGENT</code></td>
+      <td>—</td>
+      <td>Значение HTTP-заголовка User-Agent в исходящих запросах телеметрии</td>
     </tr>
   </tbody>
 </table>
