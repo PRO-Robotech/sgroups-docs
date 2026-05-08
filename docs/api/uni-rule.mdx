@@ -22,6 +22,8 @@ import AgFqdn from './_uni-rule-tabs/_ag-fqdn.mdx'
 import SvcFqdn from './_uni-rule-tabs/_svc-fqdn.mdx'
 import AgCidr from './_uni-rule-tabs/_ag-cidr.mdx'
 import SvcCidr from './_uni-rule-tabs/_svc-cidr.mdx'
+import AgSvc from './_uni-rule-tabs/_ag-svc.mdx'
+import SvcAg from './_uni-rule-tabs/_svc-ag.mdx'
 import Matrix from './_uni-rule-tabs/_matrix.mdx'
 
 # UniRule
@@ -37,14 +39,20 @@ import Matrix from './_uni-rule-tabs/_matrix.mdx'
 Создает новое правило или обновляет существующее. Тип правила определяется комбинацией `endpoints.local.type`,
 `endpoints.remote.type` и `transport.protocol` (oneOf). Поддерживаются только комбинации, у которых есть
 отдельная rule-таблица в БД: `ADDRESS_GROUP → ADDRESS_GROUP`, `ADDRESS_GROUP → FQDN`, `ADDRESS_GROUP → CIDR`,
-локальное `ADDRESS_GROUP → ICMP`, `SERVICE → SERVICE`, `SERVICE → FQDN`, `SERVICE → CIDR`.
+локальное `ADDRESS_GROUP → ICMP`, `ADDRESS_GROUP → SERVICE`, `SERVICE → ADDRESS_GROUP`,
+`SERVICE → SERVICE`, `SERVICE → FQDN`, `SERVICE → CIDR`.
+
+:::info Асимметричные пары AG ↔ SERVICE
+Для `ADDRESS_GROUP → SERVICE` и `SERVICE → ADDRESS_GROUP` режим `spec.transport`
+зависит от направления трафика — на стороне, где трафик **направлен на Service**,
+транспортная конфигурация наследуется из самого `Service` (блок `spec.transport`
+не указывается). На стороне, где Service **источник** трафика, `spec.transport`
+обязателен. Полная матрица — в табе **matrix** ниже.
+:::
 
 <Matrix />
 
 <Tabs>
-  <TabItem value="matrix" label="matrix">
-    <Matrix />
-  </TabItem>
   <TabItem value="ag-ag" label="AG → AG" default>
     <AgAg />
   </TabItem>
@@ -62,6 +70,12 @@ import Matrix from './_uni-rule-tabs/_matrix.mdx'
   </TabItem>
   <TabItem value="svc-cidr" label="Service → CIDR">
     <SvcCidr />
+  </TabItem>
+  <TabItem value="ag-svc" label="AG → Service">
+    <AgSvc />
+  </TabItem>
+  <TabItem value="svc-ag" label="Service → AG">
+    <SvcAg />
   </TabItem>
   <TabItem value="ag-icmp" label="AG → ICMP">
     <AgIcmp />

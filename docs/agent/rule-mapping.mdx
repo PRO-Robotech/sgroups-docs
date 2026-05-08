@@ -17,7 +17,7 @@ import dedent from 'ts-dedent'
 
 ## Поддерживаемые типы UniRule
 
-Агент применяет только семь комбинаций — те, у которых есть отдельная rule-таблица в БД:
+Агент применяет только девять комбинаций — те, у которых есть отдельная rule-таблица в БД:
 
 | local.type | remote.type | traffic | Где появится правило |
 |---|---|---|---|
@@ -25,9 +25,23 @@ import dedent from 'ts-dedent'
 | `ADDRESS_GROUP` | `FQDN` | EGRESS | `EGRESS-ag-prod/web` с набором `NetIPv4-fqdn-example.com` |
 | `ADDRESS_GROUP` | `CIDR` | INGRESS / EGRESS | per-AG цепочка с inline-CIDR в `saddr`/`daddr` |
 | `ADDRESS_GROUP` | — | INGRESS / EGRESS | ICMP-only правило (BOTH запрещено) |
+| `ADDRESS_GROUP` | `SERVICE` | INGRESS (explicit) / EGRESS, BOTH (inherited) | per-AG цепочка локального AG; для BOTH ещё INGRESS-цепочка AG, к которому привязан remote-сервис |
+| `SERVICE` | `ADDRESS_GROUP` | INGRESS (inherited) / EGRESS, BOTH (explicit) | per-AG цепочка AG local-сервиса; для BOTH ещё INGRESS-цепочка remote AG |
 | `SERVICE` | `SERVICE` | INGRESS / EGRESS / BOTH | per-AG цепочка AG, к которому привязан local-сервис |
 | `SERVICE` | `FQDN` | EGRESS | per-AG цепочка AG local-сервиса |
 | `SERVICE` | `CIDR` | INGRESS / EGRESS | per-AG цепочка AG local-сервиса |
+
+:::info Explicit / inherited transport
+Для асимметричных пар `AG ↔ SERVICE` режим `spec.transport` зависит от направления:
+- На стороне, где трафик **направлен на Service**, `spec.transport` запрещён —
+  агент берёт порты/типы из самого `Service` (его блока `spec.transport`).
+  Это `AG → SERVICE × EGRESS / BOTH` и `SERVICE → AG × INGRESS`.
+- На стороне, где Service — **источник** трафика, `spec.transport` обязателен.
+  Это `AG → SERVICE × INGRESS` и `SERVICE → AG × EGRESS / BOTH`.
+
+То же правило действует для `SERVICE → SERVICE` (всегда inherited) и
+`SERVICE → CIDR × INGRESS` (тоже inherited; `EGRESS` — explicit).
+:::
 
 ## Плейсхолдеры в шаблонах
 
@@ -96,6 +110,16 @@ entries дают несколько строк.
 
 Для `SERVICE → SERVICE × BOTH` действует исключение: правило с traffic=BOTH порождает
 EGRESS-строку в цепочке локального AG **и** INGRESS-строку в цепочке удаленного AG.
+
+Аналогичная двусторонняя эмиссия работает для асимметричных пар `AG ↔ SERVICE` с `traffic=BOTH`:
+
+- `ADDRESS_GROUP → SERVICE × BOTH` — EGRESS-строка в цепочке локальной AG
+  (`daddr` = set удаленного сервиса) **и** INGRESS-строка в цепочке AG, к которой
+  привязан удалённый сервис (`saddr` = set локальной AG). Транспорт берётся из
+  remote-сервиса.
+- `SERVICE → ADDRESS_GROUP × BOTH` — EGRESS-строка в цепочке AG local-сервиса
+  (`daddr` = set удалённой AG) **и** INGRESS-строка в цепочке удалённой AG
+  (`saddr` = set локального сервиса). Транспорт берётся из `spec.transport` правила.
 
 ---
 
@@ -2155,6 +2179,404 @@ curl -X POST http://localhost:9006/v1/rules/upsert \
 chain INGRESS-ag-prod/web {
     ip saddr { 10.0.0.0/24 } tcp dport 8080 counter accept
     ip saddr { 10.0.0.0/24 } udp dport 9090 counter accept
+}
+```
+
+  </TabItem>
+</Tabs>
+
+---
+
+## Тип 8. `ADDRESS_GROUP → SERVICE`
+
+Асимметричная пара: local — адресная группа, remote — сервис. Поведение
+`spec.transport` зависит от направления:
+
+| traffic | `spec.transport` | Источник портов / icmp-типов |
+|---|---|---|
+| `INGRESS` | **обязателен** (L4 или ICMP) | из правила |
+| `EGRESS` | не указывается | из `transports` remote-сервиса |
+| `BOTH` | не указывается | из `transports` remote-сервиса |
+
+Цепочки на агенте:
+
+| traffic | Цепочки |
+|---|---|
+| `INGRESS` | `INGRESS-ag-${l-ns}/${l-ag}` (`saddr` = set remote-сервиса) |
+| `EGRESS` | `EGRESS-ag-${l-ns}/${l-ag}` (`daddr` = set remote-сервиса) |
+| `BOTH` | `EGRESS-ag-${l-ns}/${l-ag}` + `INGRESS-ag-${r-ns}/${r-ag}` (`saddr` = set локальной AG) |
+
+Set удалённого сервиса — `@NetIPv4-svc-${r-ns}/${r-svc}` — наполняется адресами AG,
+к которой remote-сервис привязан через `ServiceBinding`.
+
+<Tabs groupId="agsvc-traffic">
+  <TabItem value="ingress" label="INGRESS" default>
+
+В примере ниже:
+
+- local: AG `prod/web`
+- remote: сервис `prod/api` (привязан к AG `prod/api-hosts`)
+- транспорт: **из правила** — TCP/443
+
+```bash
+curl -X POST http://localhost:9006/v1/rules/upsert \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "rules": [
+      {
+        "metadata": {
+          "name": "web-to-api-ingress",
+          "namespace": "prod"
+        },
+        "spec": {
+          "action": "ALLOW",
+          "session": {
+            "traffic": "INGRESS"
+          },
+          "endpoints": {
+            "local": {
+              "name": "web",
+              "namespace": "prod",
+              "type": "ADDRESS_GROUP"
+            },
+            "remote": {
+              "name": "api",
+              "namespace": "prod",
+              "type": "SERVICE"
+            }
+          },
+          "transport": {
+            "protocol": "TCP",
+            "IPv": "IPV4",
+            "entries": [
+              {
+                "description": "HTTPS",
+                "ports": "443"
+              }
+            ]
+          }
+        }
+      }
+    ]
+  }'
+```
+
+```nft
+chain INGRESS-ag-prod/web {
+    ip saddr @NetIPv4-svc-prod/api tcp dport 443 counter accept
+}
+```
+
+  </TabItem>
+  <TabItem value="egress" label="EGRESS">
+
+В примере ниже:
+
+- local: AG `prod/web`
+- remote: сервис `prod/api` с транспортами TCP/8080 + UDP/9090
+- `spec.transport` **не передается** — порты берутся из `Service`
+
+```bash
+curl -X POST http://localhost:9006/v1/rules/upsert \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "rules": [
+      {
+        "metadata": {
+          "name": "web-to-api-egress",
+          "namespace": "prod"
+        },
+        "spec": {
+          "action": "ALLOW",
+          "session": {
+            "traffic": "EGRESS"
+          },
+          "endpoints": {
+            "local": {
+              "name": "web",
+              "namespace": "prod",
+              "type": "ADDRESS_GROUP"
+            },
+            "remote": {
+              "name": "api",
+              "namespace": "prod",
+              "type": "SERVICE"
+            }
+          }
+        }
+      }
+    ]
+  }'
+```
+
+Агент берет порты сервиса `api`:
+
+```nft
+chain EGRESS-ag-prod/web {
+    ip daddr @NetIPv4-svc-prod/api tcp dport 8080 counter accept
+    ip daddr @NetIPv4-svc-prod/api udp dport 9090 counter accept
+}
+```
+
+  </TabItem>
+  <TabItem value="both" label="BOTH">
+
+В примере ниже:
+
+- local: AG `prod/web`
+- remote: сервис `prod/api` (привязан к AG `prod/api-hosts`),
+  транспорт TCP/8080
+- `spec.transport` **не передается** — порты берутся из `Service`
+
+```bash
+curl -X POST http://localhost:9006/v1/rules/upsert \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "rules": [
+      {
+        "metadata": {
+          "name": "web-to-api-both",
+          "namespace": "prod"
+        },
+        "spec": {
+          "action": "ALLOW",
+          "session": {
+            "traffic": "BOTH"
+          },
+          "endpoints": {
+            "local": {
+              "name": "web",
+              "namespace": "prod",
+              "type": "ADDRESS_GROUP"
+            },
+            "remote": {
+              "name": "api",
+              "namespace": "prod",
+              "type": "SERVICE"
+            }
+          }
+        }
+      }
+    ]
+  }'
+```
+
+Двусторонняя эмиссия: исходящий из AG `web` и входящий на AG `api-hosts`,
+к которой привязан remote-сервис.
+
+```nft
+chain EGRESS-ag-prod/web {
+    ip daddr @NetIPv4-svc-prod/api tcp dport 8080 counter accept
+}
+chain INGRESS-ag-prod/api-hosts {
+    ip saddr @NetIPv4-prod/web tcp dport 8080 counter accept
+}
+```
+
+  </TabItem>
+</Tabs>
+
+:::warning ICMP-транспорты сервиса для EGRESS / BOTH в nft не попадают
+В режиме inherited rule регистрируется как `Ag2SvcRule` (без ICMP-варианта).
+Реализация populate-функций для ICMP опирается на `Ag2SvcIcmpRule`, поэтому
+ICMP-блоки из `Service.spec.transports` для `EGRESS`/`BOTH` игнорируются.
+ICMP можно использовать только в `INGRESS`, где транспорт задается явно
+через `spec.transport` правила.
+:::
+
+---
+
+## Тип 9. `SERVICE → ADDRESS_GROUP`
+
+Зеркальное к Типу 8: local — сервис, remote — адресная группа.
+
+| traffic | `spec.transport` | Источник портов / icmp-типов |
+|---|---|---|
+| `INGRESS` | не указывается | из `transports` local-сервиса |
+| `EGRESS` | **обязателен** (L4 или ICMP) | из правила |
+| `BOTH` | **обязателен** (L4 или ICMP) | из правила |
+
+Цепочки на агенте:
+
+| traffic | Цепочки |
+|---|---|
+| `INGRESS` | `INGRESS-ag-${l-ns}/${l-ag}` (anchor local-сервиса; `saddr` = set удалённой AG) |
+| `EGRESS` | `EGRESS-ag-${l-ns}/${l-ag}` (`daddr` = set удалённой AG) |
+| `BOTH` | `EGRESS-ag-${l-ns}/${l-ag}` + `INGRESS-ag-${r-ns}/${r-ag}` (`saddr` = set local-сервиса) |
+
+`${l-ag}` — AG, к которой local-сервис привязан через `ServiceBinding`.
+
+<Tabs groupId="svcag-traffic">
+  <TabItem value="ingress" label="INGRESS" default>
+
+В примере ниже:
+
+- local: сервис `prod/api` (привязан к AG `prod/web`,
+  транспорты TCP/8080 + UDP/9090)
+- remote: AG `prod/clients`
+- `spec.transport` **не передается** — порты берутся из `Service`
+
+```bash
+curl -X POST http://localhost:9006/v1/rules/upsert \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "rules": [
+      {
+        "metadata": {
+          "name": "api-from-clients-ingress",
+          "namespace": "prod"
+        },
+        "spec": {
+          "action": "ALLOW",
+          "session": {
+            "traffic": "INGRESS"
+          },
+          "endpoints": {
+            "local": {
+              "name": "api",
+              "namespace": "prod",
+              "type": "SERVICE"
+            },
+            "remote": {
+              "name": "clients",
+              "namespace": "prod",
+              "type": "ADDRESS_GROUP"
+            }
+          }
+        }
+      }
+    ]
+  }'
+```
+
+Агент берет порты сервиса `api`:
+
+```nft
+chain INGRESS-ag-prod/web {
+    ip saddr @NetIPv4-prod/clients tcp dport 8080 counter accept
+    ip saddr @NetIPv4-prod/clients udp dport 9090 counter accept
+}
+```
+
+  </TabItem>
+  <TabItem value="egress" label="EGRESS">
+
+В примере ниже:
+
+- local: сервис `prod/api` (привязан к AG `prod/web`)
+- remote: AG `prod/db`
+- транспорт: **из правила** — TCP/5432
+
+```bash
+curl -X POST http://localhost:9006/v1/rules/upsert \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "rules": [
+      {
+        "metadata": {
+          "name": "api-to-db-egress",
+          "namespace": "prod"
+        },
+        "spec": {
+          "action": "ALLOW",
+          "session": {
+            "traffic": "EGRESS"
+          },
+          "endpoints": {
+            "local": {
+              "name": "api",
+              "namespace": "prod",
+              "type": "SERVICE"
+            },
+            "remote": {
+              "name": "db",
+              "namespace": "prod",
+              "type": "ADDRESS_GROUP"
+            }
+          },
+          "transport": {
+            "protocol": "TCP",
+            "IPv": "IPV4",
+            "entries": [
+              {
+                "description": "PostgreSQL",
+                "ports": "5432"
+              }
+            ]
+          }
+        }
+      }
+    ]
+  }'
+```
+
+```nft
+chain EGRESS-ag-prod/web {
+    ip daddr @NetIPv4-prod/db tcp dport 5432 counter accept
+}
+```
+
+  </TabItem>
+  <TabItem value="both" label="BOTH">
+
+В примере ниже:
+
+- local: сервис `prod/api` (привязан к AG `prod/web`)
+- remote: AG `prod/db`
+- транспорт: **из правила** — TCP/5432
+
+```bash
+curl -X POST http://localhost:9006/v1/rules/upsert \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "rules": [
+      {
+        "metadata": {
+          "name": "api-db-both",
+          "namespace": "prod"
+        },
+        "spec": {
+          "action": "ALLOW",
+          "session": {
+            "traffic": "BOTH"
+          },
+          "endpoints": {
+            "local": {
+              "name": "api",
+              "namespace": "prod",
+              "type": "SERVICE"
+            },
+            "remote": {
+              "name": "db",
+              "namespace": "prod",
+              "type": "ADDRESS_GROUP"
+            }
+          },
+          "transport": {
+            "protocol": "TCP",
+            "IPv": "IPV4",
+            "entries": [
+              {
+                "description": "PostgreSQL",
+                "ports": "5432"
+              }
+            ]
+          }
+        }
+      }
+    ]
+  }'
+```
+
+Двусторонняя эмиссия: исходящий из AG `web` (anchor сервиса `api`) и входящий на
+AG `db`. На стороне `db` `saddr` — set local-сервиса (а не AG `web`).
+
+```nft
+chain EGRESS-ag-prod/web {
+    ip daddr @NetIPv4-prod/db tcp dport 5432 counter accept
+}
+chain INGRESS-ag-prod/db {
+    ip saddr @NetIPv4-svc-prod/api tcp dport 5432 counter accept
 }
 ```
 
